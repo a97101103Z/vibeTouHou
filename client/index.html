@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>vibeTouHou — 彈幕競技場</title>
+  <meta name="description" content="Competitive bullet-hell platform. Code your patterns. Survive your rivals." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+
+  <!-- ── Login Overlay ─────────────────────────────────────────────────────── -->
+  <div id="login-overlay">
+    <div class="login-card">
+      <div class="login-logo">
+        <span class="logo-vibe">vibe</span><span class="logo-tou">Tou</span><span class="logo-hou">Hou</span>
+        <div class="logo-sub">彈幕競技場</div>
+      </div>
+
+      <p class="login-tagline">Choose your side. Code your bullets. Survive.</p>
+
+      <div class="team-picker">
+        <button id="btn-red" class="team-btn team-red" data-team="red">
+          <span class="team-icon">🔴</span>
+          <span class="team-label">Red Team</span>
+        </button>
+        <button id="btn-blue" class="team-btn team-blue" data-team="blue">
+          <span class="team-icon">🔵</span>
+          <span class="team-label">Blue Team</span>
+        </button>
+      </div>
+
+      <div id="slot-section" style="display:none">
+        <p class="slot-label">Pick your slot</p>
+        <div id="slot-grid" class="slot-grid"></div>
+      </div>
+
+      <div id="login-status" class="login-status"></div>
+    </div>
+  </div>
+
+  <!-- ── Main Application ───────────────────────────────────────────────────── -->
+  <div id="app" style="display:none">
+
+    <nav id="navbar">
+      <div class="nav-logo">
+        <span class="logo-vibe">vibe</span><span class="logo-tou">Tou</span><span class="logo-hou">Hou</span>
+      </div>
+
+      <div class="nav-tabs">
+        <button class="nav-tab" id="tab-submit"   data-page="submit">📝 Submit</button>
+        <button class="nav-tab" id="tab-assets"   data-page="assets">🖼️ Assets</button>
+        <button class="nav-tab" id="tab-playtest" data-page="playtest">🎮 Playtest</button>
+        <button class="nav-tab" id="tab-gauntlet" data-page="gauntlet">⚔️ Gauntlet</button>
+      </div>
+
+      <div id="player-badge" class="player-badge"></div>
+    </nav>
+
+    <main id="main-content">
+      <section id="page-submit"   class="page"></section>
+      <section id="page-assets"   class="page"></section>
+      <section id="page-playtest" class="page"></section>
+      <section id="page-gauntlet" class="page"></section>
+    </main>
+
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

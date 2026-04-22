@@ -1,0 +1,38 @@
+# vibeTouHou — Sandbox Image
+# Runs student Python scripts in an isolated environment.
+#
+# Build:
+#   docker build -f Dockerfile.sandbox -t vibetouhou-sandbox .
+#
+# On Arch Linux:
+#   sudo pacman -S docker
+#   sudo systemctl enable --now docker
+#   sudo usermod -aG docker $USER   # then log out/in
+#
+# On Windows: install Docker Desktop, make sure it's running.
+
+FROM python:3.11-slim
+
+# ffmpeg is needed by imageio to write MP4 files
+# libsdl2 is needed by pygame (headless via SDL_VIDEODRIVER=dummy)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ffmpeg \
+        libsdl2-2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip first (avoids hash-check bugs in older pip versions)
+RUN pip install --upgrade pip
+
+# Install exactly the libraries students are allowed to use
+# --retries handles flaky Docker build networks
+RUN pip install --no-cache-dir --retries 5 \
+        pygame \
+        "imageio[ffmpeg]" \
+        numpy \
+        Pillow
+
+# Non-root sandbox user — cannot write outside /work
+RUN useradd -m -u 1000 sandbox
+
+USER sandbox
+WORKDIR /work

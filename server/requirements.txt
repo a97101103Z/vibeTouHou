@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+python-multipart
+imageio[ffmpeg]
+Pillow
+numpy
+docker          # Docker SDK — for sandboxed script execution
