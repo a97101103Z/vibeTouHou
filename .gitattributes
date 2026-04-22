@@ -1,0 +1,11 @@
+# Set default behavior to automatically normalize line endings
+* text=auto
+
+# Force LF for files that will run in Linux/Docker
+*.py text eol=lf
+*.sh text eol=lf
+Dockerfile* text eol=lf
+requirements.txt text eol=lf
+
+# Keep markdown consistent
+*.md text eol=lf
