@@ -8,11 +8,14 @@
 
 import { GameEngine, WIDTH, HEIGHT } from '../game/engine.js';
 import { toast } from '../main.js';
+import { createSerialTaskRunner } from '../utils/serialTask.js';
 
 const TEST_RADIUS = 14;   // bigger hitbox for creator leniency
 
 let engine = null;
 let hudRafId = null;
+let runGeneration = 0;
+const triggerStart = createSerialTaskRunner(startGame);
 
 export function initPlaytest(container) {
   renderUI(container);
@@ -80,22 +83,26 @@ function renderUI(container) {
     </div>
   `;
 
-  document.getElementById('btn-start-play').addEventListener('click', startGame);
+  document.getElementById('btn-start-play').addEventListener('click', triggerStart);
 }
 
 // ── Game control ───────────────────────────────────────────────────────────────
 
 async function startGame() {
+  const generation = ++runGeneration;
+
   // Check that a render has completed before trying to load the video
   try {
     const res  = await fetch('/api/render/status', { credentials: 'include' });
     const data = await res.json();
+    if (generation !== runGeneration) return;
     if (data.status !== 'done') {
       document.getElementById('no-video-msg').style.display = '';
       return;
     }
     window.__playtestVideoUrl = data.video_url || '/api/video/my';
   } catch (_) {
+    if (generation !== runGeneration) return;
     document.getElementById('no-video-msg').style.display = '';
     return;
   }
@@ -112,23 +119,27 @@ async function startGame() {
   if (engine) engine.stop();
   if (hudRafId) cancelAnimationFrame(hudRafId);
 
-  engine = new GameEngine(
+  const thisEngine = new GameEngine(
     document.getElementById('game-canvas'),
     window.__playtestVideoUrl,
     { playerRadius: TEST_RADIUS, recordTrajectory: true }
   );
+  engine = thisEngine;
 
-  engine.addEventListener('hit', e => {
+  thisEngine.addEventListener('hit', e => {
+    if (thisEngine !== engine) return;
     document.getElementById('hud-hits').textContent = `Hits: ${e.detail.hits}`;
   });
 
-  engine.addEventListener('finish', e => {
+  thisEngine.addEventListener('finish', e => {
+    if (thisEngine !== engine) return;
     const { hits, trajectory } = e.detail;
     onFinish(hits, trajectory);
   });
 
-  engine.addEventListener('restart', startGame);
-  engine.addEventListener('videoerror', () => {
+  thisEngine.addEventListener('restart', triggerStart);
+  thisEngine.addEventListener('videoerror', () => {
+    if (thisEngine !== engine) return;
     showOverlay('Video playback stopped.', 'Reload or retry after checking the rendered video.', 'Retry');
   });
 
@@ -136,15 +147,16 @@ async function startGame() {
   const canvas = document.getElementById('game-canvas');
   const hudTime = document.getElementById('hud-time');
   function updateHUD() {
-    if (!engine || !engine.video) return;
-    const left = Math.max(0, 10 - engine.video.currentTime);
+    if (thisEngine !== engine || !thisEngine.video) return;
+    const left = Math.max(0, 10 - thisEngine.video.currentTime);
     hudTime.textContent = left.toFixed(1) + 's';
-    if (engine._running) hudRafId = requestAnimationFrame(updateHUD);
+    if (thisEngine._running) hudRafId = requestAnimationFrame(updateHUD);
   }
   hudRafId = requestAnimationFrame(updateHUD);
 
-  try { await engine.start(); }
+  try { await thisEngine.start(); }
   catch (_) {
+    if (thisEngine !== engine) return;
     showOverlay('Could not load video.', 'Check that your pattern has been rendered.');
   }
 }
@@ -175,7 +187,7 @@ function showOverlay(title, subtitle, btnLabel = 'Retry') {
     <p>${subtitle}</p>
     <button class="btn btn-primary" id="btn-retry-play">↩ ${btnLabel}</button>
   `;
-  document.getElementById('btn-retry-play').addEventListener('click', startGame);
+  document.getElementById('btn-retry-play').addEventListener('click', triggerStart);
 }
 
 // ── Publish ────────────────────────────────────────────────────────────────────
