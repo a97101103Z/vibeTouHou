@@ -33,12 +33,22 @@ export function toast(msg, type = '') {
 // ── Page switching ────────────────────────────────────────────────────────────
 const pages    = ['submit', 'assets', 'playtest', 'gauntlet'];
 const inited   = {};
+const pageFromPath = () => {
+  const name = window.location.pathname.replace(/^\/+/, '').split('/')[0];
+  return pages.includes(name) ? name : 'submit';
+};
 
-function showPage(name) {
+function showPage(name, push = true) {
+  if (!pages.includes(name)) name = 'submit';
   pages.forEach(p => {
     document.getElementById('page-' + p).classList.toggle('active', p === name);
     document.getElementById('tab-'  + p).classList.toggle('active', p === name);
   });
+
+  const nextPath = name === 'submit' ? '/' : `/${name}`;
+  if (push && window.location.pathname !== nextPath) {
+    history.pushState({ page: name }, '', nextPath);
+  }
 
   if (!inited[name]) {
     inited[name] = true;
@@ -53,6 +63,8 @@ function showPage(name) {
 document.querySelectorAll('.nav-tab').forEach(btn => {
   btn.addEventListener('click', () => showPage(btn.dataset.page));
 });
+
+window.addEventListener('popstate', () => showPage(pageFromPath(), false));
 
 // ── App boot ──────────────────────────────────────────────────────────────────
 async function boot() {
@@ -93,7 +105,7 @@ export function activateApp(team, index) {
   document.getElementById('login-overlay').style.display = 'none';
   document.getElementById('app').style.display = '';
 
-  showPage('submit');
+  showPage(pageFromPath(), false);
 }
 
 boot();

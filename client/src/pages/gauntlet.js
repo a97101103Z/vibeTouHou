@@ -21,6 +21,7 @@ let phase         = 'menu';  // 'menu' | 'playing' | 'summary' | 'infinite'
 let infiniteHits  = 0;
 let infiniteTime  = 0;
 let lbPollTimer   = null;
+let hudRafId      = null;
 
 export async function initGauntlet(container) {
   container.innerHTML = `
@@ -152,10 +153,11 @@ function playPattern(idx) {
   document.getElementById('canvas-overlay').style.display = 'none';
 
   if (engine) engine.stop();
+  if (hudRafId) cancelAnimationFrame(hudRafId);
 
   engine = new GameEngine(
     document.getElementById('game-canvas'),
-    p.video_url + '?' + Date.now(),
+    p.video_url,
     { playerRadius: REAL_RADIUS, recordTrajectory: false }
   );
 
@@ -183,6 +185,11 @@ function playPattern(idx) {
   engine.addEventListener('restart', () => {
     if (phase === 'playing') beginGauntlet();
   });
+  engine.addEventListener('videoerror', () => {
+    showCanvasOverlay('Playback stopped', 'The video stalled before the pattern ended.', 'Retry Pattern', () => {
+      playPattern(idx);
+    });
+  });
 
   engine.start().catch(() => {
     showCanvasOverlay('Error', 'Could not load this pattern\'s video.', 'Skip', () => {
@@ -196,9 +203,9 @@ function playPattern(idx) {
   function tick() {
     if (!engine?._running) return;
     hudTime.textContent = Math.max(0, 10 - (engine.video?.currentTime ?? 0)).toFixed(1) + 's';
-    requestAnimationFrame(tick);
+    hudRafId = requestAnimationFrame(tick);
   }
-  requestAnimationFrame(tick);
+  hudRafId = requestAnimationFrame(tick);
 }
 
 function showBetweenOverlay(idx, hits) {
@@ -300,10 +307,11 @@ function playInfinitePattern(queue, qi) {
 
   const p = queue[qi % queue.length];
   if (engine) engine.stop();
+  if (hudRafId) cancelAnimationFrame(hudRafId);
 
   engine = new GameEngine(
     document.getElementById('game-canvas'),
-    p.video_url + '?' + Date.now(),
+    p.video_url,
     { playerRadius: REAL_RADIUS }
   );
 
@@ -325,6 +333,7 @@ function playInfinitePattern(queue, qi) {
   engine.addEventListener('restart', () => {
     if (phase === 'infinite') beginInfinite();
   });
+  engine.addEventListener('videoerror', () => playInfinitePattern(queue, qi));
 
   engine.start().catch(() => playInfinitePattern(queue, qi + 1));
 }

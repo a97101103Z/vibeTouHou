@@ -12,6 +12,7 @@ import { toast } from '../main.js';
 const TEST_RADIUS = 14;   // bigger hitbox for creator leniency
 
 let engine = null;
+let hudRafId = null;
 
 export function initPlaytest(container) {
   renderUI(container);
@@ -93,6 +94,7 @@ async function startGame() {
       document.getElementById('no-video-msg').style.display = '';
       return;
     }
+    window.__playtestVideoUrl = data.video_url || '/api/video/my';
   } catch (_) {
     document.getElementById('no-video-msg').style.display = '';
     return;
@@ -108,10 +110,11 @@ async function startGame() {
 
   // Destroy previous engine if any
   if (engine) engine.stop();
+  if (hudRafId) cancelAnimationFrame(hudRafId);
 
   engine = new GameEngine(
     document.getElementById('game-canvas'),
-    '/api/video/my?' + Date.now(),
+    window.__playtestVideoUrl,
     { playerRadius: TEST_RADIUS, recordTrajectory: true }
   );
 
@@ -125,18 +128,20 @@ async function startGame() {
   });
 
   engine.addEventListener('restart', startGame);
+  engine.addEventListener('videoerror', () => {
+    showOverlay('Video playback stopped.', 'Reload or retry after checking the rendered video.', 'Retry');
+  });
 
   // Update HUD timer during play (via rAF check on video)
   const canvas = document.getElementById('game-canvas');
   const hudTime = document.getElementById('hud-time');
-  let rafId;
   function updateHUD() {
     if (!engine || !engine.video) return;
     const left = Math.max(0, 10 - engine.video.currentTime);
     hudTime.textContent = left.toFixed(1) + 's';
-    if (engine._running) rafId = requestAnimationFrame(updateHUD);
+    if (engine._running) hudRafId = requestAnimationFrame(updateHUD);
   }
-  rafId = requestAnimationFrame(updateHUD);
+  hudRafId = requestAnimationFrame(updateHUD);
 
   try { await engine.start(); }
   catch (_) {

@@ -5,3 +5,5 @@ imageio[ffmpeg]
 Pillow
 numpy
 docker          # Docker SDK — for sandboxed script execution
+pytest
+httpx

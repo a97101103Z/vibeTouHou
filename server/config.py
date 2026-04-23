@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 # ── Canvas / video ─────────────────────────────────────────────────────────────
 WIDTH  = 800
@@ -13,6 +14,8 @@ BRIGHTNESS_THRESHOLD = 128  # Y > this = hit zone  (Y = 0.299R + 0.587G + 0.114B
 
 # ── Sandbox ────────────────────────────────────────────────────────────────────
 MAX_RENDER_SECONDS = 60   # kill runaway student scripts after this many seconds
+MAX_RENDER_WORKERS = int(os.getenv("MAX_RENDER_WORKERS", "3"))
+MAX_RENDER_QUEUE = int(os.getenv("MAX_RENDER_QUEUE", "48"))
 
 # Imports that student scripts are allowed to use
 ALLOWED_IMPORTS = {
@@ -27,6 +30,16 @@ ALLOWED_IMPORTS = {
 # and doesn't restart the server mid-render.
 DATA_DIR   = Path(__file__).parent.parent / "data"
 STATIC_DIR = Path(__file__).parent / "static"
+
+# ── HTTP ───────────────────────────────────────────────────────────────────────
+CORS_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000,http://127.0.0.1:8000",
+    ).split(",")
+    if origin.strip()
+]
 
 # ── Teams ──────────────────────────────────────────────────────────────────────
 TEAMS        = ("red", "blue")

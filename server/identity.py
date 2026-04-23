@@ -10,6 +10,7 @@ Sessions are persisted to data/sessions.json so server restarts
 
 import json
 import secrets
+import threading
 from pathlib import Path
 from typing import Optional
 
@@ -22,6 +23,7 @@ _SESSIONS_FILE = DATA_DIR / "sessions.json"
 _claimed: dict[str, str] = {}
 # session_token  →  "red-7"
 _sessions: dict[str, str] = {}
+_lock = threading.Lock()
 
 
 def _load() -> None:
@@ -40,10 +42,9 @@ def _load() -> None:
 def _save() -> None:
     """Persist current sessions to disk."""
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    _SESSIONS_FILE.write_text(
-        json.dumps({"claimed": _claimed, "sessions": _sessions}, indent=2),
-        encoding="utf-8",
-    )
+    tmp = _SESSIONS_FILE.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps({"claimed": _claimed, "sessions": _sessions}, indent=2), encoding="utf-8")
+    tmp.replace(_SESSIONS_FILE)
 
 
 # Load on import (happens once when the server starts)
@@ -60,24 +61,27 @@ def claim(team: str, index: int) -> Optional[str]:
     """
     Claim a slot. Returns the new session token, or None if the slot is taken.
     """
-    key = slot_key(team, index)
-    if key in _claimed:
-        return None
-    token = secrets.token_hex(24)
-    _claimed[key]  = token
-    _sessions[token] = key
-    _save()
-    return token
+    with _lock:
+        key = slot_key(team, index)
+        if key in _claimed:
+            return None
+        token = secrets.token_hex(24)
+        _claimed[key] = token
+        _sessions[token] = key
+        _save()
+        return token
 
 
 def get_slot(token: str) -> Optional[str]:
     """Return 'team-index' for a session token, or None if unknown."""
-    return _sessions.get(token)
+    with _lock:
+        return _sessions.get(token)
 
 
 def parse_slot(token: str) -> Optional[tuple[str, int]]:
     """Return (team, index) tuple, or None if unknown."""
-    key = _sessions.get(token)
+    with _lock:
+        key = _sessions.get(token)
     if key is None:
         return None
     team, idx = key.rsplit("-", 1)
@@ -87,7 +91,9 @@ def parse_slot(token: str) -> Optional[tuple[str, int]]:
 def get_all_claimed() -> dict[str, list[int]]:
     """Return {"red": [1, 3, 7], "blue": [2]} of claimed slots."""
     result: dict[str, list[int]] = {"red": [], "blue": []}
-    for key in _claimed:
+    with _lock:
+        keys = list(_claimed.keys())
+    for key in keys:
         team, idx = key.rsplit("-", 1)
         result.setdefault(team, []).append(int(idx))
     return result
@@ -95,10 +101,11 @@ def get_all_claimed() -> dict[str, list[int]]:
 
 def reset(team: str, index: int) -> bool:
     """Admin: free a claimed slot. Returns True if it existed."""
-    key = slot_key(team, index)
-    if key not in _claimed:
-        return False
-    token = _claimed.pop(key)
-    _sessions.pop(token, None)
-    _save()
-    return True
+    with _lock:
+        key = slot_key(team, index)
+        if key not in _claimed:
+            return False
+        token = _claimed.pop(key)
+        _sessions.pop(token, None)
+        _save()
+        return True

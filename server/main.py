@@ -11,11 +11,14 @@ During development, run the Vite dev server separately (npm run dev in client/).
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.exception_handlers import http_exception_handler
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.responses import FileResponse
 
 from routers import auth, render, assets, patterns, scores_router, publish
-from config import STATIC_DIR, DATA_DIR
+from config import STATIC_DIR, DATA_DIR, CORS_ORIGINS
 
 # ── Application ────────────────────────────────────────────────────────────────
 app = FastAPI(
@@ -27,7 +30,7 @@ app = FastAPI(
 # ── CORS (allow local network origins during dev) ──────────────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -40,6 +43,23 @@ app.include_router(assets.router,        prefix="/api", tags=["assets"])
 app.include_router(patterns.router,      prefix="/api", tags=["patterns"])
 app.include_router(scores_router.router, prefix="/api", tags=["scores"])
 app.include_router(publish.router,       prefix="/api", tags=["publish"])
+
+
+@app.get("/api/health")
+def health():
+    return {"ok": True}
+
+
+@app.exception_handler(StarletteHTTPException)
+async def spa_fallback(request, exc):
+    if (
+        exc.status_code == 404
+        and request.method == "GET"
+        and not request.url.path.startswith("/api")
+        and STATIC_DIR.joinpath("index.html").exists()
+    ):
+        return FileResponse(str(STATIC_DIR / "index.html"))
+    return await http_exception_handler(request, exc)
 
 # ── Static client (production build) ──────────────────────────────────────────
 if STATIC_DIR.exists():

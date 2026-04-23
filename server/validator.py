@@ -34,10 +34,10 @@ def validate(video_path: Path, trajectory: list[dict]) -> tuple[bool, str]:
         return False, f"Could not open video: {exc}"
 
     # Pre-index trajectory by frame number so we only check frames we need
-    frame_hits: dict[int, list[tuple[float, float]]] = {}
+    frame_hits: dict[int, list[tuple[float, float, float]]] = {}
     for pt in trajectory:
         fidx = int(pt["t"] * fps)
-        frame_hits.setdefault(fidx, []).append((float(pt["x"]), float(pt["y"])))
+        frame_hits.setdefault(fidx, []).append((float(pt["x"]), float(pt["y"]), float(pt["t"])))
 
     r = PLAYER_RADIUS_REAL
 
@@ -47,7 +47,7 @@ def validate(video_path: Path, trajectory: list[dict]) -> tuple[bool, str]:
                 continue
             # frame shape: (H, W, 3) uint8
             h, w = frame.shape[:2]
-            for px, py in frame_hits[fidx]:
+            for px, py, t in frame_hits[fidx]:
                 # Sample every pixel inside the player's circle
                 for dy in range(-r, r + 1):
                     for dx in range(-r, r + 1):
@@ -61,7 +61,7 @@ def validate(video_path: Path, trajectory: list[dict]) -> tuple[bool, str]:
                         if Y > BRIGHTNESS_THRESHOLD:
                             reader.close()
                             return False, (
-                                f"Collision detected at t={trajectory[0]['t']:.2f}s "
+                                f"Collision detected at t={t:.2f}s "
                                 f"near pixel ({fx},{fy}) with brightness {Y:.1f}."
                             )
     finally:

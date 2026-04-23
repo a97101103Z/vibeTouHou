@@ -23,16 +23,27 @@ import os
 import sys
 import subprocess
 import threading
+from queue import Empty, Full, Queue
 from pathlib import Path
 from typing import Optional
 
-from config import DATA_DIR, MAX_RENDER_SECONDS, ALLOWED_IMPORTS
+from config import (
+    DATA_DIR,
+    MAX_RENDER_SECONDS,
+    ALLOWED_IMPORTS,
+    MAX_RENDER_WORKERS,
+    MAX_RENDER_QUEUE,
+)
 
 DOCKER_IMAGE = "vibetouhou-sandbox:latest"
 
 # ── Job tracking (in-memory) ───────────────────────────────────────────────────
 # slot_key → {"status": "queued"|"running"|"done"|"error", "stderr": str}
 _jobs: dict[str, dict] = {}
+_jobs_lock = threading.Lock()
+_render_queue: Queue[tuple[str, str, int, str]] = Queue(maxsize=MAX_RENDER_QUEUE)
+_workers_started = False
+_workers_lock = threading.Lock()
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -82,7 +93,49 @@ def _docker_available() -> bool:
 
 def get_status(team: str, index: int) -> dict:
     key = f"{team}-{index}"
-    return _jobs.get(key, {"status": "idle", "stderr": ""})
+    with _jobs_lock:
+        return dict(_jobs.get(key, {"status": "idle", "stderr": ""}))
+
+
+def _set_status(key: str, status: str, stderr: str = "") -> None:
+    with _jobs_lock:
+        _jobs[key] = {"status": status, "stderr": stderr}
+
+
+def _start_workers() -> None:
+    global _workers_started
+    with _workers_lock:
+        if _workers_started:
+            return
+        count = max(1, MAX_RENDER_WORKERS)
+        for i in range(count):
+            t = threading.Thread(target=_worker_loop, name=f"render-worker-{i+1}", daemon=True)
+            t.start()
+        _workers_started = True
+
+
+def _worker_loop() -> None:
+    while True:
+        try:
+            key, team, index, script = _render_queue.get(timeout=1)
+        except Empty:
+            continue
+        try:
+            _run_job(key, team, index, script)
+        finally:
+            _render_queue.task_done()
+
+
+def _run_job(key: str, team: str, index: int, script: str) -> None:
+    _set_status(key, "running")
+    d = slot_dir(team, index)
+    script_path = d / "script.py"
+    script_path.write_text(script, encoding="utf-8")
+
+    if _docker_available():
+        _run_docker(key, d)
+    else:
+        _run_subprocess(key, d)
 
 
 def start_render(team: str, index: int, script: str) -> Optional[str]:
@@ -95,20 +148,17 @@ def start_render(team: str, index: int, script: str) -> Optional[str]:
         return err
 
     key = f"{team}-{index}"
-    _jobs[key] = {"status": "queued", "stderr": ""}
+    current = get_status(team, index)
+    if current["status"] in {"queued", "running"}:
+        return "A render is already running for this slot. Wait for it to finish before submitting again."
 
-    def _run():
-        _jobs[key]["status"] = "running"
-        d = slot_dir(team, index)
-        script_path = d / "script.py"
-        script_path.write_text(script, encoding="utf-8")
-
-        if _docker_available():
-            _run_docker(key, d)
-        else:
-            _run_subprocess(key, d)
-
-    threading.Thread(target=_run, daemon=True).start()
+    _set_status(key, "queued")
+    _start_workers()
+    try:
+        _render_queue.put_nowait((key, team, index, script))
+    except Full:
+        _set_status(key, "error")
+        return "Render queue is full. Please retry in a few moments."
     return None
 
 
@@ -158,10 +208,7 @@ def _run_docker(key: str, d: Path):
             # Timed out or Docker error — kill container
             try: container.kill()
             except Exception: pass
-            _jobs[key] = {
-                "status": "error",
-                "stderr": f"Script timed out after {MAX_RENDER_SECONDS}s.",
-            }
+            _set_status(key, "error", f"Script timed out after {MAX_RENDER_SECONDS}s.")
             return
         finally:
             try: container.remove(force=True)
@@ -169,23 +216,21 @@ def _run_docker(key: str, d: Path):
 
         out_path = d / "output.mp4"
         if exit_code != 0 or not out_path.exists():
-            _jobs[key] = {
-                "status": "error",
-                "stderr": stderr_text or "Script did not produce output.mp4.",
-            }
+            _set_status(key, "error", stderr_text or "Script did not produce output.mp4.")
         else:
-            _jobs[key] = {"status": "done", "stderr": stderr_text}
+            _set_status(key, "done", stderr_text)
 
     except docker_sdk.errors.ImageNotFound:
-        _jobs[key] = {
-            "status": "error",
-            "stderr": (
+        _set_status(
+            key,
+            "error",
+            (
                 f"Docker image '{DOCKER_IMAGE}' not found.\n"
                 "Run: docker build -f Dockerfile.sandbox -t vibetouhou-sandbox ."
             ),
-        }
+        )
     except Exception as exc:
-        _jobs[key] = {"status": "error", "stderr": f"Docker error: {exc}"}
+        _set_status(key, "error", f"Docker error: {exc}")
 
 
 # ── Subprocess fallback (when Docker is not running) ───────────────────────────
@@ -215,17 +260,11 @@ def _run_subprocess(key: str, d: Path):
         )
         out_path = d / "output.mp4"
         if not out_path.exists():
-            _jobs[key] = {
-                "status": "error",
-                "stderr": WARNING + (result.stderr or "No output.mp4 was created."),
-            }
+            _set_status(key, "error", WARNING + (result.stderr or "No output.mp4 was created."))
         else:
-            _jobs[key] = {"status": "done", "stderr": WARNING + result.stderr}
+            _set_status(key, "done", WARNING + result.stderr)
 
     except subprocess.TimeoutExpired:
-        _jobs[key] = {
-            "status": "error",
-            "stderr": WARNING + f"Script timed out after {MAX_RENDER_SECONDS} seconds.",
-        }
+        _set_status(key, "error", WARNING + f"Script timed out after {MAX_RENDER_SECONDS} seconds.")
     except Exception as exc:
-        _jobs[key] = {"status": "error", "stderr": WARNING + str(exc)}
+        _set_status(key, "error", WARNING + str(exc))

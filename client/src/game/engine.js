@@ -18,6 +18,8 @@ const FOCUS_SPEED     = 150;
 const INVINCIBLE_TIME = 1.0;        // seconds
 const FLASH_TIME      = 0.1;        // seconds
 const BRIGHTNESS_THRESHOLD = 128;
+const LOAD_TIMEOUT_MS = 15000;
+const STALL_TIMEOUT_MS = 3500;
 
 export class GameEngine extends EventTarget {
   /**
@@ -34,7 +36,11 @@ export class GameEngine extends EventTarget {
     this.ctx    = canvas.getContext('2d');
 
     // Offscreen canvas for pixel sampling
-    this.offscreen = new OffscreenCanvas(WIDTH, HEIGHT);
+    this.offscreen = typeof OffscreenCanvas === 'function'
+      ? new OffscreenCanvas(WIDTH, HEIGHT)
+      : document.createElement('canvas');
+    this.offscreen.width = WIDTH;
+    this.offscreen.height = HEIGHT;
     this.offCtx    = this.offscreen.getContext('2d');
 
     this.playerRadius      = opts.playerRadius ?? 8;
@@ -56,10 +62,13 @@ export class GameEngine extends EventTarget {
     this.video.muted   = true;
     this.video.preload = 'auto';
     this.video.playsInline = true;
+    this.video.controls = false;
 
     this._rafId   = null;
     this._lastTs  = null;
     this._running = false;
+    this._lastVideoTime = 0;
+    this._lastProgressAt = performance.now();
 
     // Bind key handlers
     this._onKeyDown = e => { 
@@ -76,17 +85,22 @@ export class GameEngine extends EventTarget {
 
   /** Wait for video to be ready, then start the game loop. */
   async start() {
-    await new Promise((res, rej) => {
-      this.video.oncanplay = res;
-      this.video.onerror   = rej;
-      this.video.load();
-    });
+    await this._loadVideo();
 
     window.addEventListener('keydown', this._onKeyDown);
     window.addEventListener('keyup',   this._onKeyUp);
 
     this._running = true;
-    this.video.play().catch(() => {});   // autoplay (muted — should work)
+    this._lastTs = null;
+    this._lastVideoTime = this.video.currentTime || 0;
+    this._lastProgressAt = performance.now();
+    try {
+      await this.video.play();
+    } catch (err) {
+      this._running = false;
+      this.dispatchEvent(new CustomEvent('videoerror', { detail: { reason: 'play-blocked', error: err } }));
+      throw err;
+    }
     this._loop();
   }
 
@@ -95,8 +109,41 @@ export class GameEngine extends EventTarget {
     this._running = false;
     if (this._rafId) cancelAnimationFrame(this._rafId);
     this.video.pause();
+    this.video.removeAttribute('src');
+    this.video.load();
     window.removeEventListener('keydown', this._onKeyDown);
     window.removeEventListener('keyup',   this._onKeyUp);
+  }
+
+  async _loadVideo() {
+    if (this.video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) return;
+
+    await new Promise((resolve, reject) => {
+      let settled = false;
+      const cleanup = () => {
+        clearTimeout(timer);
+        this.video.removeEventListener('loadeddata', onReady);
+        this.video.removeEventListener('canplay', onReady);
+        this.video.removeEventListener('error', onError);
+      };
+      const done = fn => value => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        fn(value);
+      };
+      const onReady = done(resolve);
+      const onError = done(() => reject(this.video.error || new Error('Video failed to load.')));
+      const timer = setTimeout(
+        done(() => reject(new Error('Video load timed out.'))),
+        LOAD_TIMEOUT_MS,
+      );
+
+      this.video.addEventListener('loadeddata', onReady, { once: true });
+      this.video.addEventListener('canplay', onReady, { once: true });
+      this.video.addEventListener('error', onError, { once: true });
+      this.video.load();
+    });
   }
 
   // ── Internal loop ──────────────────────────────────────────────────────────
@@ -113,6 +160,16 @@ export class GameEngine extends EventTarget {
 
   _tick(dt) {
     const vt = this.video.currentTime;
+    const now = performance.now();
+
+    if (vt > this._lastVideoTime + 0.001) {
+      this._lastVideoTime = vt;
+      this._lastProgressAt = now;
+    } else if (!this.video.paused && !this.video.ended && now - this._lastProgressAt > STALL_TIMEOUT_MS) {
+      this._running = false;
+      this.dispatchEvent(new CustomEvent('videoerror', { detail: { reason: 'stalled' } }));
+      return;
+    }
 
     // Check for end
     if (vt >= DURATION || this.video.ended) {

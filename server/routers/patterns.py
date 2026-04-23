@@ -5,11 +5,11 @@ GET /api/patterns/opponent   → list of published patterns from the opponent te
 GET /api/video/{team}/{index} → stream a published video (only opponent's)
 """
 
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 import renderer
 from config import DATA_DIR, TEAM_SIZE
+from responses import media_file_response, version_for
 from routers import require_session
 
 router = APIRouter()
@@ -32,13 +32,13 @@ def get_opponent_patterns(slot: str = Depends(require_session)):
                 "slot": f"{opp}-{idx}",
                 "index": idx,
                 "team": opp,
-                "video_url": f"/api/video/{opp}/{idx}",
+                "video_url": f"/api/video/{opp}/{idx}?v={version_for(pub)}",
             })
     return {"patterns": results}
 
 
 @router.get("/video/{team}/{index}")
-def stream_video(team: str, index: int, slot: str = Depends(require_session)):
+def stream_video(team: str, index: int, request: Request, slot: str = Depends(require_session)):
     my_team, _ = slot.rsplit("-", 1)
 
     # You may only fetch published videos from the opposing team
@@ -50,4 +50,4 @@ def stream_video(team: str, index: int, slot: str = Depends(require_session)):
     path = DATA_DIR / team / str(index) / "published.mp4"
     if not path.exists():
         raise HTTPException(404, "Pattern not yet published.")
-    return FileResponse(str(path), media_type="video/mp4")
+    return media_file_response(request, path, "video/mp4", cache_public=True)

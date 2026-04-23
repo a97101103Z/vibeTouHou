@@ -12,11 +12,13 @@ infinite_time   → only set when best_hits==0 (survived all patterns flawlessly
 """
 
 import json
+import threading
 from pathlib import Path
 
 from config import DATA_DIR
 
 _SCORES_FILE = DATA_DIR / "scores.json"
+_lock = threading.Lock()
 
 
 def _load() -> dict:
@@ -27,11 +29,14 @@ def _load() -> dict:
 
 def _save(data: dict) -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    _SCORES_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    tmp = _SCORES_FILE.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    tmp.replace(_SCORES_FILE)
 
 
 def get_leaderboard() -> dict:
-    return _load()
+    with _lock:
+        return _load()
 
 
 def submit(team: str, index: int, hits: int, infinite_time: float | None) -> None:
@@ -39,21 +44,22 @@ def submit(team: str, index: int, hits: int, infinite_time: float | None) -> Non
     Record a run result, keeping only the best score per slot.
     Fewer hits wins; same hits → more infinite_time wins.
     """
-    data    = _load()
-    slot_id = str(index)
-    current = data.setdefault(team, {}).get(slot_id, {"best_hits": None, "infinite_time": None})
+    with _lock:
+        data = _load()
+        slot_id = str(index)
+        current = data.setdefault(team, {}).get(slot_id, {"best_hits": None, "infinite_time": None})
 
-    improved = False
-    if current["best_hits"] is None:
-        improved = True
-    elif hits < current["best_hits"]:
-        improved = True
-    elif hits == current["best_hits"] and infinite_time is not None:
-        if current["infinite_time"] is None or infinite_time > current["infinite_time"]:
+        improved = False
+        if current["best_hits"] is None:
             improved = True
+        elif hits < current["best_hits"]:
+            improved = True
+        elif hits == current["best_hits"] and infinite_time is not None:
+            if current["infinite_time"] is None or infinite_time > current["infinite_time"]:
+                improved = True
 
-    if improved:
-        current = {"best_hits": hits, "infinite_time": infinite_time}
-        data[team][slot_id] = current
+        if improved:
+            current = {"best_hits": hits, "infinite_time": infinite_time}
+            data[team][slot_id] = current
 
-    _save(data)
+        _save(data)

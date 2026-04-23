@@ -17,12 +17,12 @@ router = APIRouter()
 
 class ClaimBody(BaseModel):
     team:  str = Field(..., pattern="^(red|blue)$")
-    index: int = Field(..., ge=1, le=12)
+    index: int = Field(..., ge=1, le=TEAM_SIZE)
 
 
 class ResetBody(BaseModel):
     team:  str = Field(..., pattern="^(red|blue)$")
-    index: int = Field(..., ge=1, le=12)
+    index: int = Field(..., ge=1, le=TEAM_SIZE)
 
 
 @router.get("/slots")
