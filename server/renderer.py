@@ -19,7 +19,9 @@ Build the Docker image once:
 """
 
 import ast
+import json
 import os
+import shutil
 import sys
 import subprocess
 import threading
@@ -44,6 +46,8 @@ _jobs_lock = threading.Lock()
 _render_queue: Queue[tuple[str, str, int, str]] = Queue(maxsize=MAX_RENDER_QUEUE)
 _workers_started = False
 _workers_lock = threading.Lock()
+_ASSET_LINKS_META = ".asset_links.json"
+_RESERVED_RUNTIME_NAMES = {"script.py", "output.mp4", "published.mp4", _ASSET_LINKS_META}
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -131,11 +135,62 @@ def _run_job(key: str, team: str, index: int, script: str) -> None:
     d = slot_dir(team, index)
     script_path = d / "script.py"
     script_path.write_text(script, encoding="utf-8")
+    _stage_assets_for_runtime(d)
 
     if _docker_available():
         _run_docker(key, d)
     else:
         _run_subprocess(key, d)
+
+
+def _read_staged_asset_names(meta_path: Path) -> set[str]:
+    if not meta_path.exists():
+        return set()
+    try:
+        payload = json.loads(meta_path.read_text(encoding="utf-8"))
+        if isinstance(payload, dict) and isinstance(payload.get("names"), list):
+            return {str(x) for x in payload["names"]}
+    except Exception:
+        pass
+    return set()
+
+
+def _stage_assets_for_runtime(slot_path: Path) -> None:
+    """
+    Make uploaded assets available from the script cwd (/work), so scripts can do
+    pygame.image.load("my_asset.png") without prefixing assets/.
+    """
+    assets_dir = slot_path / "assets"
+    assets_dir.mkdir(exist_ok=True)
+    meta_path = slot_path / _ASSET_LINKS_META
+
+    old_names = _read_staged_asset_names(meta_path)
+    for name in old_names:
+        target = slot_path / name
+        if target.exists() or target.is_symlink():
+            try:
+                target.unlink()
+            except Exception:
+                pass
+
+    staged_names: list[str] = []
+    for src in sorted(assets_dir.iterdir()):
+        if not src.is_file():
+            continue
+        name = src.name
+        if name in _RESERVED_RUNTIME_NAMES:
+            continue
+        dst = slot_path / name
+        if dst.exists() or dst.is_symlink():
+            # Avoid clobbering non-staged runtime files.
+            continue
+        try:
+            dst.symlink_to(Path("assets") / name)
+        except Exception:
+            shutil.copy2(src, dst)
+        staged_names.append(name)
+
+    meta_path.write_text(json.dumps({"names": staged_names}, indent=2), encoding="utf-8")
 
 
 def start_render(team: str, index: int, script: str) -> Optional[str]:
