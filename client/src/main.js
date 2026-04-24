@@ -31,8 +31,8 @@ export function toast(msg, type = '') {
 }
 
 // ── Page switching ────────────────────────────────────────────────────────────
-const pages    = ['submit', 'assets', 'playtest', 'gauntlet'];
-const inited   = {};
+const pages = ['submit', 'assets', 'playtest', 'gauntlet'];
+const inited = {};
 const pageFromPath = () => {
   const name = window.location.pathname.replace(/^\/+/, '').split('/')[0];
   return pages.includes(name) ? name : 'submit';
@@ -42,7 +42,7 @@ function showPage(name, push = true) {
   if (!pages.includes(name)) name = 'submit';
   pages.forEach(p => {
     document.getElementById('page-' + p).classList.toggle('active', p === name);
-    document.getElementById('tab-'  + p).classList.toggle('active', p === name);
+    document.getElementById('tab-' + p).classList.toggle('active', p === name);
   });
 
   const nextPath = name === 'submit' ? '/' : `/${name}`;
@@ -53,8 +53,8 @@ function showPage(name, push = true) {
   if (!inited[name]) {
     inited[name] = true;
     const el = document.getElementById('page-' + name);
-    if      (name === 'submit')   initSubmit(el);
-    else if (name === 'assets')   initAssets(el);
+    if (name === 'submit') initSubmit(el);
+    else if (name === 'assets') initAssets(el);
     else if (name === 'playtest') initPlaytest(el);
     else if (name === 'gauntlet') initGauntlet(el);
   }
@@ -70,7 +70,7 @@ window.addEventListener('popstate', () => showPage(pageFromPath(), false));
 async function boot() {
   // Check if we already have a valid session cookie
   try {
-    const res  = await fetch('/api/me', { credentials: 'include' });
+    const res = await fetch('/api/me', { credentials: 'include' });
     const data = await res.json();
 
     if (data.slot) {
@@ -85,8 +85,8 @@ async function boot() {
 }
 
 export function activateApp(team, index) {
-  session.slot  = `${team}-${index}`;
-  session.team  = team;
+  session.slot = `${team}-${index}`;
+  session.team = team;
   session.index = index;
 
   // Apply team theme
@@ -97,9 +97,10 @@ export function activateApp(team, index) {
   badge.textContent = session.slot.toUpperCase();
 
   // Update logo colors to match team
-  document.querySelectorAll('.logo-tou').forEach(el => {
+  document.querySelectorAll('.logo-tou, .logo-hou').forEach(el => {
     el.style.color = team === 'red' ? 'var(--red)' : 'var(--blue)';
   });
+
 
   // Hide login overlay, show app
   document.getElementById('login-overlay').style.display = 'none';
