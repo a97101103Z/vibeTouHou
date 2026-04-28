@@ -230,11 +230,10 @@ function playPattern(idx, initialPlayer) {
     });
   });
 
-  // HUD timer
+  // HUD timer — runs until cancelled externally (next playPattern or forfeit)
   const hudTime = document.getElementById('hud-time');
   function tick() {
-    if (!engine?._running) return;
-    hudTime.textContent = Math.max(0, 10 - (engine.video?.currentTime ?? 0)).toFixed(1) + 's';
+    hudTime.textContent = Math.max(0, 10 - (engine?.video?.currentTime ?? 0)).toFixed(1) + 's';
     hudRafId = requestAnimationFrame(tick);
   }
   hudRafId = requestAnimationFrame(tick);
