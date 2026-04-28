@@ -4,13 +4,21 @@
  * The player faces the opponent team's published patterns one by one
  * with the real (smaller) hitbox. Tracks cumulative hits.
  * Perfect run → Infinite Mode. Submits best score to server.
+ *
+ * Flow:
+ *  - Patterns play back-to-back with no stop button in between.
+ *  - Player position is carried over from one pattern to the next.
+ *  - A ~750 ms full-black grace period separates patterns.
+ *  - Pressing R resets to the very start of the gauntlet.
+ *  - Navigating away while playing counts as a forfeit (engine stops).
  */
 
 import { GameEngine, WIDTH, HEIGHT } from '../game/engine.js';
 import { toast } from '../main.js';
 
-const REAL_RADIUS = 8;
+const REAL_RADIUS  = 8;
 const INFINITE_MAX_HITS = 3;
+const GRACE_MS     = 750;   // black screen between patterns
 
 let engine        = null;
 let patterns      = [];
@@ -22,6 +30,7 @@ let infiniteHits  = 0;
 let infiniteTime  = 0;
 let lbPollTimer   = null;
 let hudRafId      = null;
+let graceRafId    = null;  // tracks grace period rAF inside the engine
 
 export async function initGauntlet(container) {
   container.innerHTML = `
@@ -80,6 +89,13 @@ export async function initGauntlet(container) {
     </div>
   `;
 
+  // ── Forfeit when navigating away while playing ────────────────────────────
+  new MutationObserver(() => {
+    if (!container.classList.contains('active') && phase === 'playing') {
+      forfeit();
+    }
+  }).observe(container, { attributes: true, attributeFilter: ['class'] });
+
   await loadPatterns();
   startLeaderboardPoll();
 }
@@ -137,10 +153,16 @@ function beginGauntlet() {
   hitsPerPattern = new Array(patterns.length).fill(null);
   phase          = 'playing';
   document.getElementById('summary-card').style.display = 'none';
-  playPattern(0);
+  document.getElementById('hud-hits').textContent = 'Hits: 0';
+  renderPatternList();  // reset any done/active styling
+  playPattern(0, null);
 }
 
-function playPattern(idx) {
+/**
+ * @param {number}      idx
+ * @param {{x,y}|null}  initialPlayer  – pass saved position to keep player where they were
+ */
+function playPattern(idx, initialPlayer) {
   const p = patterns[idx];
   if (!p) { endGauntlet(); return; }
 
@@ -153,19 +175,21 @@ function playPattern(idx) {
   document.getElementById('canvas-overlay').style.display = 'none';
 
   if (engine) engine.stop();
-  if (hudRafId) cancelAnimationFrame(hudRafId);
+  if (hudRafId) { cancelAnimationFrame(hudRafId); hudRafId = null; }
 
   engine = new GameEngine(
     document.getElementById('game-canvas'),
     p.video_url,
-    { playerRadius: REAL_RADIUS, recordTrajectory: false }
+    { playerRadius: REAL_RADIUS, recordTrajectory: false, initialPlayer }
   );
 
   engine.addEventListener('hit', e => {
     document.getElementById('hud-hits').textContent = `Hits: ${e.detail.hits}`;
   });
 
-  engine.addEventListener('finish', e => {
+  engine.addEventListener('finish', async e => {
+    if (phase !== 'playing') return;
+
     const { hits } = e.detail;
     hitsPerPattern[idx] = hits;
     totalHits += hits;
@@ -178,23 +202,31 @@ function playPattern(idx) {
       pi.querySelector('.pi-hits').textContent = hits === 0 ? '✓' : `${hits} hit${hits > 1 ? 's' : ''}`;
     }
 
-    // Show between-pattern overlay
-    showBetweenOverlay(idx, hits);
+    // Grace period — player stays live, can reposition on black canvas
+    await engine.runGrace(GRACE_MS);
+
+    if (phase !== 'playing') return;   // forfeit or restart fired during grace
+    const savedPlayer = { x: engine.player.x, y: engine.player.y };
+    const isLast = idx === patterns.length - 1;
+    if (isLast) endGauntlet();
+    else playPattern(idx + 1, savedPlayer);
   });
 
+  // R always restarts the full gauntlet from the top
   engine.addEventListener('restart', () => {
     if (phase === 'playing') beginGauntlet();
   });
+
   engine.addEventListener('videoerror', () => {
     showCanvasOverlay('Playback stopped', 'The video stalled before the pattern ended.', 'Retry Pattern', () => {
-      playPattern(idx);
+      playPattern(idx, initialPlayer);
     });
   });
 
   engine.start().catch(() => {
-    showCanvasOverlay('Error', 'Could not load this pattern\'s video.', 'Skip', () => {
+    showCanvasOverlay('Error', "Could not load this pattern's video.", 'Skip', () => {
       hitsPerPattern[idx] = 99;
-      playPattern(idx + 1);
+      playPattern(idx + 1, initialPlayer);
     });
   });
 
@@ -208,22 +240,20 @@ function playPattern(idx) {
   hudRafId = requestAnimationFrame(tick);
 }
 
-function showBetweenOverlay(idx, hits) {
-  const isLast = idx === patterns.length - 1;
+function forfeit() {
+  // Player left the page mid-run — stop everything silently
+  if (engine) { engine.stop(); engine = null; }
+  if (hudRafId) { cancelAnimationFrame(hudRafId); hudRafId = null; }
+  phase = 'menu';
+  // Re-show the start overlay next time they come back
   const ov = document.getElementById('canvas-overlay');
-  ov.style.display = '';
-  ov.innerHTML = `
-    <h2>${hits === 0 ? '✓ Flawless!' : `${hits} Hit${hits > 1 ? 's' : ''}`}</h2>
-    <p>Pattern ${idx + 1} of ${patterns.length} complete.</p>
-    <p style="color:var(--text-muted)">Total hits so far: ${totalHits}</p>
-    ${isLast
-      ? `<button class="btn btn-primary" id="btn-next-p">See Results</button>`
-      : `<button class="btn btn-primary" id="btn-next-p">Next Pattern ▶</button>`}
-  `;
-  document.getElementById('btn-next-p').addEventListener('click', () => {
-    if (isLast) endGauntlet();
-    else playPattern(idx + 1);
-  });
+  if (ov) {
+    ov.style.display = '';
+    const title = document.getElementById('ov-title');
+    const sub   = document.getElementById('ov-sub');
+    if (title) title.textContent = '⚔️ Gauntlet';
+    if (sub)   sub.textContent   = 'Run forfeited. Ready to try again?';
+  }
 }
 
 function showCanvasOverlay(title, sub, btnTxt, onBtn) {
@@ -285,21 +315,19 @@ async function endGauntlet() {
 // ── Infinite Mode ─────────────────────────────────────────────────────────────
 
 function beginInfinite() {
-  phase     = 'infinite';
+  phase        = 'infinite';
   infiniteHits = 0;
   infiniteTime = 0;
   currentIdx   = 0;
 
   const shuffled = [...patterns].sort(() => Math.random() - 0.5);
-  let queue = shuffled;
-
   document.getElementById('canvas-overlay').style.display = 'none';
-  document.getElementById('hud-hits').textContent = `HP: ${INFINITE_MAX_HITS - infiniteHits} / ${INFINITE_MAX_HITS}`;
+  document.getElementById('hud-hits').textContent = `HP: ${INFINITE_MAX_HITS} / ${INFINITE_MAX_HITS}`;
 
-  playInfinitePattern(queue, 0);
+  playInfinitePattern(shuffled, 0, null);
 }
 
-function playInfinitePattern(queue, qi) {
+function playInfinitePattern(queue, qi, initialPlayer) {
   if (infiniteHits >= INFINITE_MAX_HITS) {
     endInfinite();
     return;
@@ -307,12 +335,12 @@ function playInfinitePattern(queue, qi) {
 
   const p = queue[qi % queue.length];
   if (engine) engine.stop();
-  if (hudRafId) cancelAnimationFrame(hudRafId);
+  if (hudRafId) { cancelAnimationFrame(hudRafId); hudRafId = null; }
 
   engine = new GameEngine(
     document.getElementById('game-canvas'),
     p.video_url,
-    { playerRadius: REAL_RADIUS }
+    { playerRadius: REAL_RADIUS, initialPlayer }
   );
 
   engine.addEventListener('hit', e => {
@@ -325,17 +353,21 @@ function playInfinitePattern(queue, qi) {
     }
   });
 
-  engine.addEventListener('finish', e => {
+  engine.addEventListener('finish', async () => {
+    if (phase !== 'infinite') return;
     infiniteTime += 10;
-    playInfinitePattern(queue, qi + 1);
+    const savedPlayer = { x: engine.player.x, y: engine.player.y };
+    await engine.runGrace(GRACE_MS);
+    if (phase !== 'infinite') return;
+    playInfinitePattern(queue, qi + 1, savedPlayer);
   });
 
   engine.addEventListener('restart', () => {
     if (phase === 'infinite') beginInfinite();
   });
-  engine.addEventListener('videoerror', () => playInfinitePattern(queue, qi));
+  engine.addEventListener('videoerror', () => playInfinitePattern(queue, qi, initialPlayer));
 
-  engine.start().catch(() => playInfinitePattern(queue, qi + 1));
+  engine.start().catch(() => playInfinitePattern(queue, qi + 1, initialPlayer));
 }
 
 async function endInfinite() {

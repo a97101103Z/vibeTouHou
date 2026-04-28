@@ -46,8 +46,10 @@ export class GameEngine extends EventTarget {
     this.playerRadius      = opts.playerRadius ?? 8;
     this.recordTrajectory  = opts.recordTrajectory ?? false;
 
-    // Player state
-    this.player = { x: WIDTH / 2, y: HEIGHT - 80 };
+    // Player state — can be seeded from outside (gauntlet carries position between patterns)
+    this.player = opts.initialPlayer
+      ? { x: opts.initialPlayer.x, y: opts.initialPlayer.y }
+      : { x: WIDTH / 2, y: HEIGHT - 80 };
     this.invincTimer = 0;
     this.flashTimer  = 0;
     this.hits        = 0;
@@ -64,8 +66,9 @@ export class GameEngine extends EventTarget {
     this.video.playsInline = true;
     this.video.controls = false;
 
-    this._rafId   = null;
-    this._lastTs  = null;
+    this._rafId      = null;
+    this._graceRafId = null;
+    this._lastTs     = null;
     this._running = false;
     this._lastVideoTime = 0;
     this._lastProgressAt = performance.now();
@@ -107,12 +110,65 @@ export class GameEngine extends EventTarget {
   /** Stop the engine and clean up. */
   stop() {
     this._running = false;
-    if (this._rafId) cancelAnimationFrame(this._rafId);
+    if (this._rafId)      cancelAnimationFrame(this._rafId);
+    if (this._graceRafId) cancelAnimationFrame(this._graceRafId);
+    this._graceRafId = null;
     this.video.pause();
     this.video.removeAttribute('src');
     this.video.load();
     window.removeEventListener('keydown', this._onKeyDown);
     window.removeEventListener('keyup',   this._onKeyUp);
+  }
+
+  /**
+   * Black-canvas grace period between patterns.
+   * The player can still move; key listeners remain active.
+   * Resolves after durationMs, or never if stop() is called first.
+   */
+  runGrace(durationMs) {
+    return new Promise(resolve => {
+      const start = performance.now();
+      let lastTs  = null;
+
+      const loop = (ts) => {
+        const dt = lastTs == null ? 0 : Math.min((ts - lastTs) / 1000, 0.1);
+        lastTs = ts;
+
+        this._movePlayer(dt);
+
+        // Black background
+        this.ctx.fillStyle = '#000';
+        this.ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+        // Draw player dot (same glow as normal)
+        const blink = this.invincTimer > 0 && Math.floor(this.invincTimer * 10) % 2 === 0;
+        if (!blink) {
+          const r = this.playerRadius;
+          const { x, y } = this.player;
+          this.ctx.save();
+          this.ctx.shadowBlur  = 18;
+          this.ctx.shadowColor = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#fff';
+          this.ctx.fillStyle   = '#fff';
+          this.ctx.beginPath();
+          this.ctx.arc(x, y, r, 0, Math.PI * 2);
+          this.ctx.fill();
+          this.ctx.restore();
+          this.ctx.fillStyle = '#000';
+          this.ctx.beginPath();
+          this.ctx.arc(x, y, 2, 0, Math.PI * 2);
+          this.ctx.fill();
+        }
+
+        if (ts - start < durationMs) {
+          this._graceRafId = requestAnimationFrame(loop);
+        } else {
+          this._graceRafId = null;
+          resolve();
+        }
+      };
+
+      this._graceRafId = requestAnimationFrame(loop);
+    });
   }
 
   async _loadVideo() {
