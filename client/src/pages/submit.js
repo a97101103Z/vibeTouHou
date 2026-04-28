@@ -140,6 +140,7 @@ export function initSubmit(container) {
     const script = editor.state.doc.toString();
     if (!script.trim()) { toast('Editor is empty.', 'error'); return; }
 
+    renderStartTime = Date.now();
     setStatus('queued');
     clearPoll();
 
@@ -161,7 +162,7 @@ export function initSubmit(container) {
     }
 
     // Start polling
-    pollTimer = setInterval(pollStatus, 2000);
+    pollTimer = setInterval(pollStatus, 500);
   });
 
   // ── Video download link ──────────────────────────────────────────────────
@@ -171,6 +172,7 @@ export function initSubmit(container) {
 }
 
 // ── Status helpers ────────────────────────────────────────────────────────────
+let renderStartTime = 0;
 const STATUS_LABELS = {
   idle:    '● IDLE',
   queued:  '◌ QUEUED',
@@ -179,10 +181,10 @@ const STATUS_LABELS = {
   error:   '✗ ERROR',
 };
 
-function setStatus(status, stderr = '') {
+function setStatus(status, stderr = '', durationStr = '') {
   const el = document.getElementById('render-status');
   el.className = `status-badge status-${status}`;
-  el.textContent = STATUS_LABELS[status] ?? status.toUpperCase();
+  el.textContent = (STATUS_LABELS[status] ?? status.toUpperCase()) + (durationStr ? ` (${durationStr})` : '');
 
   const errEl = document.getElementById('render-stderr');
   if (stderr) {
@@ -198,7 +200,14 @@ async function pollStatus() {
   try {
     const res  = await fetch('/api/render/status', { credentials: 'include' });
     const data = await res.json();
-    setStatus(data.status, data.stderr || '');
+    
+    let durationStr = '';
+    if (data.status === 'done' || data.status === 'error') {
+      const ms = Date.now() - renderStartTime;
+      durationStr = (ms / 1000).toFixed(1) + 's';
+    }
+    
+    setStatus(data.status, data.stderr || '', durationStr);
 
     if (data.status === 'done') {
       clearPoll();
