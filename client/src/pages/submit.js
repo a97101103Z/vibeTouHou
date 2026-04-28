@@ -11,11 +11,10 @@ import { python } from '@codemirror/lang-python';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { toast } from '../main.js';
 
-// ── Default sample code: expanding ring of pellets ────────────────────────────
 const SAMPLE = `import math
 import imageio
 import numpy as np
-import pygame
+import gizeh
 
 # ─────────────────────────────────────────────────────────────
 #  vibeTouHou — Bullet Pattern Script
@@ -34,27 +33,28 @@ DURATION = 10   # seconds
 PELLETS      = 24          # number of pellets in the ring
 PELLET_RADIUS = 5          # size of each pellet (pixels)
 SPEED        = 130         # expansion speed (pixels / second)
-COLOR        = (255, 255, 255)   # white = always a hit zone
+COLOR        = (1, 1, 1)   # white = always a hit zone (gizeh uses 0.0-1.0)
 
 # ── Render loop ───────────────────────────────────────────────
-surface = pygame.Surface((WIDTH, HEIGHT))
 frames  = []
 
 for frame_num in range(FPS * DURATION):
     t = frame_num / FPS       # current time in seconds (0 → 10)
 
-    surface.fill((0, 0, 0))   # pure black background (required)
+    surface = gizeh.Surface(width=WIDTH, height=HEIGHT, bg_color=(0, 0, 0))
 
     # Draw each pellet evenly spaced around a ring that grows over time
     for i in range(PELLETS):
         angle = (2 * math.pi / PELLETS) * i   # even spacing
         dist  = SPEED * t                      # ring expands with time
-        x = int(WIDTH  / 2 + math.cos(angle) * dist)
-        y = int(HEIGHT / 2 + math.sin(angle) * dist)
-        pygame.draw.circle(surface, COLOR, (x, y), PELLET_RADIUS)
+        x = WIDTH  / 2 + math.cos(angle) * dist
+        y = HEIGHT / 2 + math.sin(angle) * dist
+        
+        circle = gizeh.circle(r=PELLET_RADIUS, xy=(x, y), fill=COLOR)
+        circle.draw(surface)
 
-    # Capture frame — (W, H, 3) → (H, W, 3) for imageio
-    frames.append(pygame.surfarray.array3d(surface).transpose(1, 0, 2))
+    # Capture frame natively without transpose
+    frames.append(surface.get_npimage())
 
 # ── DO NOT CHANGE THE FILENAME BELOW ──────────────────────────
 # The server explicitly looks for 'output.mp4'. If you change this,
@@ -107,11 +107,11 @@ export function initSubmit(container) {
         <div class="card">
           <div class="card-title">Tips</div>
           <ul style="color:var(--text-dim);font-size:0.8rem;padding-left:1.2em;line-height:2">
-            <li>Use <code>pygame.Surface</code> — no display needed</li>
+            <li>Use <code>gizeh.Surface</code> — no display needed</li>
             <li>Bright pixels (Y&gt;128) = collision zone</li>
             <li>Background must be pure black <code>(0,0,0)</code></li>
             <li>Script runs in your <em>assets/</em> folder as cwd</li>
-            <li>Allowed: pygame, imageio, numpy, Pillow, math…</li>
+            <li>Allowed: gizeh, imageio, numpy, Pillow, math…</li>
           </ul>
         </div>
       </div>

@@ -7,3 +7,4 @@ numpy
 docker          # Docker SDK — for sandboxed script execution
 pytest
 httpx
+gizeh

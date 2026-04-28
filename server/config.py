@@ -21,7 +21,7 @@ MAX_RENDER_QUEUE = int(os.getenv("MAX_RENDER_QUEUE", "48"))
 ALLOWED_IMPORTS = {
     "math", "random", "colorsys", "itertools", "functools",
     "imageio", "numpy", "np", "pygame", "PIL", "Pillow",
-    "os", "sys", "time",
+    "os", "sys", "time", "gizeh",
 }
 
 # ── Storage ────────────────────────────────────────────────────────────────────

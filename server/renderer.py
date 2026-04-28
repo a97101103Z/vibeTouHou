@@ -243,7 +243,7 @@ def _run_docker(key: str, d: Path):
             mem_limit="1g",                 # 1 GB RAM (video frames are huge)
             memswap_limit="1g",             # no swap either
             cpu_period=100_000,
-            cpu_quota=50_000,               # max 50% of one CPU core
+            cpu_quota=200_000,              # max 200% (2 cores) to speed up video rendering
             pids_limit=64,                  # no fork-bombs
             # ── Runtime ────────────────────────────────────────────────
             user="1000",                    # sandbox user (non-root)

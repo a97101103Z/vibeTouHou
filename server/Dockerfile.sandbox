@@ -15,9 +15,11 @@ FROM python:3.11-slim
 
 # ffmpeg is needed by imageio to write MP4 files
 # libsdl2 is needed by pygame (headless via SDL_VIDEODRIVER=dummy)
+# libcairo2 is needed by gizeh
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ffmpeg \
         libsdl2-2.0-0 \
+        libcairo2 \
     && rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip first (avoids hash-check bugs in older pip versions)
@@ -29,7 +31,8 @@ RUN pip install --no-cache-dir --retries 5 \
         pygame \
         "imageio[ffmpeg]" \
         numpy \
-        Pillow
+        Pillow \
+        gizeh
 
 # Non-root sandbox user — cannot write outside /work
 RUN useradd -m -u 1000 sandbox
