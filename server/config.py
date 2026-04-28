@@ -42,5 +42,16 @@ CORS_ORIGINS = [
 ]
 
 # ── Teams ──────────────────────────────────────────────────────────────────────
-TEAMS        = ("red", "blue")
-TEAM_SIZE    = 12   # slots per team (1 – TEAM_SIZE)
+TEAMS = ("red", "blue")
+TEAM_SIZE = 12 # slots per team (1 – TEAM_SIZE)
+
+# ── Tokens ─────────────────────────────────────────────────────────────────────
+RED_TEAM_TOKEN = os.getenv("RED_TEAM_TOKEN", "RED-TOKEN-DEV-HD4G9GKN")
+BLUE_TEAM_TOKEN = os.getenv("BLUE_TEAM_TOKEN", "BLUE-TOKEN-DEV-EL3O9BW8")
+ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "ADMIN-TOKEN-DEV-K2M8N3PQ")
+
+# Token-to-team mapping for validation
+TEAM_TOKENS = {
+    RED_TEAM_TOKEN: "red",
+    BLUE_TEAM_TOKEN: "blue",
+}

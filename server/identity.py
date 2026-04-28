@@ -1,8 +1,9 @@
 """
 Identity / session management.
 
-Each player claims a (team, index) slot, e.g. ("red", 7).
-A random session token is issued and stored in a cookie.
+Token-based claiming: each team has a predefined token. Users submit
+a team token to be assigned the next available user number (1-TEAM_SIZE).
+An admin token can remove registered users, freeing their slot.
 
 Sessions are persisted to data/sessions.json so server restarts
 (e.g. from uvicorn --reload) don't log everyone out mid-event.
@@ -14,14 +15,14 @@ import threading
 from pathlib import Path
 from typing import Optional
 
-from config import DATA_DIR
+from config import DATA_DIR, TEAM_SIZE, ADMIN_TOKEN, TEAM_TOKENS
 
 _SESSIONS_FILE = DATA_DIR / "sessions.json"
 
 # ── In-memory state (loaded from disk at import time) ──────────────────────────
-# "red-7"  →  session_token
+# "red-7" → session_token
 _claimed: dict[str, str] = {}
-# session_token  →  "red-7"
+# session_token → "red-7"
 _sessions: dict[str, str] = {}
 _lock = threading.Lock()
 
@@ -33,7 +34,7 @@ def _load() -> None:
         return
     try:
         data = json.loads(_SESSIONS_FILE.read_text(encoding="utf-8"))
-        _claimed  = data.get("claimed", {})
+        _claimed = data.get("claimed", {})
         _sessions = data.get("sessions", {})
     except Exception:
         pass  # corrupted file → start fresh
@@ -43,7 +44,10 @@ def _save() -> None:
     """Persist current sessions to disk."""
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     tmp = _SESSIONS_FILE.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps({"claimed": _claimed, "sessions": _sessions}, indent=2), encoding="utf-8")
+    tmp.write_text(
+        json.dumps({"claimed": _claimed, "sessions": _sessions}, indent=2),
+        encoding="utf-8",
+    )
     tmp.replace(_SESSIONS_FILE)
 
 
@@ -53,23 +57,38 @@ _load()
 
 # ── Public API ─────────────────────────────────────────────────────────────────
 
-def slot_key(team: str, index: int) -> str:
-    return f"{team}-{index}"
+
+def _get_next_index(team: str) -> Optional[int]:
+    """Find the next available index for a team (1-TEAM_SIZE). Returns None if full."""
+    for i in range(1, TEAM_SIZE + 1):
+        if f"{team}-{i}" not in _claimed:
+            return i
+    return None
 
 
-def claim(team: str, index: int) -> Optional[str]:
+def claim(team_token: str) -> Optional[tuple[str, str]]:
     """
-    Claim a slot. Returns the new session token, or None if the slot is taken.
+    Claim a slot using a team token.
+
+    Returns (session_token, slot_key) on success, or None if:
+    - token is invalid, or
+    - team is at capacity
     """
+    team = TEAM_TOKENS.get(team_token)
+    if team is None:
+        return None
+
     with _lock:
-        key = slot_key(team, index)
-        if key in _claimed:
+        index = _get_next_index(team)
+        if index is None:
             return None
-        token = secrets.token_hex(24)
-        _claimed[key] = token
-        _sessions[token] = key
+
+        key = f"{team}-{index}"
+        session_token = secrets.token_hex(24)
+        _claimed[key] = session_token
+        _sessions[session_token] = key
         _save()
-        return token
+        return session_token, key
 
 
 def get_slot(token: str) -> Optional[str]:
@@ -78,33 +97,22 @@ def get_slot(token: str) -> Optional[str]:
         return _sessions.get(token)
 
 
-def parse_slot(token: str) -> Optional[tuple[str, int]]:
-    """Return (team, index) tuple, or None if unknown."""
+def remove(admin_token: str, team: str, index: int) -> bool:
+    """
+    Admin: remove a user from a slot using the admin token.
+
+    Returns True if a user was removed, False otherwise.
+    """
+    if admin_token != ADMIN_TOKEN:
+        return False
+    if team not in ("red", "blue"):
+        return False
+
     with _lock:
-        key = _sessions.get(token)
-    if key is None:
-        return None
-    team, idx = key.rsplit("-", 1)
-    return team, int(idx)
-
-
-def get_all_claimed() -> dict[str, list[int]]:
-    """Return {"red": [1, 3, 7], "blue": [2]} of claimed slots."""
-    result: dict[str, list[int]] = {"red": [], "blue": []}
-    with _lock:
-        keys = list(_claimed.keys())
-    for key in keys:
-        team, idx = key.rsplit("-", 1)
-        result.setdefault(team, []).append(int(idx))
-    return result
-
-
-def reset(team: str, index: int) -> bool:
-    """Admin: free a claimed slot. Returns True if it existed."""
-    with _lock:
-        key = slot_key(team, index)
+        key = f"{team}-{index}"
         if key not in _claimed:
             return False
+
         token = _claimed.pop(key)
         _sessions.pop(token, None)
         _save()

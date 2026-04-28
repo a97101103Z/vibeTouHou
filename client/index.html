@@ -20,25 +20,21 @@
         <div class="logo-sub">彈幕競技場</div>
       </div>
 
-      <p class="login-tagline">Choose your side. Code your bullets. Survive.</p>
+    <p class="login-tagline">Enter your team token to claim your slot.</p>
 
-      <div class="team-picker">
-        <button id="btn-red" class="team-btn team-red" data-team="red">
-          <span class="team-icon">🔴</span>
-          <span class="team-label">Red Team</span>
-        </button>
-        <button id="btn-blue" class="team-btn team-blue" data-team="blue">
-          <span class="team-icon">🔵</span>
-          <span class="team-label">Blue Team</span>
-        </button>
-      </div>
+    <div class="token-input-section">
+      <input
+        id="token-input"
+        type="text"
+        class="token-input"
+        placeholder="Enter your team token"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button id="btn-claim" class="claim-btn">Claim Slot</button>
+    </div>
 
-      <div id="slot-section" style="display:none">
-        <p class="slot-label">Pick your slot</p>
-        <div id="slot-grid" class="slot-grid"></div>
-      </div>
-
-      <div id="login-status" class="login-status"></div>
+    <div id="login-status" class="login-status"></div>
     </div>
   </div>
 

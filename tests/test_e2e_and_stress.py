@@ -5,6 +5,8 @@ import pytest
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
 
+from config import RED_TEAM_TOKEN, BLUE_TEAM_TOKEN
+
 
 PNG_BYTES = b"\x89PNG\r\n\x1a\n"
 
@@ -24,6 +26,7 @@ def app_context(tmp_path, monkeypatch):
     monkeypatch.setattr(identity, "DATA_DIR", data_dir)
     monkeypatch.setattr(identity, "_SESSIONS_FILE", data_dir / "sessions.json")
     monkeypatch.setattr(scores, "_SCORES_FILE", data_dir / "scores.json")
+    # Clear new data structures
     identity._claimed.clear()
     identity._sessions.clear()
     with renderer._jobs_lock:
@@ -58,8 +61,8 @@ def test_e2e_upload_render_and_gauntlet_routes(app_context, monkeypatch):
     red_client = TestClient(app)
     blue_client = TestClient(app)
 
-    assert red_client.post("/api/claim", json={"team": "red", "index": 1}).status_code == 200
-    assert blue_client.post("/api/claim", json={"team": "blue", "index": 1}).status_code == 200
+    assert red_client.post("/api/claim", json={"token": RED_TEAM_TOKEN}).status_code == 200
+    assert blue_client.post("/api/claim", json={"token": BLUE_TEAM_TOKEN}).status_code == 200
 
     resp = red_client.post("/api/assets/upload", files={"file": ("hero.png", PNG_BYTES, "image/png")})
     assert resp.status_code == 200
@@ -95,7 +98,8 @@ def test_stress_24_users_claim_upload_render_video_score(app_context, monkeypatc
 
     async def user_flow(team: str, index: int):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            claim = await client.post("/api/claim", json={"team": team, "index": index})
+            token = RED_TEAM_TOKEN if team == "red" else BLUE_TEAM_TOKEN
+            claim = await client.post("/api/claim", json={"token": token})
             assert claim.status_code == 200
 
             up = await client.post(

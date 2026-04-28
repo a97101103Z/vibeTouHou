@@ -1,60 +1,55 @@
 """
 Auth / identity endpoints.
 
-GET  /api/slots          → list of claimed slots (public)
-POST /api/claim          → claim a slot, receive session cookie
-POST /admin/reset-slot   → host-only: free a claimed slot
+POST /api/claim → claim a slot with team token, receive session cookie
+POST /admin/reset-slot → admin: free a claimed slot
 """
 
 from fastapi import APIRouter, Cookie, Response, HTTPException
 from pydantic import BaseModel, Field
 
 import identity
-from config import TEAMS, TEAM_SIZE
+from config import TEAM_SIZE
 
 router = APIRouter()
 
 
 class ClaimBody(BaseModel):
-    team:  str = Field(..., pattern="^(red|blue)$")
-    index: int = Field(..., ge=1, le=TEAM_SIZE)
+    token: str = Field(..., min_length=1)
 
 
 class ResetBody(BaseModel):
-    team:  str = Field(..., pattern="^(red|blue)$")
+    admin_token: str = Field(..., min_length=1)
+    team: str = Field(..., pattern="^(red|blue)$")
     index: int = Field(..., ge=1, le=TEAM_SIZE)
-
-
-@router.get("/slots")
-def get_slots():
-    """Return which slots are already claimed so the login screen can grey them out."""
-    return identity.get_all_claimed()
 
 
 @router.post("/claim")
 def claim_slot(body: ClaimBody, response: Response):
-    if body.index < 1 or body.index > TEAM_SIZE:
-        raise HTTPException(400, f"Index must be 1–{TEAM_SIZE}.")
+    """Claim a slot using a team token. Returns assigned team-index."""
+    result = identity.claim(body.token)
+    if result is None:
+        # Either invalid token or team is full
+        raise HTTPException(409, "No slots remaining for this team.")
 
-    token = identity.claim(body.team, body.index)
-    if token is None:
-        raise HTTPException(409, f"Slot {body.team}-{body.index} is already taken.")
+    session_token, slot_key = result
 
     response.set_cookie(
         key="session",
-        value=token,
+        value=session_token,
         httponly=True,
         samesite="lax",
         max_age=60 * 60 * 12,  # 12-hour cookie
     )
-    return {"ok": True, "slot": f"{body.team}-{body.index}"}
+    return {"ok": True, "slot": slot_key}
 
 
 @router.post("/admin/reset-slot")
 def reset_slot(body: ResetBody):
-    ok = identity.reset(body.team, body.index)
+    """Admin: remove a user from a slot. Frees the slot for new claims."""
+    ok = identity.remove(body.admin_token, body.team, body.index)
     if not ok:
-        raise HTTPException(404, "Slot was not claimed.")
+        raise HTTPException(403, "Invalid admin token or slot not found.")
     return {"ok": True}
 
 
