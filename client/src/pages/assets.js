@@ -54,10 +54,14 @@ export function initAssets(container) {
 # Assets are in the current directory
 # when your script runs on the server.
 
-img = pygame.image.load("my_image.png")
-# or with Pillow:
-from PIL import Image
-img = Image.open("my_image.png")</pre>
+# Read as a numpy array (H, W, 3):
+import imageio
+img = imageio.v3.imread("my_image.png")
+
+# Or use it as a gizeh pattern:
+import gizeh, imageio
+raw = imageio.v3.imread("my_image.png")
+# raw is already (H, W, RGBA/RGB) numpy array</pre>
         </div>
       </div>
     </div>
