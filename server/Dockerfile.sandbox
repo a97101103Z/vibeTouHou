@@ -37,5 +37,11 @@ RUN pip install --no-cache-dir --retries 5 \
 # Non-root sandbox user — cannot write outside /work
 RUN useradd -m -u 1000 sandbox
 
+# Watcher script — polls /work/trigger, runs script.py, writes /work/result
+COPY watcher.py /watcher.py
+
 USER sandbox
 WORKDIR /work
+
+# Default command: idle watcher (server drops /work/trigger to start a render)
+CMD ["python", "/watcher.py"]

@@ -1,15 +1,21 @@
 """
 Sandboxed student script runner.
 
-Execution priority:
-  1. Docker (preferred) — fully isolated container:
+Execution model:
+  1. Docker (preferred) — one persistent watcher container per slot:
        • No network access
-       • 256 MB RAM cap (no swap)
-       • 50% of one CPU core
+       • 1 GB RAM cap (no swap)
+       • 2 CPU cores (fast ffmpeg encoding)
        • 64 process limit (blocks fork-bombs)
        • Non-root sandbox user (uid 1000)
-       • Only /work is writable
-       • Auto-removed after run
+       • /work is writable; /work/assets is read-only
+       • Container stays alive between renders — no startup cost after first run
+
+  The server writes script.py then drops /work/trigger.
+  The in-container watcher.py detects trigger, runs script.py as a subprocess,
+  and writes /work/result ("ok"/"error"/"timeout" + stderr).
+  The server polls result and reads output.mp4.
+
   2. Subprocess fallback — used when Docker is unavailable.
        Less safe but still has: timeout, SDL_VIDEODRIVER=dummy,
        and the AST import allowlist (first line of defence for both paths).
@@ -25,9 +31,10 @@ import shutil
 import sys
 import subprocess
 import threading
+import time
 from queue import Empty, Full, Queue
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from config import (
     DATA_DIR,
@@ -47,7 +54,7 @@ _render_queue: Queue[tuple[str, str, int, str]] = Queue(maxsize=MAX_RENDER_QUEUE
 _workers_started = False
 _workers_lock = threading.Lock()
 _ASSET_LINKS_META = ".asset_links.json"
-_RESERVED_RUNTIME_NAMES = {"script.py", "output.mp4", "published.mp4", _ASSET_LINKS_META}
+_RESERVED_RUNTIME_NAMES = {"script.py", "output.mp4", "published.mp4", _ASSET_LINKS_META, "trigger", "result"}
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -217,75 +224,114 @@ def start_render(team: str, index: int, script: str) -> Optional[str]:
     return None
 
 
+# ── Watcher container pool ────────────────────────────────────────────────────
+# One persistent container per slot; stays alive between renders.
+# Communication via files in the mounted /work volume:
+#   server writes  /work/trigger  → watcher runs script.py
+#   watcher writes /work/result   → server reads outcome
+_watcher_containers: dict[str, Any] = {}
+_watcher_lock = threading.Lock()
+
+_SANDBOX_ENV = {
+    "SDL_VIDEODRIVER": "dummy",
+    "SDL_AUDIODRIVER": "dummy",
+    "HOME": "/work",
+    "PYTHONUNBUFFERED": "1",
+}
+
+
+def _get_or_create_watcher(key: str, d: Path) -> Any:
+    """Return the running watcher container for this slot, creating it if needed."""
+    import docker as docker_sdk
+    with _watcher_lock:
+        c = _watcher_containers.get(key)
+        if c is not None:
+            try:
+                c.reload()
+                if c.status == "running":
+                    return c
+            except Exception:
+                pass
+            try: c.remove(force=True)
+            except Exception: pass
+
+        assets_dir = d / "assets"
+        assets_dir.mkdir(exist_ok=True)
+
+        c = docker_sdk.from_env().containers.run(
+            DOCKER_IMAGE,
+            volumes={
+                str(d.resolve()):           {"bind": "/work",        "mode": "rw"},
+                str(assets_dir.resolve()):  {"bind": "/work/assets", "mode": "ro"},
+            },
+            working_dir="/work",
+            network_disabled=True,
+            mem_limit="1g",
+            memswap_limit="1g",
+            cpu_period=100_000,
+            cpu_quota=200_000,
+            pids_limit=64,
+            user="1000",
+            environment={**_SANDBOX_ENV, "RENDER_TIMEOUT": str(MAX_RENDER_SECONDS)},
+            detach=True,
+            remove=False,
+        )
+        _watcher_containers[key] = c
+        return c
+
+
 # ── Docker execution (preferred) ───────────────────────────────────────────────
 
-def _run_docker(key: str, d: Path):
+def _run_docker(key: str, d: Path) -> None:
     import docker as docker_sdk
 
-    client = docker_sdk.from_env()
-    container = None
-
-    env = {
-        "SDL_VIDEODRIVER": "dummy",
-        "SDL_AUDIODRIVER": "dummy",
-        "HOME": "/work",
-        "PYTHONUNBUFFERED": "1",
-    }
-
     try:
-        container = client.containers.run(
-            DOCKER_IMAGE,
-            command=["python", "/work/script.py"],
-            volumes={str(d.resolve()): {"bind": "/work", "mode": "rw"}},
-            working_dir="/work",
-            # ── Isolation ──────────────────────────────────────────────
-            network_disabled=True,          # no internet/LAN access
-            mem_limit="1g",                 # 1 GB RAM (video frames are huge)
-            memswap_limit="1g",             # no swap either
-            cpu_period=100_000,
-            cpu_quota=200_000,              # max 200% (2 cores) to speed up video rendering
-            pids_limit=64,                  # no fork-bombs
-            # ── Runtime ────────────────────────────────────────────────
-            user="1000",                    # sandbox user (non-root)
-            environment=env,
-            stdout=True,
-            stderr=True,
-            detach=True,                    # we manage timeout manually
-            remove=False,                   # we remove after reading logs
-        )
-
-        try:
-            result = container.wait(timeout=MAX_RENDER_SECONDS)
-            stderr_bytes = container.logs(stdout=False, stderr=True)
-            stderr_text  = stderr_bytes.decode(errors="replace")
-            exit_code    = result.get("StatusCode", -1)
-        except Exception:
-            # Timed out or Docker error — kill container
-            try: container.kill()
-            except Exception: pass
-            _set_status(key, "error", f"Script timed out after {MAX_RENDER_SECONDS}s.")
-            return
-        finally:
-            try: container.remove(force=True)
-            except Exception: pass
-
-        out_path = d / "output.mp4"
-        if exit_code != 0 or not out_path.exists():
-            _set_status(key, "error", stderr_text or "Script did not produce output.mp4.")
-        else:
-            _set_status(key, "done", stderr_text)
-
+        container = _get_or_create_watcher(key, d)
     except docker_sdk.errors.ImageNotFound:
         _set_status(
-            key,
-            "error",
-            (
-                f"Docker image '{DOCKER_IMAGE}' not found.\n"
-                "Run: docker build -f Dockerfile.sandbox -t vibetouhou-sandbox ."
-            ),
+            key, "error",
+            f"Docker image '{DOCKER_IMAGE}' not found.\n"
+            "Run: docker build -f Dockerfile.sandbox -t vibetouhou-sandbox .",
         )
+        return
     except Exception as exc:
-        _set_status(key, "error", f"Docker error: {exc}")
+        _set_status(key, "error", f"Docker error starting watcher: {exc}")
+        return
+
+    result_path  = d / "result"
+    trigger_path = d / "trigger"
+
+    # Clean up any leftover result from a previous run
+    try: result_path.unlink(missing_ok=True)
+    except Exception: pass
+
+    # Signal the watcher to start execution
+    trigger_path.write_text("go", encoding="utf-8")
+
+    # Poll for the result file (watcher writes it when the script finishes)
+    deadline = time.monotonic() + MAX_RENDER_SECONDS + 10  # +10s buffer
+    while time.monotonic() < deadline:
+        if result_path.exists():
+            break
+        time.sleep(0.1)
+    else:
+        _set_status(key, "error", f"Script timed out after {MAX_RENDER_SECONDS}s.")
+        return
+
+    try:
+        content = result_path.read_text(encoding="utf-8")
+        result_path.unlink(missing_ok=True)
+    except Exception as exc:
+        _set_status(key, "error", f"Could not read watcher result: {exc}")
+        return
+
+    status_line, _, stderr_text = content.partition("\n")
+    if status_line == "ok":
+        _set_status(key, "done", stderr_text)
+    elif status_line == "timeout":
+        _set_status(key, "error", stderr_text or f"Script timed out after {MAX_RENDER_SECONDS}s.")
+    else:
+        _set_status(key, "error", stderr_text or "Script did not produce output.mp4.")
 
 
 # ── Subprocess fallback (when Docker is not running) ───────────────────────────

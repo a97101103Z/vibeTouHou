@@ -59,7 +59,8 @@ for frame_num in range(FPS * DURATION):
 # ── DO NOT CHANGE THE FILENAME BELOW ──────────────────────────
 # The server explicitly looks for 'output.mp4'. If you change this,
 # the submission will fail because the server won't find the file!
-imageio.mimwrite("output.mp4", frames, fps=FPS, macro_block_size=None)
+imageio.mimwrite("output.mp4", frames, fps=FPS, macro_block_size=None,
+                 output_params=["-preset", "ultrafast", "-crf", "28"])
 print("Done! output.mp4 created.")
 `;
 
