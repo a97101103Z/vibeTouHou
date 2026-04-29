@@ -2,12 +2,9 @@
  * login.js — Token-based team claiming flow.
  */
 
-import { activateApp } from '../main.js';
-
 let claimedSlot = null;
 
 export function initLogin(onSuccess) {
-  const overlay = document.getElementById('login-overlay');
   const tokenInput = document.getElementById('token-input');
   const statusEl = document.getElementById('login-status');
   const claimBtn = document.getElementById('btn-claim');
@@ -22,7 +19,7 @@ export function initLogin(onSuccess) {
   tokenInput.focus();
 
   // Handle Enter key
-  tokenInput.addEventListener('keypress', (e) => {
+  tokenInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       tryClaim();
     }

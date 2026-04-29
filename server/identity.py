@@ -97,14 +97,17 @@ def get_slot(token: str) -> Optional[str]:
         return _sessions.get(token)
 
 
-def remove(admin_token: str, team: str, index: int) -> bool:
+def remove(admin_token: str, team: str, index: int) -> Optional[bool]:
     """
     Admin: remove a user from a slot using the admin token.
 
-    Returns True if a user was removed, False otherwise.
+    Returns:
+      True  – user was removed successfully
+      False – slot not found (valid admin token but slot is unclaimed)
+      None  – invalid admin token
     """
     if admin_token != ADMIN_TOKEN:
-        return False
+        return None
     if team not in ("red", "blue"):
         return False
 

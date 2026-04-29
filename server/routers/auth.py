@@ -27,7 +27,7 @@ class ResetBody(BaseModel):
 @router.post("/claim")
 def claim_slot(body: ClaimBody, response: Response):
     """Claim a slot using a team token. Returns assigned team-index."""
-    result = identity.claim(body.token)
+    result = identity.claim(body.token.strip())
     if result is None:
         # Either invalid token or team is full
         raise HTTPException(409, "No slots remaining for this team.")
@@ -47,9 +47,11 @@ def claim_slot(body: ClaimBody, response: Response):
 @router.post("/admin/reset-slot")
 def reset_slot(body: ResetBody):
     """Admin: remove a user from a slot. Frees the slot for new claims."""
-    ok = identity.remove(body.admin_token, body.team, body.index)
-    if not ok:
-        raise HTTPException(403, "Invalid admin token or slot not found.")
+    result = identity.remove(body.admin_token, body.team, body.index)
+    if result is None:
+        raise HTTPException(403, "Invalid admin token.")
+    if result is False:
+        raise HTTPException(404, "Slot not found.")
     return {"ok": True}
 
 
