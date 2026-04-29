@@ -12,8 +12,7 @@ Sessions are persisted to data/sessions.json so server restarts
 import json
 import secrets
 import threading
-from pathlib import Path
-from typing import Optional
+from typing import Literal
 
 from config import DATA_DIR, TEAM_SIZE, ADMIN_TOKEN, TEAM_TOKENS
 
@@ -58,7 +57,7 @@ _load()
 # ── Public API ─────────────────────────────────────────────────────────────────
 
 
-def _get_next_index(team: str) -> Optional[int]:
+def _get_next_index(team: str) -> int | None:
     """Find the next available index for a team (1-TEAM_SIZE). Returns None if full."""
     for i in range(1, TEAM_SIZE + 1):
         if f"{team}-{i}" not in _claimed:
@@ -66,13 +65,14 @@ def _get_next_index(team: str) -> Optional[int]:
     return None
 
 
-def claim(team_token: str) -> Optional[tuple[str, str]]:
+def claim(team_token: str) -> tuple[str, str] | Literal["team_full"] | None:
     """
     Claim a slot using a team token.
 
-    Returns (session_token, slot_key) on success, or None if:
-    - token is invalid, or
-    - team is at capacity
+    Returns:
+        (session_token, slot_key) — on success
+        "team_full" — team is at capacity
+        None — token is invalid
     """
     team = TEAM_TOKENS.get(team_token)
     if team is None:
@@ -81,7 +81,7 @@ def claim(team_token: str) -> Optional[tuple[str, str]]:
     with _lock:
         index = _get_next_index(team)
         if index is None:
-            return None
+            return "team_full"
 
         key = f"{team}-{index}"
         session_token = secrets.token_hex(24)
@@ -91,13 +91,13 @@ def claim(team_token: str) -> Optional[tuple[str, str]]:
         return session_token, key
 
 
-def get_slot(token: str) -> Optional[str]:
+def get_slot(token: str) -> str | None:
     """Return 'team-index' for a session token, or None if unknown."""
     with _lock:
         return _sessions.get(token)
 
 
-def remove(admin_token: str, team: str, index: int) -> Optional[bool]:
+def remove(admin_token: str, team: str, index: int) -> bool | None:
     """
     Admin: remove a user from a slot using the admin token.
 

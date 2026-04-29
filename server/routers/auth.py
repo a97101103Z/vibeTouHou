@@ -2,7 +2,8 @@
 Auth / identity endpoints.
 
 POST /api/claim → claim a slot with team token, receive session cookie
-POST /admin/reset-slot → admin: free a claimed slot
+POST /api/admin/reset-slot → admin: free a claimed slot
+GET /api/me → check current session identity
 """
 
 from fastapi import APIRouter, Cookie, Response, HTTPException
@@ -29,7 +30,8 @@ def claim_slot(body: ClaimBody, response: Response):
     """Claim a slot using a team token. Returns assigned team-index."""
     result = identity.claim(body.token.strip())
     if result is None:
-        # Either invalid token or team is full
+        raise HTTPException(401, "Invalid token.")
+    if result == "team_full":
         raise HTTPException(409, "No slots remaining for this team.")
 
     session_token, slot_key = result
@@ -49,7 +51,7 @@ def reset_slot(body: ResetBody):
     """Admin: remove a user from a slot. Frees the slot for new claims."""
     result = identity.remove(body.admin_token, body.team, body.index)
     if result is None:
-        raise HTTPException(403, "Invalid admin token.")
+        raise HTTPException(401, "Invalid admin token.")
     if result is False:
         raise HTTPException(404, "Slot not found.")
     return {"ok": True}

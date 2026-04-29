@@ -284,3 +284,32 @@ Styled similarly to OWASP Juice Shop: a single-page app with a persistent navbar
 - "Claiming a slot" should be lightweight — a simple name + team + number form, no account system needed
 - The server should display a "slot taken" error if someone tries to claim an already-used identity
 - An admin/host override should exist to reset slots if someone picked wrong
+
+---
+
+## Token-Based Authentication (2026-04-29)
+
+The identity system has been updated to use **token-based authentication** instead of manual slot picking.
+
+### Changes
+
+**Login Flow:**
+- Users enter their team's secret token (e.g., `RED-TOKEN-DEV-HD4G9GKN`)
+- Server automatically assigns the next available index (1–12)
+- Original `team-index` slot format is preserved for backwards compatibility
+
+**API Changes:**
+- `POST /api/claim` now accepts `{token: string}` instead of `{team: string, index: number}`
+- `GET /api/slots` has been removed (no longer needed)
+- `POST /api/admin/reset-slot` now requires `admin_token` in the request body (previously unprotected)
+
+**Error Codes:**
+- `401 Unauthorized` — invalid token (team token doesn't match red or blue)
+- `409 Conflict` — team is at capacity (no slots remaining)
+
+**Environment Variables:**
+- `RED_TEAM_TOKEN` — secret token for red team (default: `RED-TOKEN-DEV-HD4G9GKN`)
+- `BLUE_TEAM_TOKEN` — secret token for blue team (default: `BLUE-TOKEN-DEV-EL3O9BW8`)
+- `ADMIN_TOKEN` — secret token for admin actions (default: `ADMIN-TOKEN-DEV-K2M8N3PQ`)
+
+⚠️ **Security:** Default tokens emit a warning at startup. Set custom environment variables before deploying to production.

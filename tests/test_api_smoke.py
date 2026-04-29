@@ -89,9 +89,9 @@ def test_claim_returns_full_when_team_at_capacity(client):
 
 
 def test_claim_with_invalid_token_fails(client):
-    """Invalid tokens should be rejected."""
+    """Invalid tokens should be rejected with 401."""
     response = client.post("/api/claim", json={"token": "INVALID-TOKEN"})
-    assert response.status_code == 409
+    assert response.status_code == 401
 
 
 def test_admin_reset_requires_valid_token(client):
@@ -105,7 +105,7 @@ def test_admin_reset_requires_valid_token(client):
         "team": "red",
         "index": 1
     })
-    assert response.status_code == 403
+    assert response.status_code == 401
 
     # Reset with correct token should work
     response = client.post("/api/admin/reset-slot", json={
