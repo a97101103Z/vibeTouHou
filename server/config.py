@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import warnings
 
 # ── Canvas / video ─────────────────────────────────────────────────────────────
 WIDTH  = 800
@@ -42,5 +43,50 @@ CORS_ORIGINS = [
 ]
 
 # ── Teams ──────────────────────────────────────────────────────────────────────
-TEAMS        = ("red", "blue")
-TEAM_SIZE    = 12   # slots per team (1 – TEAM_SIZE)
+TEAMS = ("red", "blue")
+TEAM_SIZE = 12 # slots per team (1 – TEAM_SIZE)
+
+# ── Tokens ─────────────────────────────────────────────────────────────────────
+_RED_DEFAULT   = "RED-TOKEN-DEV-HD4G9GKN"
+_BLUE_DEFAULT  = "BLUE-TOKEN-DEV-EL3O9BW8"
+_ADMIN_DEFAULT = "ADMIN-TOKEN-DEV-K2M8N3PQ"
+
+RED_TEAM_TOKEN  = os.getenv("RED_TEAM_TOKEN",  _RED_DEFAULT)
+BLUE_TEAM_TOKEN = os.getenv("BLUE_TEAM_TOKEN", _BLUE_DEFAULT)
+ADMIN_TOKEN     = os.getenv("ADMIN_TOKEN",     _ADMIN_DEFAULT)
+
+for _var, _val, _default in (
+    ("RED_TEAM_TOKEN",  RED_TEAM_TOKEN,  _RED_DEFAULT),
+    ("BLUE_TEAM_TOKEN", BLUE_TEAM_TOKEN, _BLUE_DEFAULT),
+    ("ADMIN_TOKEN",     ADMIN_TOKEN,     _ADMIN_DEFAULT),
+):
+    if _val == _default:
+        warnings.warn(
+            f"{_var} is using its insecure default value. "
+            "Set this environment variable before deploying to production.",
+            UserWarning,
+            stacklevel=2,
+        )
+
+# Token-to-team mapping for validation
+TEAM_TOKENS = {
+    RED_TEAM_TOKEN: "red",
+    BLUE_TEAM_TOKEN: "blue",
+}
+
+# ── Token startup validation ────────────────────────────────────────────────────
+_all_tokens = {
+    "RED_TEAM_TOKEN": RED_TEAM_TOKEN,
+    "BLUE_TEAM_TOKEN": BLUE_TEAM_TOKEN,
+    "ADMIN_TOKEN": ADMIN_TOKEN,
+}
+
+for _name, _tok in _all_tokens.items():
+    if not _tok:
+        raise ValueError(f"{_name} must not be empty.")
+
+_token_values = list(_all_tokens.values())
+if len(set(_token_values)) != len(_token_values):
+    raise ValueError(
+        "RED_TEAM_TOKEN, BLUE_TEAM_TOKEN, and ADMIN_TOKEN must all be unique."
+    )
