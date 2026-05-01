@@ -1,112 +1,75 @@
 /**
- * main.js — SPA router and app bootstrap.
+ * main.js — Main application entry point.
  *
  * Responsibilities:
- *  - Check if the user already has a session; skip login if so.
- *  - Drive the login flow (team pick → slot pick → claim).
- *  - Switch between the 4 pages on navbar clicks.
- *  - Provide a global toast notification helper.
+ * - Initialize all managers and coordinate between them.
+ * - Set up global error handling.
  */
 
-import { initLogin } from './pages/login.js';
-import { initSubmit } from './pages/submit.js';
-import { initAssets } from './pages/assets.js';
-import { initPlaytest } from './pages/playtest.js';
-import { initGauntlet } from './pages/gauntlet.js';
+import { SessionManager } from './managers/SessionManager.js';
+import { ToastManager } from './managers/ToastManager.js';
+import { SidebarManager } from './managers/SidebarManager.js';
+import { PatternManager } from './managers/PatternManager.js';
+import { AssetsManager } from './managers/AssetsManager.js';
+import { GauntletManager } from './managers/GauntletManager.js';
+import { GameManager } from './managers/GameManager.js';
+import { LoginManager } from './managers/LoginManager.js';
 
-// ── Session state (set by login, persisted as a module-level object) ──────────
-export const session = { slot: null, team: null, index: null };
+// Instantiate managers
+const toastManager = new ToastManager();
+const sessionManager = new SessionManager();
+const sidebarManager = new SidebarManager(toastManager);
+const patternManager = new PatternManager(sidebarManager, toastManager);
+const assetsManager = new AssetsManager(sidebarManager, toastManager);
+const gauntletManager = new GauntletManager(toastManager);
+const gameManager = new GameManager(
+  patternManager,
+  gauntletManager,
+  sidebarManager,
+  toastManager
+);
+const loginManager = new LoginManager(sessionManager, toastManager);
 
-// ── Toast helper ──────────────────────────────────────────────────────────────
-const toastContainer = document.createElement('div');
-toastContainer.id = 'toast-container';
-document.body.appendChild(toastContainer);
-
-export function toast(msg, type = '') {
-  const el = document.createElement('div');
-  el.className = `toast${type ? ' toast-' + type : ''}`;
-  el.textContent = msg;
-  toastContainer.appendChild(el);
-  setTimeout(() => el.remove(), 3500);
-}
-
-// ── Page switching ────────────────────────────────────────────────────────────
-const pages = ['submit', 'assets', 'playtest', 'gauntlet'];
-const inited = {};
-const pageFromPath = () => {
-  const name = window.location.pathname.replace(/^\/+/, '').split('/')[0];
-  return pages.includes(name) ? name : 'submit';
-};
-
-function showPage(name, push = true) {
-  if (!pages.includes(name)) name = 'submit';
-  pages.forEach(p => {
-    document.getElementById('page-' + p).classList.toggle('active', p === name);
-    document.getElementById('tab-' + p).classList.toggle('active', p === name);
-  });
-
-  const nextPath = name === 'submit' ? '/' : `/${name}`;
-  if (push && window.location.pathname !== nextPath) {
-    history.pushState({ page: name }, '', nextPath);
-  }
-
-  if (!inited[name]) {
-    inited[name] = true;
-    const el = document.getElementById('page-' + name);
-    if (name === 'submit') initSubmit(el);
-    else if (name === 'assets') initAssets(el);
-    else if (name === 'playtest') initPlaytest(el);
-    else if (name === 'gauntlet') initGauntlet(el);
-  }
-}
-
-document.querySelectorAll('.nav-tab').forEach(btn => {
-  btn.addEventListener('click', () => showPage(btn.dataset.page));
+// Wire up cross-manager events
+sessionManager.addEventListener('change', () => {
+  document.body.classList.add('team-' + sessionManager.team);
 });
 
-window.addEventListener('popstate', () => showPage(pageFromPath(), false));
+// Wire up gauntlet start from gauntlet manager to game manager
+gauntletManager.addEventListener('startGauntlet', () => {
+  if (!gameManager.isRunning) {
+    gameManager.startGauntlet();
+  }
+});
 
-// ── App boot ──────────────────────────────────────────────────────────────────
-async function boot() {
-  // Check if we already have a valid session cookie
-  try {
-    const res = await fetch('/api/me', { credentials: 'include' });
-    const data = await res.json();
+// Wire up pattern tested event
+patternManager.addEventListener('renderComplete', () => {
+  sidebarManager.setPatternTested(true);
+});
 
-    if (data.slot) {
-      const [team, idx] = data.slot.split('-');
-      activateApp(team, parseInt(idx));
-      return;
-    }
-  } catch (_) { /* server may not be up yet */ }
+// Global error handling
+window.addEventListener('unhandledrejection', (e) => {
+  toastManager.toast(e.reason?.message || 'Error', 'error');
+});
 
-  // Show login
-  initLogin(activateApp);
+// Initialize application
+async function initApp() {
+  await sidebarManager.init();
+  await patternManager.render(); // Initialize with current editor content if any
+  assetsManager.init();
+  await assetsManager.loadGallery();
+  gauntletManager.init();
+  gameManager.init();
 }
 
-export function activateApp(team, index) {
-  session.slot = `${team}-${index}`;
-  session.team = team;
-  session.index = index;
-
-  // Apply team theme
-  document.body.classList.add('team-' + team);
-
-  // Update player badge
-  const badge = document.getElementById('player-badge');
-  badge.textContent = session.slot.toUpperCase();
-
-  // Update logo colors to match team
-  document.querySelectorAll('.logo-tou, .logo-hou').forEach(el => {
-    el.style.color = team === 'red' ? 'var(--red)' : 'var(--blue)';
-  });
-
-
-  // Hide login overlay, show app
-  document.getElementById('login-overlay').style.display = 'none';
-  document.getElementById('app').style.display = '';
-
-  showPage(pageFromPath(), false);
+// Boot the application
+async function boot() {
+  loginManager.addEventListener('loginSuccess', initApp, { once: true });
+  await loginManager.init();
+  
+  if (sessionManager.isLoggedIn) {
+    await initApp();
+  }
 }
 
 boot();
