@@ -1,27 +1,27 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from "vite";
 
 export default defineConfig({
   server: {
-    host: '0.0.0.0',
+    host: "0.0.0.0",
     port: 5173,
     proxy: {
       // During `npm run dev`, forward all /api calls to the FastAPI server
-      '/api': {
-        target: process.env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:8000',
+      "/api": {
+        target: process.env.VITE_API_PROXY_TARGET || "http://127.0.0.1:8000",
         changeOrigin: true,
         secure: false,
       },
     },
   },
   preview: {
-    host: '0.0.0.0',
+    host: "0.0.0.0",
     port: 4173,
   },
   build: {
-    outDir: '../server/static',
+    outDir: "../server/static",
     emptyOutDir: true,
-    sourcemap: false,  // Do not expose source maps to clients
-    minify: 'terser',
+    sourcemap: false, // Do not expose source maps to clients
+    minify: "terser",
     terserOptions: {
       compress: { drop_console: false },
       mangle: true,

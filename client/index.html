@@ -1,171 +1,245 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>vibeTouHou — 彈幕競技場</title>
-  <meta name="description" content="Competitive bullet-hell platform. Code your patterns. Survive your rivals." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/src/style.css" />
-</head>
-<body>
-
-  <!-- Login Overlay -->
-  <div id="login-overlay">
-    <div class="login-card">
-      <div class="login-logo">
-        <span class="logo-vibe">vibe</span><span class="logo-tou">Tou</span><span class="logo-hou">Hou</span>
-        <div class="logo-sub">彈幕競技場</div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vibeTouHou — 彈幕競技場</title>
+    <meta
+      name="description"
+      content="Competitive bullet-hell platform. Code your patterns. Survive your rivals."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <!-- Login Overlay -->
+    <div id="login-overlay">
+      <div class="login-card">
+        <div class="login-logo">
+          <span class="logo-vibe">vibe</span><span class="logo-tou">Tou</span
+          ><span class="logo-hou">Hou</span>
+          <div class="logo-sub">彈幕競技場</div>
+        </div>
+        <p class="login-tagline">Enter your team token to claim your slot.</p>
+        <div class="token-input-section">
+          <input
+            id="token-input"
+            type="text"
+            class="token-input"
+            placeholder="Enter your team token"
+            aria-label="Team token"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button id="btn-claim" class="claim-btn">Claim Slot</button>
+        </div>
+        <div id="login-status" class="login-status"></div>
       </div>
-      <p class="login-tagline">Enter your team token to claim your slot.</p>
-      <div class="token-input-section">
-        <input
-          id="token-input"
-          type="text"
-          class="token-input"
-          placeholder="Enter your team token"
-          aria-label="Team token"
-          autocomplete="off"
-          spellcheck="false"
-        />
-        <button id="btn-claim" class="claim-btn">Claim Slot</button>
-      </div>
-      <div id="login-status" class="login-status"></div>
     </div>
-  </div>
 
-  <!-- Main Application -->
-  <div id="app" style="display:none">
-    <nav id="navbar">
-      <div class="nav-logo">
-        <span class="logo-vibe">vibe</span><span class="logo-tou">Tou</span><span class="logo-hou">Hou</span>
+    <!-- Main Application -->
+    <div id="app" style="display: none">
+      <nav id="navbar">
+        <div class="nav-logo">
+          <span class="logo-vibe">vibe</span><span class="logo-tou">Tou</span
+          ><span class="logo-hou">Hou</span>
+        </div>
+        <div id="player-badge" class="player-badge"></div>
+      </nav>
+
+      <div id="main-container">
+        <!-- Sidebar -->
+        <aside id="sidebar">
+          <div id="sidebar-header">
+            <span id="sidebar-title">My Pattern</span>
+            <button
+              id="btn-expand"
+              class="btn-expand"
+              aria-label="Expand sidebar"
+            >
+              <span class="expand-icon">▶</span>
+            </button>
+          </div>
+
+          <div id="sidebar-content">
+            <!-- Collapsed Content -->
+            <div id="sidebar-collapsed">
+              <div id="pattern-status" class="status-row">
+                <span class="status-icon">📝</span>
+                <span id="pattern-status-text">Not tested</span>
+              </div>
+              <div id="assets-status" class="status-row">
+                <span class="status-icon">🖼️</span>
+                <span id="assets-count">0 assets</span>
+                <span id="assets-size" class="status-size"></span>
+              </div>
+            </div>
+
+            <!-- Expanded Content -->
+            <div id="sidebar-expanded">
+              <div id="sidebar-tabs">
+                <button
+                  id="tab-pattern"
+                  class="sidebar-tab active"
+                  data-tab="pattern"
+                >
+                  Pattern
+                </button>
+                <button id="tab-assets" class="sidebar-tab" data-tab="assets">
+                  Assets
+                </button>
+              </div>
+
+              <div id="tab-content">
+                <div id="pattern-tab" class="tab-pane active">
+                  <div id="editor-wrap" style="height: 400px"></div>
+                  <div class="tab-actions">
+                    <button id="btn-playtest" class="btn btn-primary">
+                      ▶ Playtest
+                    </button>
+                  </div>
+                </div>
+
+                <div id="assets-tab" class="tab-pane">
+                  <div id="drop-zone" class="drop-zone">
+                    <div class="drop-icon">📁</div>
+                    <div>
+                      Drag & drop images here, or
+                      <strong>click to browse</strong>
+                    </div>
+                    <div
+                      style="
+                        font-size: 0.75rem;
+                        margin-top: 6px;
+                        color: var(--text-muted);
+                      "
+                    >
+                      PNG, JPG, GIF, BMP, WebP — max 10 MB each
+                    </div>
+                  </div>
+                  <input
+                    id="file-input"
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    style="display: none"
+                  />
+
+                  <div class="assets-gallery-container">
+                    <div class="row center" style="margin-bottom: 12px">
+                      <span class="card-title" style="margin: 0"
+                        >Your Assets</span
+                      >
+                      <button
+                        id="btn-refresh-assets"
+                        class="btn btn-outline"
+                        style="margin-left: auto; padding: 6px 14px"
+                      >
+                        ↻ Refresh
+                      </button>
+                    </div>
+                    <div id="asset-gallery" class="asset-grid">
+                      <div
+                        style="
+                          color: var(--text-muted);
+                          font-size: 0.82rem;
+                          grid-column: 1/-1;
+                        "
+                      >
+                        Loading…
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="tab-actions">
+                    <button id="btn-upload-assets" class="btn btn-outline">
+                      ⬆ Upload
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            id="render-status-container"
+            class="status-row"
+            style="margin-top: auto"
+          >
+            <div id="render-status" class="status-badge status-idle">
+              ● IDLE
+            </div>
+          </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main id="main-content">
+          <!-- Play Section -->
+          <section id="play-section" class="main-section">
+            <div class="section-header">
+              <h2 class="section-title">Play</h2>
+              <span id="play-mode-indicator" class="mode-indicator"></span>
+            </div>
+            <div class="canvas-wrap">
+              <canvas id="game-canvas" width="800" height="600"></canvas>
+              <div class="canvas-hud">
+                <span id="hud-pattern">—</span>
+                <span id="hud-time">10.0s</span>
+                <span id="hud-hits">Hits: 0</span>
+                <span style="color: var(--text-muted); font-size: 0.65rem"
+                  >SHIFT = focus · WASD / ↕↔ = move</span
+                >
+              </div>
+              <div id="canvas-overlay" class="canvas-overlay">
+                <h2 id="overlay-title">Play</h2>
+                <p id="overlay-subtitle">Select a mode to begin.</p>
+                <div id="overlay-actions"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Gauntlet Section -->
+          <section id="gauntlet-section" class="main-section">
+            <div class="section-header">
+              <h2 class="section-title">Gauntlet</h2>
+              <button
+                id="btn-start-gauntlet"
+                class="btn btn-primary"
+                style="padding: 6px 14px"
+              >
+                ▶ Begin
+              </button>
+            </div>
+
+            <div id="gauntlet-content" class="gauntlet-content">
+              <div class="gauntlet-subsection">
+                <h3 class="subsection-title">Opponent Patterns</h3>
+                <div id="pattern-list" class="pattern-list">
+                  <div style="color: var(--text-muted); font-size: 0.82rem">
+                    Loading…
+                  </div>
+                </div>
+              </div>
+
+              <div class="gauntlet-subsection">
+                <h3 class="subsection-title">Leaderboard</h3>
+                <div id="leaderboard" class="leaderboard">
+                  <div style="color: var(--text-muted); font-size: 0.78rem">
+                    Loading…
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
       </div>
-      <div id="player-badge" class="player-badge"></div>
-    </nav>
-
-    <div id="main-container">
-      <!-- Sidebar -->
-      <aside id="sidebar">
-        <div id="sidebar-header">
-          <span id="sidebar-title">My Pattern</span>
-          <button id="btn-expand" class="btn-expand" aria-label="Expand sidebar">
-            <span class="expand-icon">▶</span>
-          </button>
-        </div>
-        
-        <div id="sidebar-content">
-          <!-- Collapsed Content -->
-          <div id="sidebar-collapsed">
-            <div id="pattern-status" class="status-row">
-              <span class="status-icon">📝</span>
-              <span id="pattern-status-text">Not tested</span>
-            </div>
-            <div id="assets-status" class="status-row">
-              <span class="status-icon">🖼️</span>
-              <span id="assets-count">0 assets</span>
-              <span id="assets-size" class="status-size"></span>
-            </div>
-          </div>
-          
-          <!-- Expanded Content -->
-          <div id="sidebar-expanded">
-            <div id="sidebar-tabs">
-              <button id="tab-pattern" class="sidebar-tab active" data-tab="pattern">Pattern</button>
-              <button id="tab-assets" class="sidebar-tab" data-tab="assets">Assets</button>
-            </div>
-            
-            <div id="tab-content">
-              <div id="pattern-tab" class="tab-pane active">
-                <div id="editor-wrap" style="height:400px"></div>
-                <div class="tab-actions">
-                  <button id="btn-playtest" class="btn btn-primary">▶ Playtest</button>
-                </div>
-              </div>
-              
-              <div id="assets-tab" class="tab-pane">
-                <div id="drop-zone" class="drop-zone">
-                  <div class="drop-icon">📁</div>
-                  <div>Drag & drop images here, or <strong>click to browse</strong></div>
-                  <div style="font-size:0.75rem;margin-top:6px;color:var(--text-muted)">PNG, JPG, GIF, BMP, WebP — max 10 MB each</div>
-                </div>
-                <input id="file-input" type="file" multiple accept="image/*" style="display:none" />
-                
-                <div class="assets-gallery-container">
-                  <div class="row center" style="margin-bottom:12px">
-                    <span class="card-title" style="margin:0">Your Assets</span>
-                    <button id="btn-refresh-assets" class="btn btn-outline" style="margin-left:auto;padding:6px 14px">↻ Refresh</button>
-                  </div>
-                  <div id="asset-gallery" class="asset-grid">
-                    <div style="color:var(--text-muted);font-size:0.82rem;grid-column:1/-1">Loading…</div>
-                  </div>
-                </div>
-                
-                <div class="tab-actions">
-                  <button id="btn-upload-assets" class="btn btn-outline">⬆ Upload</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div id="render-status-container" class="status-row" style="margin-top:auto;">
-          <div id="render-status" class="status-badge status-idle">● IDLE</div>
-        </div>
-      </aside>
-
-      <!-- Main Content Area -->
-      <main id="main-content">
-        <!-- Play Section -->
-        <section id="play-section" class="main-section">
-          <div class="section-header">
-            <h2 class="section-title">Play</h2>
-            <span id="play-mode-indicator" class="mode-indicator"></span>
-          </div>
-          <div class="canvas-wrap">
-            <canvas id="game-canvas" width="800" height="600"></canvas>
-            <div class="canvas-hud">
-              <span id="hud-pattern">—</span>
-              <span id="hud-time">10.0s</span>
-              <span id="hud-hits">Hits: 0</span>
-              <span style="color:var(--text-muted);font-size:0.65rem">SHIFT = focus · WASD / ↕↔ = move</span>
-            </div>
-            <div id="canvas-overlay" class="canvas-overlay">
-              <h2 id="overlay-title">Play</h2>
-              <p id="overlay-subtitle">Select a mode to begin.</p>
-              <div id="overlay-actions"></div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Gauntlet Section -->
-        <section id="gauntlet-section" class="main-section">
-          <div class="section-header">
-            <h2 class="section-title">Gauntlet</h2>
-            <button id="btn-start-gauntlet" class="btn btn-primary" style="padding:6px 14px">▶ Begin</button>
-          </div>
-          
-          <div id="gauntlet-content" class="gauntlet-content">
-            <div class="gauntlet-subsection">
-              <h3 class="subsection-title">Opponent Patterns</h3>
-              <div id="pattern-list" class="pattern-list">
-                <div style="color:var(--text-muted);font-size:0.82rem">Loading…</div>
-              </div>
-            </div>
-            
-            <div class="gauntlet-subsection">
-              <h3 class="subsection-title">Leaderboard</h3>
-              <div id="leaderboard" class="leaderboard">
-                <div style="color:var(--text-muted);font-size:0.78rem">Loading…</div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
     </div>
-  </div>
 
-  <script type="module" src="/src/main.js"></script>
-</body>
+    <script type="module" src="/src/main.js"></script>
+  </body>
 </html>

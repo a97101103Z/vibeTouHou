@@ -53,7 +53,7 @@ print("Done! output.mp4 created.")
 
 export class SidebarManager extends EventTarget {
   #isExpanded = false;
-  #activeTab = 'pattern';
+  #activeTab = "pattern";
   #patternTested = false;
   #assetsCount = 0;
   #assetsSize = 0;
@@ -98,24 +98,24 @@ export class SidebarManager extends EventTarget {
   }
 
   #cacheDOM() {
-    this.#sidebar = document.getElementById('sidebar');
-    this.#btnExpand = document.getElementById('btn-expand');
-    this.#sidebarTabs = document.querySelectorAll('.sidebar-tab');
-    this.#tabPanes = document.querySelectorAll('.tab-pane');
-    this.#btnPlaytest = document.getElementById('btn-playtest');
-    this.#patternStatus = document.getElementById('pattern-status-text');
-    this.#assetsCountEl = document.getElementById('assets-count');
-    this.#assetsSizeEl = document.getElementById('assets-size');
-    this.#renderStatusEl = document.getElementById('render-status');
+    this.#sidebar = document.getElementById("sidebar");
+    this.#btnExpand = document.getElementById("btn-expand");
+    this.#sidebarTabs = document.querySelectorAll(".sidebar-tab");
+    this.#tabPanes = document.querySelectorAll(".tab-pane");
+    this.#btnPlaytest = document.getElementById("btn-playtest");
+    this.#patternStatus = document.getElementById("pattern-status-text");
+    this.#assetsCountEl = document.getElementById("assets-count");
+    this.#assetsSizeEl = document.getElementById("assets-size");
+    this.#renderStatusEl = document.getElementById("render-status");
   }
 
   async #initEditor() {
-    if (!document.getElementById('pattern-tab')) return;
+    if (!document.getElementById("pattern-tab")) return;
 
     try {
-      const { EditorView, basicSetup } = await import('codemirror');
-      const { python } = await import('@codemirror/lang-python');
-      const { oneDark } = await import('@codemirror/theme-one-dark');
+      const { EditorView, basicSetup } = await import("codemirror");
+      const { python } = await import("@codemirror/lang-python");
+      const { oneDark } = await import("@codemirror/theme-one-dark");
 
       this.#editor = new EditorView({
         doc: PATTERN_SAMPLE,
@@ -124,31 +124,31 @@ export class SidebarManager extends EventTarget {
           python(),
           oneDark,
           EditorView.theme({
-            '&': { height: '400px' },
-            '.cm-scroller': { overflow: 'auto' }
+            "&": { height: "400px" },
+            ".cm-scroller": { overflow: "auto" },
           }),
         ],
-        parent: document.getElementById('editor-wrap'),
+        parent: document.getElementById("editor-wrap"),
       });
     } catch (e) {
-      console.error('Failed to initialize editor:', e);
+      console.error("Failed to initialize editor:", e);
     }
   }
 
   #setupEventListeners() {
     if (this.#btnExpand) {
-      this.#btnExpand.addEventListener('click', () => this.toggle());
+      this.#btnExpand.addEventListener("click", () => this.toggle());
     }
 
-    this.#sidebarTabs.forEach(tab => {
-      tab.addEventListener('click', () => {
+    this.#sidebarTabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
         this.switchTab(tab.dataset.tab);
       });
     });
 
     if (this.#btnPlaytest) {
-      this.#btnPlaytest.addEventListener('click', () => {
-        this.dispatchEvent(new CustomEvent('startPlaytest'));
+      this.#btnPlaytest.addEventListener("click", () => {
+        this.dispatchEvent(new CustomEvent("startPlaytest"));
       });
     }
   }
@@ -156,7 +156,7 @@ export class SidebarManager extends EventTarget {
   toggle() {
     this.#isExpanded = !this.#isExpanded;
     this.updateDisplay();
-    this.dispatchEvent(new CustomEvent('toggle'));
+    this.dispatchEvent(new CustomEvent("toggle"));
   }
 
   /**
@@ -165,25 +165,39 @@ export class SidebarManager extends EventTarget {
   switchTab(tabName) {
     this.#activeTab = tabName;
 
-    this.#sidebarTabs.forEach(tab => {
-      tab.setAttribute('data-active', tab.dataset.tab === tabName ? 'true' : 'false');
+    this.#sidebarTabs.forEach((tab) => {
+      tab.setAttribute(
+        "data-active",
+        tab.dataset.tab === tabName ? "true" : "false",
+      );
     });
 
-    this.#tabPanes.forEach(pane => {
-      pane.setAttribute('data-active', pane.id === `${tabName}-tab` ? 'true' : 'false');
+    this.#tabPanes.forEach((pane) => {
+      pane.setAttribute(
+        "data-active",
+        pane.id === `${tabName}-tab` ? "true" : "false",
+      );
     });
 
     this.updateDisplay();
-    this.dispatchEvent(new CustomEvent('tabChange', { detail: { tab: tabName } }));
+    this.dispatchEvent(
+      new CustomEvent("tabChange", { detail: { tab: tabName } }),
+    );
   }
 
   updateDisplay() {
     if (!this.#sidebar) return;
 
-    this.#sidebar.setAttribute('data-expanded', this.#isExpanded ? 'true' : 'false');
+    this.#sidebar.setAttribute(
+      "data-expanded",
+      this.#isExpanded ? "true" : "false",
+    );
 
-    if (this.#btnExpand && this.#btnExpand.querySelector('.expand-icon')) {
-      this.#btnExpand.querySelector('.expand-icon').textContent = this.#isExpanded ? '◀' : '▶';
+    if (this.#btnExpand && this.#btnExpand.querySelector(".expand-icon")) {
+      this.#btnExpand.querySelector(".expand-icon").textContent = this
+        .#isExpanded
+        ? "◀"
+        : "▶";
     }
 
     this.#updatePatternStatus();
@@ -192,14 +206,19 @@ export class SidebarManager extends EventTarget {
 
   #updatePatternStatus() {
     if (this.#patternStatus) {
-      this.#patternStatus.textContent = this.#patternTested ? '✓ Tested' : 'Not tested';
-      this.#patternStatus.setAttribute('data-tested', this.#patternTested ? 'true' : 'false');
+      this.#patternStatus.textContent = this.#patternTested
+        ? "✓ Tested"
+        : "Not tested";
+      this.#patternStatus.setAttribute(
+        "data-tested",
+        this.#patternTested ? "true" : "false",
+      );
     }
   }
 
   #updateAssetsStatus() {
     if (this.#assetsCountEl) {
-      this.#assetsCountEl.textContent = `${this.#assetsCount} asset${this.#assetsCount !== 1 ? 's' : ''}`;
+      this.#assetsCountEl.textContent = `${this.#assetsCount} asset${this.#assetsCount !== 1 ? "s" : ""}`;
     }
     if (this.#assetsSizeEl) {
       const sizeMB = (this.#assetsSize / (1024 * 1024)).toFixed(1);
@@ -213,7 +232,7 @@ export class SidebarManager extends EventTarget {
   setPatternTested(tested) {
     this.#patternTested = tested;
     this.#updatePatternStatus();
-    this.dispatchEvent(new CustomEvent('patternTested'));
+    this.dispatchEvent(new CustomEvent("patternTested"));
   }
 
   /**
@@ -231,30 +250,32 @@ export class SidebarManager extends EventTarget {
    * @param {string} [stderr='']
    * @param {string} [durationStr='']
    */
-  setRenderStatus(status, stderr = '', durationStr = '') {
+  setRenderStatus(status, stderr = "", durationStr = "") {
     if (!this.#renderStatusEl) return;
 
     const STATUS_LABELS = {
-      idle: '● IDLE',
-      queued: '◌ QUEUED',
-      running: '◉ RENDERING…',
-      done: '✓ DONE',
-      error: '✗ ERROR',
+      idle: "● IDLE",
+      queued: "◌ QUEUED",
+      running: "◉ RENDERING…",
+      done: "✓ DONE",
+      error: "✗ ERROR",
     };
 
-    this.#renderStatusEl.setAttribute('data-status', status);
-    this.#renderStatusEl.textContent = (STATUS_LABELS[status] ?? status.toUpperCase()) + (durationStr ? ` (${durationStr})` : '');
+    this.#renderStatusEl.setAttribute("data-status", status);
+    this.#renderStatusEl.textContent =
+      (STATUS_LABELS[status] ?? status.toUpperCase()) +
+      (durationStr ? ` (${durationStr})` : "");
 
-    const errEl = document.getElementById('render-stderr');
+    const errEl = document.getElementById("render-stderr");
     if (stderr && errEl) {
-      errEl.setAttribute('data-visible', 'true');
+      errEl.setAttribute("data-visible", "true");
       errEl.textContent = stderr;
     } else if (errEl) {
-      errEl.setAttribute('data-visible', 'false');
+      errEl.setAttribute("data-visible", "false");
     }
   }
 
   getEditorScript() {
-    return this.#editor ? this.#editor.state.doc.toString() : '';
+    return this.#editor ? this.#editor.state.doc.toString() : "";
   }
 }

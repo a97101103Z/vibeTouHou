@@ -76,15 +76,15 @@ export class GauntletManager extends EventTarget {
   }
 
   #cacheDOM() {
-    this.#btnStartGauntlet = document.getElementById('btn-start-gauntlet');
-    this.#patternList = document.getElementById('pattern-list');
-    this.#leaderboardEl = document.getElementById('leaderboard');
+    this.#btnStartGauntlet = document.getElementById("btn-start-gauntlet");
+    this.#patternList = document.getElementById("pattern-list");
+    this.#leaderboardEl = document.getElementById("leaderboard");
   }
 
   #setupEventListeners() {
     if (this.#btnStartGauntlet) {
-      this.#btnStartGauntlet.addEventListener('click', () => {
-        this.dispatchEvent(new CustomEvent('startGauntlet'));
+      this.#btnStartGauntlet.addEventListener("click", () => {
+        this.dispatchEvent(new CustomEvent("startGauntlet"));
       });
     }
   }
@@ -92,32 +92,37 @@ export class GauntletManager extends EventTarget {
   async loadPatterns() {
     if (!this.#patternList) return;
 
-    this.#patternList.innerHTML = '<div style="color:var(--text-muted);font-size:0.82rem">Loading…</div>';
+    this.#patternList.innerHTML =
+      '<div style="color:var(--text-muted);font-size:0.82rem">Loading…</div>';
 
     try {
-      const res = await fetch('/api/patterns/opponent', { credentials: 'include' });
+      const res = await fetch("/api/patterns/opponent", {
+        credentials: "include",
+      });
       const data = await res.json();
       this.#patterns = data.patterns;
 
       if (!this.#patterns.length) {
-        this.#patternList.innerHTML = '<div style="color:var(--text-muted);font-size:0.82rem">No published patterns yet.</div>';
+        this.#patternList.innerHTML =
+          '<div style="color:var(--text-muted);font-size:0.82rem">No published patterns yet.</div>';
         return;
       }
 
       this.#renderPatternList();
-      this.dispatchEvent(new CustomEvent('patternsLoaded'));
+      this.dispatchEvent(new CustomEvent("patternsLoaded"));
     } catch (_) {
-      this.#patternList.innerHTML = '<div style="color:var(--red);font-size:0.82rem">Could not load patterns.</div>';
+      this.#patternList.innerHTML =
+        '<div style="color:var(--red);font-size:0.82rem">Could not load patterns.</div>';
     }
   }
 
   #renderPatternList() {
     if (!this.#patternList) return;
 
-    this.#patternList.innerHTML = '';
+    this.#patternList.innerHTML = "";
     this.#patterns.forEach((p, i) => {
-      const item = document.createElement('div');
-      item.className = 'pattern-item';
+      const item = document.createElement("div");
+      item.className = "pattern-item";
       item.id = `pi-${i}`;
       item.innerHTML = `
         <span class="pi-idx">#${i + 1}</span>
@@ -125,10 +130,10 @@ export class GauntletManager extends EventTarget {
         <span class="pi-hits">—</span>
       `;
 
-      item.addEventListener('click', () => {
+      item.addEventListener("click", () => {
         if (!this.#isRunning) {
           this.#currentIdx = i;
-          this.dispatchEvent(new CustomEvent('startGauntlet'));
+          this.dispatchEvent(new CustomEvent("startGauntlet"));
         }
       });
 
@@ -153,18 +158,18 @@ export class GauntletManager extends EventTarget {
     if (!this.#leaderboardEl) return;
 
     try {
-      const res = await fetch('/api/leaderboard', { credentials: 'include' });
+      const res = await fetch("/api/leaderboard", { credentials: "include" });
       const data = await res.json();
       this.#renderLeaderboard(data);
-      this.dispatchEvent(new CustomEvent('leaderboardUpdate'));
-    } catch(_) {}
+      this.dispatchEvent(new CustomEvent("leaderboardUpdate"));
+    } catch (_) {}
   }
 
   #renderLeaderboard(data) {
     if (!this.#leaderboardEl) return;
 
     const rows = [];
-    for (const team of ['red', 'blue']) {
+    for (const team of ["red", "blue"]) {
       const slots = data[team] || {};
       for (const [idx, score] of Object.entries(slots)) {
         rows.push({ team, idx: parseInt(idx), score });
@@ -181,20 +186,23 @@ export class GauntletManager extends EventTarget {
     this.#leaderboard = rows;
 
     this.#leaderboardEl.innerHTML = rows.length
-      ? rows.map(r => {
-          const h = r.score.best_hits;
-          const it = r.score.infinite_time;
-          const scoreStr = h == null
-            ? '—'
-            : h === 0 && it != null
-              ? `Perfect + ${it.toFixed(0)}s∞`
-              : `${h} hit${h !== 1 ? 's' : ''}`;
-          return `
+      ? rows
+          .map((r) => {
+            const h = r.score.best_hits;
+            const it = r.score.infinite_time;
+            const scoreStr =
+              h == null
+                ? "—"
+                : h === 0 && it != null
+                  ? `Perfect + ${it.toFixed(0)}s∞`
+                  : `${h} hit${h !== 1 ? "s" : ""}`;
+            return `
             <div class="lb-row lb-${r.team}">
               <span class="lb-slot">${r.team.toUpperCase()}-${r.idx}</span>
-              <span class="lb-score ${h === 0 ? 'best' : ''}">${scoreStr}</span>
+              <span class="lb-score ${h === 0 ? "best" : ""}">${scoreStr}</span>
             </div>`;
-        }).join('')
+          })
+          .join("")
       : '<div style="color:var(--text-muted);font-size:0.78rem">No scores yet.</div>';
   }
 }
