@@ -5,9 +5,6 @@
 
 export class GauntletManager extends EventTarget {
   #patterns = [];
-  #currentIdx = 0;
-  #totalHits = 0;
-  #hitsPerPattern = [];
   #leaderboard = [];
   #isRunning = false;
   #lbPollTimer = null;
@@ -15,34 +12,11 @@ export class GauntletManager extends EventTarget {
   // DOM references
   #btnStartGauntlet;
   #patternList;
+  #patternItems = [];
   #leaderboardEl;
 
   get patterns() {
     return this.#patterns;
-  }
-
-  get currentIdx() {
-    return this.#currentIdx;
-  }
-
-  set currentIdx(value) {
-    this.#currentIdx = value;
-  }
-
-  get totalHits() {
-    return this.#totalHits;
-  }
-
-  set totalHits(value) {
-    this.#totalHits = value;
-  }
-
-  get hitsPerPattern() {
-    return this.#hitsPerPattern;
-  }
-
-  set hitsPerPattern(value) {
-    this.#hitsPerPattern = value;
   }
 
   get leaderboard() {
@@ -107,24 +81,78 @@ export class GauntletManager extends EventTarget {
     if (!this.#patternList) return;
 
     this.#patternList.innerHTML = "";
-    this.#patterns.forEach((p, i) => {
+    this.#patternItems = this.#patterns.map((p, i) => {
       const item = document.createElement("div");
       item.className = "pattern-item";
       item.id = `pi-${i}`;
+
+      const hitsEl = document.createElement("span");
+      hitsEl.className = "pi-hits";
+      hitsEl.textContent = "—";
+
       item.innerHTML = `
         <span class="pi-idx">#${i + 1}</span>
         <span>${p.slot}</span>
-        <span class="pi-hits">—</span>
       `;
+      item.appendChild(hitsEl);
 
       item.addEventListener("click", () => {
         if (!this.#isRunning) {
-          this.#currentIdx = i;
-          this.dispatchEvent(new CustomEvent("startGauntlet"));
+          this.dispatchEvent(new CustomEvent("startGauntlet", { detail: { startIdx: i } }));
         }
       });
 
       this.#patternList.appendChild(item);
+      return { el: item, hitsEl };
+    });
+  }
+
+  /**
+   * Highlight the active pattern and update done/normal states based on hits array.
+   * @param {number} idx
+   * @param {(number|null)[]} hitsPerPattern - array where null means untouched, number means done
+   */
+  activatePatternItem(idx, hitsPerPattern) {
+    this.#patternItems.forEach((item, i) => {
+      item.el.setAttribute("data-active", i === idx ? "true" : "false");
+      item.el.setAttribute(
+        "data-done",
+        hitsPerPattern[i] !== null ? "true" : "false",
+      );
+    });
+  }
+
+  /**
+   * Mark a pattern item as complete (no longer active, shown as done).
+   * @param {number} idx
+   */
+  deactivatePatternItem(idx) {
+    const item = this.#patternItems[idx];
+    if (!item) return;
+    item.el.setAttribute("data-active", "false");
+    item.el.setAttribute("data-done", "true");
+  }
+
+  /**
+   * Update the hits display text for a pattern item.
+   * @param {number} idx
+   * @param {number} hits
+   */
+  setPatternItemHits(idx, hits) {
+    const item = this.#patternItems[idx];
+    if (!item) return;
+    item.hitsEl.textContent =
+      hits === 0 ? "✓" : `${hits} hit${hits > 1 ? "s" : ""}`;
+  }
+
+  /**
+   * Reset all pattern items to their initial state.
+   */
+  resetAllPatternItems() {
+    this.#patternItems.forEach((item) => {
+      item.el.setAttribute("data-active", "false");
+      item.el.setAttribute("data-done", "false");
+      item.hitsEl.textContent = "—";
     });
   }
 
