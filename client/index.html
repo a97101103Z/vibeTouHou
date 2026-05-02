@@ -82,7 +82,7 @@
 
             <!-- Expanded Content -->
             <div id="sidebar-expanded">
-              <div id="sidebar-tabs">
+              <div id="sidebar-tab-container">
                 <button
                   id="tab-pattern"
                   class="sidebar-tab active"
@@ -102,6 +102,9 @@
                     <button id="btn-playtest" class="btn btn-primary">
                       ▶ Playtest
                     </button>
+                    <button id="btn-render-pattern" class="btn btn-outline">
+                      ⬆ Render
+                    </button>
                   </div>
                 </div>
 
@@ -112,13 +115,7 @@
                       Drag & drop images here, or
                       <strong>click to browse</strong>
                     </div>
-                    <div
-                      style="
-                        font-size: 0.75rem;
-                        margin-top: 6px;
-                        color: var(--text-muted);
-                      "
-                    >
+                    <div class="asset-hint">
                       PNG, JPG, GIF, BMP, WebP — max 10 MB each
                     </div>
                   </div>
@@ -144,13 +141,7 @@
                       </button>
                     </div>
                     <div id="asset-gallery" class="asset-grid">
-                      <div
-                        style="
-                          color: var(--text-muted);
-                          font-size: 0.82rem;
-                          grid-column: 1/-1;
-                        "
-                      >
+                      <div class="loading-message" style="grid-column: 1/-1">
                         Loading…
                       </div>
                     </div>
@@ -220,18 +211,14 @@
               <div class="gauntlet-subsection">
                 <h3 class="subsection-title">Opponent Patterns</h3>
                 <div id="pattern-list" class="pattern-list">
-                  <div style="color: var(--text-muted); font-size: 0.82rem">
-                    Loading…
-                  </div>
+                  <div class="loading-message">Loading…</div>
                 </div>
               </div>
 
               <div class="gauntlet-subsection">
                 <h3 class="subsection-title">Leaderboard</h3>
                 <div id="leaderboard" class="leaderboard">
-                  <div style="color: var(--text-muted); font-size: 0.78rem">
-                    Loading…
-                  </div>
+                  <div class="empty-message">Loading…</div>
                 </div>
               </div>
             </div>

@@ -17,9 +17,6 @@ export class GauntletManager extends EventTarget {
   #patternList;
   #leaderboardEl;
 
-  // Dependencies
-  #toastManager;
-
   get patterns() {
     return this.#patterns;
   }
@@ -60,14 +57,6 @@ export class GauntletManager extends EventTarget {
     this.#isRunning = value;
   }
 
-  /**
-   * @param {import('./ToastManager.js').ToastManager} toastManager
-   */
-  constructor(toastManager) {
-    super();
-    this.#toastManager = toastManager;
-  }
-
   init() {
     this.#cacheDOM();
     this.#setupEventListeners();
@@ -92,8 +81,7 @@ export class GauntletManager extends EventTarget {
   async loadPatterns() {
     if (!this.#patternList) return;
 
-    this.#patternList.innerHTML =
-      '<div style="color:var(--text-muted);font-size:0.82rem">Loading…</div>';
+    this.#patternList.innerHTML = '<div class="loading-message">Loading…</div>';
 
     try {
       const res = await fetch("/api/patterns/opponent", {
@@ -104,15 +92,14 @@ export class GauntletManager extends EventTarget {
 
       if (!this.#patterns.length) {
         this.#patternList.innerHTML =
-          '<div style="color:var(--text-muted);font-size:0.82rem">No published patterns yet.</div>';
+          '<div class="loading-message">No published patterns yet.</div>';
         return;
       }
 
       this.#renderPatternList();
-      this.dispatchEvent(new CustomEvent("patternsLoaded"));
     } catch (_) {
       this.#patternList.innerHTML =
-        '<div style="color:var(--red);font-size:0.82rem">Could not load patterns.</div>';
+        '<div class="loading-message error">Could not load patterns.</div>';
     }
   }
 
@@ -161,7 +148,6 @@ export class GauntletManager extends EventTarget {
       const res = await fetch("/api/leaderboard", { credentials: "include" });
       const data = await res.json();
       this.#renderLeaderboard(data);
-      this.dispatchEvent(new CustomEvent("leaderboardUpdate"));
     } catch (_) {}
   }
 
@@ -185,24 +171,40 @@ export class GauntletManager extends EventTarget {
 
     this.#leaderboard = rows;
 
-    this.#leaderboardEl.innerHTML = rows.length
-      ? rows
-          .map((r) => {
-            const h = r.score.best_hits;
-            const it = r.score.infinite_time;
-            const scoreStr =
-              h == null
-                ? "—"
-                : h === 0 && it != null
-                  ? `Perfect + ${it.toFixed(0)}s∞`
-                  : `${h} hit${h !== 1 ? "s" : ""}`;
-            return `
-            <div class="lb-row lb-${r.team}">
-              <span class="lb-slot">${r.team.toUpperCase()}-${r.idx}</span>
-              <span class="lb-score ${h === 0 ? "best" : ""}">${scoreStr}</span>
-            </div>`;
-          })
-          .join("")
-      : '<div style="color:var(--text-muted);font-size:0.78rem">No scores yet.</div>';
+    if (rows.length === 0) {
+      this.#leaderboardEl.innerHTML =
+        '<div class="empty-message">No scores yet.</div>';
+      return;
+    }
+
+    const fragment = document.createDocumentFragment();
+    rows.forEach((r) => {
+      const h = r.score.best_hits;
+      const it = r.score.infinite_time;
+      const scoreStr =
+        h == null
+          ? "—"
+          : h === 0 && it != null
+            ? `Perfect + ${it.toFixed(0)}s∞`
+            : `${h} hit${h !== 1 ? "s" : ""}`;
+
+      const row = document.createElement("div");
+      row.className = `lb-row lb-${r.team}`;
+
+      const slot = document.createElement("span");
+      slot.className = "lb-slot";
+      slot.textContent = `${r.team.toUpperCase()}-${r.idx}`;
+
+      const score = document.createElement("span");
+      score.className = `lb-score ${h === 0 ? "best" : ""}`;
+      score.textContent = scoreStr;
+
+      row.appendChild(slot);
+      row.appendChild(score);
+      fragment.appendChild(row);
+    });
+
+    this.#leaderboardEl.innerHTML = "";
+    this.#leaderboardEl.appendChild(fragment);
   }
 }

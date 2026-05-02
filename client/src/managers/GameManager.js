@@ -1,11 +1,9 @@
-/**
- * GameManager - Manages game canvas and game modes (playtest and gauntlet).
- * @extends EventTarget
- */
-
 import { GameEngine } from "../game/engine.js";
 
-export class GameManager extends EventTarget {
+/**
+ * GameManager - Manages game canvas and game modes (playtest and gauntlet).
+ */
+export class GameManager {
   #engine = null;
   #mode = null;
   #isRunning = false;
@@ -22,10 +20,8 @@ export class GameManager extends EventTarget {
   #playModeIndicator;
 
   // Dependencies
-  #patternManager;
   #gauntletManager;
   #sidebarManager;
-  #toastManager;
 
   get isRunning() {
     return this.#isRunning;
@@ -40,26 +36,25 @@ export class GameManager extends EventTarget {
   }
 
   /**
-   * @param {import('./PatternManager.js').PatternManager} patternManager
    * @param {import('./GauntletManager.js').GauntletManager} gauntletManager
    * @param {import('./SidebarManager.js').SidebarManager} sidebarManager
-   * @param {import('./ToastManager.js').ToastManager} toastManager
    */
-  constructor(patternManager, gauntletManager, sidebarManager, toastManager) {
-    super();
-    this.#patternManager = patternManager;
+  constructor(gauntletManager, sidebarManager) {
     this.#gauntletManager = gauntletManager;
     this.#sidebarManager = sidebarManager;
-    this.#toastManager = toastManager;
   }
 
   init() {
     this.#cacheDOM();
     this.#showCanvasOverlay("Play", "Select a mode to begin.", []);
 
-    // Listen for startPlaytest from sidebar
-    this.#sidebarManager.addEventListener("startPlaytest", () =>
-      this.startPlaytest(),
+    // Listen for start events
+    this.#sidebarManager.addEventListener("startPlaytest", (e) =>
+      this.startPlaytest(e.detail.url),
+    );
+
+    this.#gauntletManager.addEventListener("startGauntlet", () =>
+      this.startGauntlet(),
     );
   }
 
@@ -74,27 +69,16 @@ export class GameManager extends EventTarget {
     this.#playModeIndicator = document.getElementById("play-mode-indicator");
   }
 
-  startPlaytest() {
+  startPlaytest(url) {
     if (this.#isRunning) return;
-    if (!this.#patternManager.videoUrl) {
-      this.#showCanvasOverlay(
-        "No Video",
-        "Your pattern has not been rendered yet.",
-        [],
-      );
-      return;
-    }
 
-    if (this.#sidebarManager.isExpanded) {
-      this.#sidebarManager.toggle();
-    }
-
+    this.#sidebarManager.collapse();
     this.#showCanvasOverlay(
       "Playtest Mode",
       "Survive 10 seconds with zero hits to verify your pattern. Hitbox is slightly larger here.",
       [],
     );
-    this.#startCountdown("playtest");
+    this.#startCountdown("playtest", url);
   }
 
   startGauntlet() {
@@ -108,20 +92,23 @@ export class GameManager extends EventTarget {
       return;
     }
 
-    if (this.#sidebarManager.isExpanded) {
-      this.#sidebarManager.toggle();
-    }
-
-    this.#startGauntletGame();
+    this.#sidebarManager.collapse();
+    this.#showCanvasOverlay(
+      "Gauntlet Mode",
+      "Beat your opponents' pattern with the least hits!",
+      [],
+    );
+    this.#startCountdown("gauntlet");
   }
 
-  #startCountdown(mode) {
+  #startCountdown(mode, url = "") {
     let count = 3;
     const timerEl = document.createElement("div");
     timerEl.className = "countdown-timer";
     timerEl.textContent = count;
     this.#overlayActions.appendChild(timerEl);
 
+    // TODO: return promise that resolves after countdown, so the caller can call "start game" themselves
     const interval = setInterval(() => {
       count--;
       timerEl.textContent = count;
@@ -129,20 +116,20 @@ export class GameManager extends EventTarget {
       if (count <= 0) {
         clearInterval(interval);
         this.#overlayActions.removeChild(timerEl);
-        this.#startGameMode(mode);
+        this.#startGameMode(mode, url);
       }
     }, 1000);
   }
 
-  #startGameMode(mode) {
+  #startGameMode(mode, url = "") {
     if (mode === "playtest") {
-      this.#startPlaytestGame();
+      this.#startPlaytestGame(url);
     } else if (mode === "gauntlet") {
       this.#startGauntletGame();
     }
   }
 
-  #startPlaytestGame() {
+  #startPlaytestGame(url) {
     this.#mode = "playtest";
     this.#isRunning = true;
 
@@ -153,32 +140,28 @@ export class GameManager extends EventTarget {
       this.#engine = null;
     }
 
-    const engine = new GameEngine(
-      document.getElementById("game-canvas"),
-      this.#patternManager.videoUrl,
-      {
-        playerRadius: 14, // TEST_RADIUS
-        recordTrajectory: true,
-      },
-    );
+    const engine = new GameEngine(document.getElementById("game-canvas"), url, {
+      playerRadius: 14, // TEST_RADIUS // TODO: make this magic number a constant at the top
+      recordTrajectory: true,
+    });
 
     engine.addEventListener("hit", (e) => this.#updateHits(e.detail.hits));
     engine.addEventListener("finish", (e) =>
-      this.#onPlaytestFinish(e.detail.hits, e.detail.trajectory),
+      this.#onPlaytestFinish(e.detail.hits, e.detail.trajectory, url),
     );
-    engine.addEventListener("restart", () => this.startPlaytest());
+    engine.addEventListener("restart", () => this.startPlaytest(url));
     engine.addEventListener("videoerror", () => {
       this.#showCanvasOverlay(
         "Video Error",
         "Could not load your pattern video.",
-        [{ text: "Retry", action: () => this.startPlaytest() }],
+        [{ text: "Retry", action: () => this.startPlaytest(url) }],
       );
     });
 
     this.#engine = engine;
     engine.start().catch(() => {
       this.#showCanvasOverlay("Error", "Could not start playtest.", [
-        { text: "Retry", action: () => this.startPlaytest() },
+        { text: "Retry", action: () => this.startPlaytest(url) },
       ]);
     });
 
@@ -187,10 +170,6 @@ export class GameManager extends EventTarget {
     if (this.#hudHits) this.#hudHits.textContent = "Hits: 0";
     if (this.#hudPattern) this.#hudPattern.textContent = "—";
     this.#updateTimer();
-
-    this.dispatchEvent(
-      new CustomEvent("gameStart", { detail: { mode: "playtest" } }),
-    );
   }
 
   #startGauntletGame() {
@@ -300,7 +279,7 @@ export class GameManager extends EventTarget {
     }, 750);
   }
 
-  #onPlaytestFinish(hits, trajectory) {
+  #onPlaytestFinish(hits, trajectory, url) {
     this.#isRunning = false;
     this.#trajectory = trajectory;
 
@@ -309,70 +288,19 @@ export class GameManager extends EventTarget {
         "🎉 Flawless Clear!",
         "Pattern confirmed survivable!",
         [
-          { text: "Replay", action: () => this.startPlaytest() },
-          { text: "Publish", action: () => this.publishPattern(trajectory) },
+          { text: "Replay", action: () => this.startPlaytest(url) },
+          {
+            text: "Publish",
+            action: () => this.#sidebarManager.publishPattern(trajectory),
+          },
         ],
       );
     } else {
       this.#showCanvasOverlay(
         `${hits} Hit${hits > 1 ? "s" : ""} Taken`,
         "Try again to unlock Publish.",
-        [{ text: "Retry", action: () => this.startPlaytest() }],
+        [{ text: "Retry", action: () => this.startPlaytest(url) }],
       );
-    }
-
-    this.dispatchEvent(
-      new CustomEvent("gameEnd", { detail: { mode: "playtest", hits } }),
-    );
-  }
-
-  async publishPattern(trajectory) {
-    const btnPublish = document.createElement("button");
-    btnPublish.className = "btn btn-primary";
-    btnPublish.textContent = "🔄 Publishing…";
-    btnPublish.disabled = true;
-
-    const statusEl = document.createElement("div");
-    statusEl.style.cssText =
-      "font-size:0.8rem;color:var(--text-dim);min-height:20px;margin-top:8px;";
-
-    this.#overlayActions.innerHTML = "";
-    this.#overlayActions.appendChild(btnPublish);
-    this.#overlayActions.appendChild(statusEl);
-
-    this.dispatchEvent(new CustomEvent("publishStart"));
-
-    try {
-      const res = await fetch("/api/publish", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trajectory }),
-      });
-      const data = await res.json();
-
-      if (res.ok) {
-        statusEl.style.color = "#50ff8c";
-        statusEl.textContent = "✓ " + (data.message || "Published!");
-        btnPublish.textContent = "✓ Published";
-        this.#toastManager.toast("Pattern published to the pool!", "success");
-
-        this.#sidebarManager.setPatternTested(true);
-        this.dispatchEvent(new CustomEvent("publishComplete"));
-      } else {
-        statusEl.style.color = "var(--red)";
-        statusEl.textContent = "✗ " + (data.detail || "Validation failed.");
-        btnPublish.disabled = false;
-        btnPublish.textContent = "Retry";
-        btnPublish.onclick = () => this.publishPattern(trajectory);
-        this.#toastManager.toast("Server rejected the trajectory.", "error");
-      }
-    } catch (_) {
-      statusEl.style.color = "var(--red)";
-      statusEl.textContent = "✗ Network error.";
-      btnPublish.disabled = false;
-      btnPublish.textContent = "Retry";
-      btnPublish.onclick = () => this.publishPattern(trajectory);
     }
   }
 
@@ -381,43 +309,49 @@ export class GameManager extends EventTarget {
 
     this.#submitGauntletScore();
 
-    let summaryHTML = this.#gauntletManager.patterns
-      .map((p, i) => {
-        const h = this.#gauntletManager.hitsPerPattern[i];
-        return `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)">
-        <span>#${i + 1} ${p.slot}</span>
-        <span style="color:${h === 0 ? "#50ff8c" : "var(--red)"}">${h === 0 ? "✓" : h + "h"}</span>
-      </div>`;
-      })
-      .join("");
+    const summaryContainer = document.createElement("div");
+    this.#gauntletManager.patterns.forEach((p, i) => {
+      const h = this.#gauntletManager.hitsPerPattern[i];
+      const row = document.createElement("div");
+      row.className = "summary-list";
 
-    summaryHTML += `<div style="margin-top:10px;font-family:var(--font-ui);font-size:0.75rem;color:var(--text)">
-      Total: <strong>${this.#gauntletManager.totalHits} hit${this.#gauntletManager.totalHits !== 1 ? "s" : ""}</strong>
-    </div>`;
+      const label = document.createElement("span");
+      label.textContent = `#${i + 1} ${p.slot}`;
+
+      const result = document.createElement("span");
+      result.className =
+        h === 0 ? "summary-item success" : "summary-item error";
+      result.textContent = h === 0 ? "✓" : h + "h";
+
+      row.appendChild(label);
+      row.appendChild(result);
+      summaryContainer.appendChild(row);
+    });
+
+    const totalRow = document.createElement("div");
+    totalRow.className = "summary-item";
+    totalRow.style.marginTop = "10px";
+    totalRow.textContent = `Total: ${this.#gauntletManager.totalHits} hit${this.#gauntletManager.totalHits !== 1 ? "s" : ""}`;
+    summaryContainer.appendChild(totalRow);
 
     if (this.#gauntletManager.totalHits === 0) {
       this.#showCanvasOverlay(
         "🎉 Perfect Gauntlet!",
-        `You took 0 hits across all ${this.#gauntletManager.patterns.length} patterns.<br><br>` +
-          summaryHTML,
+        `You took 0 hits across all ${this.#gauntletManager.patterns.length} patterns.<br><br>`,
         [
           { text: "♾ Infinite Mode", action: () => this.beginInfinite() },
           { text: "↩ Run Again", action: () => this.startGauntlet() },
         ],
+        summaryContainer,
       );
     } else {
       this.#showCanvasOverlay(
         `${this.#gauntletManager.totalHits} Hit${this.#gauntletManager.totalHits !== 1 ? "s" : ""} Total`,
-        "Run the gauntlet again to improve your score.<br><br>" + summaryHTML,
+        "Run the gauntlet again to improve your score.<br><br>",
         [{ text: "↩ Run Again", action: () => this.startGauntlet() }],
+        summaryContainer,
       );
     }
-
-    this.dispatchEvent(
-      new CustomEvent("gameEnd", {
-        detail: { mode: "gauntlet", hits: this.#gauntletManager.totalHits },
-      }),
-    );
   }
 
   async #submitGauntletScore() {
@@ -442,8 +376,9 @@ export class GameManager extends EventTarget {
    * @param {string} title
    * @param {string} subtitle
    * @param {Array<{text: string, action: Function}>} actions
+   * @param {HTMLElement} [extraContent]
    */
-  #showCanvasOverlay(title, subtitle, actions = []) {
+  #showCanvasOverlay(title, subtitle, actions = [], extraContent = null) {
     if (!this.#canvasOverlay) return;
 
     this.#overlayTitle.textContent = title;
@@ -457,6 +392,10 @@ export class GameManager extends EventTarget {
       btn.addEventListener("click", action.action);
       this.#overlayActions.appendChild(btn);
     });
+
+    if (extraContent) {
+      this.#overlayActions.appendChild(extraContent);
+    }
 
     this.#canvasOverlay.setAttribute("data-visible", "true");
   }

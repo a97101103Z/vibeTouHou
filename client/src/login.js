@@ -35,7 +35,6 @@ export async function login() {
 
       try {
         const result = await claimSlot(token);
-        session = result;
         statusEl.className = "login-status success";
         statusEl.textContent = `✓ Assigned to ${result.slot.toUpperCase()}!`;
         setTimeout(() => {

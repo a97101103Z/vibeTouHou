@@ -360,7 +360,7 @@ body::before {
   display: block;
 }
 
-#sidebar-tabs {
+#sidebar-tab-container {
   display: flex;
   gap: 4px;
   margin-bottom: 12px;
@@ -388,6 +388,7 @@ body::before {
   background: var(--bg-glass);
 }
 
+/* Tab switcher buttons */
 #sidebar[data-active-tab="pattern"] #tab-pattern,
 #sidebar[data-active-tab="assets"] #tab-assets {
   color: var(--accent);
@@ -395,6 +396,7 @@ body::before {
   background: var(--accent-dim);
 }
 
+/* Tab content containers */
 .tab-pane {
   display: none;
 }
@@ -518,6 +520,12 @@ body::before {
 .drop-icon {
   font-size: 1.8rem;
   margin-bottom: 8px;
+}
+
+.asset-hint {
+  font-size: 0.75rem;
+  margin-top: 6px;
+  color: var(--text-muted);
 }
 
 /* Render Status */
@@ -1012,6 +1020,63 @@ canvas#game-canvas {
 }
 .gap-sm {
   gap: 8px;
+}
+
+/* Status Message */
+.status-message {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  min-height: 20px;
+  margin-top: 8px;
+}
+
+.status-message.success {
+  color: #50ff8c;
+}
+
+.status-message.error {
+  color: var(--red);
+}
+
+/* Summary List */
+.summary-list {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.summary-list:last-child {
+  border-bottom: none;
+}
+
+.summary-item {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  color: var(--text);
+}
+
+.summary-item.success {
+  color: #50ff8c;
+}
+
+.summary-item.error {
+  color: var(--red);
+}
+
+/* Loading/Empty States */
+.loading-message {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.loading-message.error {
+  color: var(--red);
+}
+
+.empty-message {
+  color: var(--text-muted);
+  font-size: 0.78rem;
 }
 
 /* Countdown Overlay */

@@ -1,0 +1,207 @@
+import {
+  render as renderPattern,
+  publishPattern as publishPatternApi,
+} from "../patternApi.js";
+
+const PATTERN_SAMPLE = `import math
+import imageio
+import numpy as np
+import gizeh
+
+# vibeTouHou — Bullet Pattern Script
+# This script generates a 10-second bullet-hell pattern video.
+# Edit the PATTERN SETTINGS section below to create your own!
+# The script should produce a file called "output.mp4".
+
+# Canvas settings (keep these as-is)
+WIDTH, HEIGHT = 800, 600
+FPS = 30
+DURATION = 10 # seconds
+
+# Pattern settings — edit freely!
+PELLETS = 24 # number of pellets in the ring
+PELLET_RADIUS = 5 # size of each pellet (pixels)
+SPEED = 130 # expansion speed (pixels / second)
+COLOR = (1, 1, 1) # white = always a hit zone
+
+# Render loop
+frames = []
+
+for frame_num in range(FPS * DURATION):
+    t = frame_num / FPS # current time in seconds (0 → 10)
+    
+    surface = gizeh.Surface(width=WIDTH, height=HEIGHT, bg_color=(0, 0, 0))
+    
+    # Draw each pellet evenly spaced around a ring that grows over time
+    for i in range(PELLETS):
+        angle = (2 * math.pi / PELLETS) * i # even spacing
+        dist = SPEED * t # ring expands with time
+        x = WIDTH / 2 + math.cos(angle) * dist
+        y = HEIGHT / 2 + math.sin(angle) * dist
+        
+        circle = gizeh.circle(r=PELLET_RADIUS, xy=(x, y), fill=COLOR)
+        circle.draw(surface)
+    
+    # Capture frame
+    frames.append(surface.get_npimage())
+
+# DO NOT CHANGE THE FILENAME BELOW
+imageio.mimwrite("output.mp4", frames, fps=FPS, macro_block_size=None,
+    output_params=["-preset", "ultrafast", "-crf", "28"])
+print("Done! output.mp4 created.")
+`;
+
+/**
+ * PatternTabManager - Manages the pattern editor tab in the sidebar.
+ * @extends EventTarget
+ */
+export class PatternTabManager extends EventTarget {
+  #editor = null;
+  #patternUrl = "/api/video/my";
+  #toastManager;
+
+  #btnPlaytest;
+  #btnRenderPattern;
+  #patternStatus;
+  #renderStatusEl;
+
+  /**
+   * @param {import("./ToastManager.js").ToastManager} toastManager
+   */
+  constructor(toastManager) {
+    super();
+    this.#toastManager = toastManager;
+  }
+
+  async init() {
+    this.#cacheDOM();
+    await this.#initEditor();
+    this.#setupEventListeners();
+    this.#setRendered(false);
+  }
+
+  #cacheDOM() {
+    this.#btnPlaytest = document.getElementById("btn-playtest");
+    this.#btnRenderPattern = document.getElementById("btn-render-pattern");
+    this.#patternStatus = document.getElementById("pattern-status-text");
+    this.#renderStatusEl = document.getElementById("render-status");
+  }
+
+  // ── Public ──────────────────────────────────────────────
+
+  get editorScript() {
+    return this.#editor ? this.#editor.state.doc.toString() : "";
+  }
+
+  async publishPattern(trajectory) {
+    try {
+      const result = await publishPatternApi(trajectory);
+      if (result.ok) {
+        this.#toastManager.toast(result.message, "success");
+        this.#setVerified(true);
+      } else {
+        this.#toastManager.toast(result.message, "error");
+      }
+    } catch (_) {
+      this.#toastManager.toast("Network error.", "error");
+    }
+  }
+
+  // ── DOM side effects ───────────────────────────────────
+
+  #setRendered(value) {
+    if (this.#btnPlaytest) {
+      this.#btnPlaytest.disabled = !value;
+    }
+  }
+
+  #setVerified(value) {
+    if (this.#patternStatus) {
+      this.#patternStatus.textContent = value ? "✓ Tested" : "Not tested";
+      this.#patternStatus.setAttribute("data-tested", value ? "true" : "false");
+    }
+  }
+
+  #setRenderStatus(status, stderr = "", durationStr = "") {
+    if (!this.#renderStatusEl) return;
+
+    const STATUS_LABELS = {
+      idle: "● IDLE",
+      queued: "◌ QUEUED",
+      running: "◉ RENDERING…",
+      done: "✓ DONE",
+      error: "✗ ERROR",
+    };
+
+    this.#renderStatusEl.setAttribute("data-status", status);
+    this.#renderStatusEl.textContent =
+      (STATUS_LABELS[status] ?? status.toUpperCase()) +
+      (durationStr ? ` (${durationStr})` : "");
+
+    const errEl = document.getElementById("render-stderr");
+    if (stderr && errEl) {
+      errEl.setAttribute("data-visible", "true");
+      errEl.textContent = stderr;
+    } else if (errEl) {
+      errEl.setAttribute("data-visible", "false");
+    }
+  }
+
+  // ── Event handlers ─────────────────────────────────────
+
+  async #handleRenderPattern() {
+    this.#setVerified(false);
+    this.#setRendered(false);
+    this.#setRenderStatus("running");
+    try {
+      this.#patternUrl = await renderPattern(this.editorScript);
+      this.#setRenderStatus("done");
+      this.#setRendered(true);
+    } catch (err) {
+      this.#setRenderStatus("error", err.message);
+      this.#toastManager.toast(err.message, "error");
+    }
+  }
+
+  // ── Listeners ──────────────────────────────────────────
+
+  #setupEventListeners() {
+    this.#btnPlaytest.addEventListener("click", () => {
+      this.dispatchEvent(
+        new CustomEvent("startPlaytest", { detail: { url: this.#patternUrl } }),
+      );
+    });
+
+    this.#btnRenderPattern.addEventListener("click", () => {
+      this.#handleRenderPattern();
+    });
+  }
+
+  // ── Editor init ────────────────────────────────────────
+
+  async #initEditor() {
+    if (!document.getElementById("pattern-tab")) return;
+
+    try {
+      const { EditorView, basicSetup } = await import("codemirror");
+      const { python } = await import("@codemirror/lang-python");
+      const { oneDark } = await import("@codemirror/theme-one-dark");
+
+      this.#editor = new EditorView({
+        doc: PATTERN_SAMPLE,
+        extensions: [
+          basicSetup,
+          python(),
+          oneDark,
+          EditorView.theme({
+            "&": { height: "400px" },
+            ".cm-scroller": { overflow: "auto" },
+          }),
+        ],
+        parent: document.getElementById("editor-wrap"),
+      });
+    } catch (e) {
+      console.error("Failed to initialize editor:", e);
+    }
+  }
+}
