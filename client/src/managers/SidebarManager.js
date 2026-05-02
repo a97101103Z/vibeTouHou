@@ -3,79 +3,7 @@
  * @extends EventTarget
  */
 
-export class SidebarManager extends EventTarget {
-  #isExpanded = false;
-  #activeTab = 'pattern';
-  #patternTested = false;
-  #assetsCount = 0;
-  #assetsSize = 0;
-  #editor = null;
-
-  // DOM references
-  #sidebar;
-  #btnExpand;
-  #sidebarTabs;
-  #tabPanes;
-  #btnPlaytest;
-  #patternStatus;
-  #assetsCountEl;
-  #assetsSizeEl;
-  #renderStatusEl;
-
-  // Dependencies
-  #toastManager;
-
-  get isExpanded() {
-    return this.#isExpanded;
-  }
-
-  get activeTab() {
-    return this.#activeTab;
-  }
-
-  get patternTested() {
-    return this.#patternTested;
-  }
-
-  get assetsCount() {
-    return this.#assetsCount;
-  }
-
-  get assetsSize() {
-    return this.#assetsSize;
-  }
-
-  /**
-   * @param {import('./ToastManager.js').ToastManager} toastManager
-   */
-  constructor(toastManager) {
-    super();
-    this.#toastManager = toastManager;
-  }
-
-  async init() {
-    this.#cacheDOM();
-    await this.#initEditor();
-    this.#setupEventListeners();
-    this.updateDisplay();
-  }
-
-  #cacheDOM() {
-    this.#sidebar = document.getElementById('sidebar');
-    this.#btnExpand = document.getElementById('btn-expand');
-    this.#sidebarTabs = document.querySelectorAll('.sidebar-tab');
-    this.#tabPanes = document.querySelectorAll('.tab-pane');
-    this.#btnPlaytest = document.getElementById('btn-playtest');
-    this.#patternStatus = document.getElementById('pattern-status-text');
-    this.#assetsCountEl = document.getElementById('assets-count');
-    this.#assetsSizeEl = document.getElementById('assets-size');
-    this.#renderStatusEl = document.getElementById('render-status');
-  }
-
-  async #initEditor() {
-    if (!document.getElementById('pattern-tab')) return;
-
-    const SAMPLE = `import math
+const PATTERN_SAMPLE = `import math
 import imageio
 import numpy as np
 import gizeh
@@ -123,13 +51,74 @@ imageio.mimwrite("output.mp4", frames, fps=FPS, macro_block_size=None,
 print("Done! output.mp4 created.")
 `;
 
+export class SidebarManager extends EventTarget {
+  #isExpanded = false;
+  #activeTab = 'pattern';
+  #patternTested = false;
+  #assetsCount = 0;
+  #assetsSize = 0;
+  #editor = null;
+
+  // DOM references
+  #sidebar;
+  #btnExpand;
+  #sidebarTabs;
+  #tabPanes;
+  #btnPlaytest;
+  #patternStatus;
+  #assetsCountEl;
+  #assetsSizeEl;
+  #renderStatusEl;
+
+  get isExpanded() {
+    return this.#isExpanded;
+  }
+
+  get activeTab() {
+    return this.#activeTab;
+  }
+
+  get patternTested() {
+    return this.#patternTested;
+  }
+
+  get assetsCount() {
+    return this.#assetsCount;
+  }
+
+  get assetsSize() {
+    return this.#assetsSize;
+  }
+
+  async init() {
+    this.#cacheDOM();
+    await this.#initEditor();
+    this.#setupEventListeners();
+    this.updateDisplay();
+  }
+
+  #cacheDOM() {
+    this.#sidebar = document.getElementById('sidebar');
+    this.#btnExpand = document.getElementById('btn-expand');
+    this.#sidebarTabs = document.querySelectorAll('.sidebar-tab');
+    this.#tabPanes = document.querySelectorAll('.tab-pane');
+    this.#btnPlaytest = document.getElementById('btn-playtest');
+    this.#patternStatus = document.getElementById('pattern-status-text');
+    this.#assetsCountEl = document.getElementById('assets-count');
+    this.#assetsSizeEl = document.getElementById('assets-size');
+    this.#renderStatusEl = document.getElementById('render-status');
+  }
+
+  async #initEditor() {
+    if (!document.getElementById('pattern-tab')) return;
+
     try {
       const { EditorView, basicSetup } = await import('codemirror');
       const { python } = await import('@codemirror/lang-python');
       const { oneDark } = await import('@codemirror/theme-one-dark');
 
       this.#editor = new EditorView({
-        doc: SAMPLE,
+        doc: PATTERN_SAMPLE,
         extensions: [
           basicSetup,
           python(),

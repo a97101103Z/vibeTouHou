@@ -28,12 +28,24 @@ export class GauntletManager extends EventTarget {
     return this.#currentIdx;
   }
 
+  set currentIdx(value) {
+    this.#currentIdx = value;
+  }
+
   get totalHits() {
     return this.#totalHits;
   }
 
+  set totalHits(value) {
+    this.#totalHits = value;
+  }
+
   get hitsPerPattern() {
     return this.#hitsPerPattern;
+  }
+
+  set hitsPerPattern(value) {
+    this.#hitsPerPattern = value;
   }
 
   get leaderboard() {
@@ -42,6 +54,10 @@ export class GauntletManager extends EventTarget {
 
   get isRunning() {
     return this.#isRunning;
+  }
+
+  set isRunning(value) {
+    this.#isRunning = value;
   }
 
   /**
