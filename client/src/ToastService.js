@@ -1,7 +1,7 @@
 /**
- * ToastManager - Displays toast notifications.
+ * ToastService - Displays toast notifications.
  */
-export class ToastManager {
+export class ToastService {
   #container;
 
   constructor() {

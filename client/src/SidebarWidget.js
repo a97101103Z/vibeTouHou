@@ -1,29 +1,29 @@
-import { PatternTabManager } from "./PatternTabManager.js";
-import { AssetsTabManager } from "./AssetsTabManager.js";
+import { PatternTab } from "./sidebar/PatternTab.js";
+import { AssetsTab } from "./sidebar/AssetsTab.js";
 
 /**
- * SidebarManager - Coordinates sidebar layout, tabs, and sub-managers.
+ * SidebarWidget - Coordinates sidebar layout and tabs.
  * @extends EventTarget
  */
-export class SidebarManager extends EventTarget {
+export class SidebarWidget extends EventTarget {
   #isExpanded = false;
 
   #sidebar;
   #btnExpand;
   #sidebarTabs;
 
-  /** @type {PatternTabManager} */
+  /** @type {PatternTab} */
   #patternTab;
-  /** @type {AssetsTabManager} */
+  /** @type {AssetsTab} */
   #assetsTab;
 
   /**
-   * @param {import("./ToastManager.js").ToastManager} toastManager
+   * @param {import("./ToastService.js").ToastService} toastService
    */
-  constructor(toastManager) {
+  constructor(toastService) {
     super();
-    this.#patternTab = new PatternTabManager(toastManager);
-    this.#assetsTab = new AssetsTabManager(toastManager);
+    this.#patternTab = new PatternTab(toastService);
+    this.#assetsTab = new AssetsTab(toastService);
   }
 
   // ── Passthrough ─────────────────────────────────────────
@@ -102,3 +102,4 @@ export class SidebarManager extends EventTarget {
     });
   }
 }
+

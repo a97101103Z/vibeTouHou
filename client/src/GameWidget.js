@@ -1,12 +1,12 @@
-import { GameEngine } from "../game/engine.js";
+import { GameEngine } from "./game/engine.js";
 
 const TEST_RADIUS = 14;
 const REAL_RADIUS = 8;
 
 /**
- * GameManager - Manages game canvas and game modes (playtest and gauntlet).
+ * GameWidget - Manages game canvas and game modes (playtest, gauntlet, and infinite).
  */
-export class GameManager {
+export class GameWidget {
   #engine = null;
   #isRunning = false;
 
@@ -23,16 +23,16 @@ export class GameManager {
   #gameCanvas;
 
   // Dependencies
-  #gauntletManager;
-  #sidebarManager;
+  #gauntletWidget;
+  #sidebarWidget;
 
   /**
-   * @param {import('./GauntletManager.js').GauntletManager} gauntletManager
-   * @param {import('./SidebarManager.js').SidebarManager} sidebarManager
+   * @param {import('./GauntletWidget.js').GauntletWidget} gauntletWidget
+   * @param {import('./SidebarWidget.js').SidebarWidget} sidebarWidget
    */
-  constructor(gauntletManager, sidebarManager) {
-    this.#gauntletManager = gauntletManager;
-    this.#sidebarManager = sidebarManager;
+  constructor(gauntletWidget, sidebarWidget) {
+    this.#gauntletWidget = gauntletWidget;
+    this.#sidebarWidget = sidebarWidget;
   }
 
   init() {
@@ -40,11 +40,11 @@ export class GameManager {
     this.#showCanvasOverlay("Play", "Select a mode to begin.", []);
 
     // Listen for start events
-    this.#sidebarManager.addEventListener("startPlaytest", (e) =>
+    this.#sidebarWidget.addEventListener("startPlaytest", (e) =>
       this.startPlaytest(e.detail.url),
     );
 
-    this.#gauntletManager.addEventListener("startGauntlet", (e) =>
+    this.#gauntletWidget.addEventListener("startGauntlet", (e) =>
       this.startGauntlet(e?.detail?.startIdx),
     );
   }
@@ -145,7 +145,7 @@ export class GameManager {
   async startPlaytest(url) {
     if (this.#isRunning) return;
 
-    this.#sidebarManager.collapse();
+    this.#sidebarWidget.collapse();
     this.#showCanvasOverlay(
       "Playtest Mode",
       "Survive 10 seconds with zero hits to verify your pattern. Hitbox is slightly larger here.",
@@ -212,7 +212,7 @@ export class GameManager {
           { text: "Replay", action: () => this.startPlaytest(url) },
           {
             text: "Publish",
-            action: () => this.#sidebarManager.publishPattern(trajectory),
+            action: () => this.#sidebarWidget.publishPattern(trajectory),
           },
         ],
       );
@@ -234,7 +234,7 @@ export class GameManager {
 
   async startGauntlet(startIdx) {
     if (this.#isRunning) return;
-    if (!this.#gauntletManager.patterns.length) {
+    if (!this.#gauntletWidget.patterns.length) {
       this.#showCanvasOverlay(
         "No Patterns",
         "The opposing team has not published any patterns yet.",
@@ -245,7 +245,7 @@ export class GameManager {
 
     this.#gauntletCurrentIdx = startIdx ?? 0;
 
-    this.#sidebarManager.collapse();
+    this.#sidebarWidget.collapse();
     this.#showCanvasOverlay(
       "Gauntlet Mode",
       "Face every pattern published by the opposing team. Real hitbox. No mercy.",
@@ -260,30 +260,27 @@ export class GameManager {
     this.#gauntletCurrentIdx = 0;
     this.#gauntletTotalHits = 0;
     this.#gauntletHitsPerPattern = new Array(
-      this.#gauntletManager.patterns.length,
+      this.#gauntletWidget.patterns.length,
     ).fill(null);
 
     this.#setModeIndicator("gauntlet");
 
-    this.#gauntletManager.resetAllPatternItems();
+    this.#gauntletWidget.resetAllPatternItems();
 
     this.#playPattern(this.#gauntletCurrentIdx, null);
   }
 
   #playPattern(idx, initialPlayer) {
-    const p = this.#gauntletManager.patterns[idx];
+    const p = this.#gauntletWidget.patterns[idx];
     if (!p) {
       this.#endGauntlet();
       return;
     }
 
-    this.#gauntletManager.activatePatternItem(
-      idx,
-      this.#gauntletHitsPerPattern,
-    );
+    this.#gauntletWidget.activatePatternItem(idx, this.#gauntletHitsPerPattern);
 
     if (this.#hudPattern)
-      this.#hudPattern.textContent = `${idx + 1} / ${this.#gauntletManager.patterns.length}`;
+      this.#hudPattern.textContent = `${idx + 1} / ${this.#gauntletWidget.patterns.length}`;
     if (this.#canvasOverlay)
       this.#canvasOverlay.setAttribute("data-visible", "false");
 
@@ -309,11 +306,11 @@ export class GameManager {
     });
     engine.addEventListener("videoerror", () => {
       this.#gauntletHitsPerPattern[idx] = 99;
-      this.#gauntletManager.setPatternItemHits(idx, 99);
+      this.#gauntletWidget.setPatternItemHits(idx, 99);
       const savedPlayer = engine
         ? { x: engine.player.x, y: engine.player.y }
         : null;
-      if (idx + 1 < this.#gauntletManager.patterns.length) {
+      if (idx + 1 < this.#gauntletWidget.patterns.length) {
         this.#playPattern(idx + 1, savedPlayer);
       } else {
         this.#endGauntlet();
@@ -323,8 +320,8 @@ export class GameManager {
     this.#engine = engine;
     engine.start().catch(() => {
       this.#gauntletHitsPerPattern[idx] = 99;
-      this.#gauntletManager.setPatternItemHits(idx, 99);
-      if (idx + 1 < this.#gauntletManager.patterns.length) {
+      this.#gauntletWidget.setPatternItemHits(idx, 99);
+      if (idx + 1 < this.#gauntletWidget.patterns.length) {
         this.#playPattern(idx + 1, initialPlayer);
       } else {
         this.#endGauntlet();
@@ -339,11 +336,11 @@ export class GameManager {
     this.#gauntletHitsPerPattern[idx] = hits;
     this.#gauntletTotalHits += hits;
 
-    this.#gauntletManager.deactivatePatternItem(idx);
-    this.#gauntletManager.setPatternItemHits(idx, hits);
+    this.#gauntletWidget.deactivatePatternItem(idx);
+    this.#gauntletWidget.setPatternItemHits(idx, hits);
 
     setTimeout(() => {
-      if (idx + 1 < this.#gauntletManager.patterns.length) {
+      if (idx + 1 < this.#gauntletWidget.patterns.length) {
         const savedPlayer = this.#engine
           ? { x: this.#engine.player.x, y: this.#engine.player.y }
           : null;
@@ -359,7 +356,7 @@ export class GameManager {
 
     this.#submitGauntletScore();
 
-    const patternsSummary = this.#gauntletManager.patterns
+    const patternsSummary = this.#gauntletWidget.patterns
       .map((p, i) => {
         const h = this.#gauntletHitsPerPattern[i];
         return `<div class="summary-list">
@@ -379,7 +376,7 @@ export class GameManager {
     if (this.#gauntletTotalHits === 0) {
       this.#showCanvasOverlay(
         "🎉 Perfect Gauntlet!",
-        `You took 0 hits across all ${this.#gauntletManager.patterns.length} patterns.<br><br>`,
+        `You took 0 hits across all ${this.#gauntletWidget.patterns.length} patterns.<br><br>`,
         [
           { text: "♾ Infinite Mode", action: () => this.beginInfinite() },
           { text: "↩ Run Again", action: () => this.startGauntlet() },
@@ -423,7 +420,7 @@ export class GameManager {
     this.#infiniteHits = 0;
     this.#infiniteTime = 0;
     this.#infiniteQueueIdx = 0;
-    this.#infiniteQueue = [...this.#gauntletManager.patterns].sort(
+    this.#infiniteQueue = [...this.#gauntletWidget.patterns].sort(
       () => Math.random() - 0.5,
     );
 

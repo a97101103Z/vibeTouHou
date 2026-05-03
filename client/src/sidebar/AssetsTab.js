@@ -1,11 +1,11 @@
-import { loadAssetList, uploadFile, deleteAsset } from "../assets.js";
+import { loadAssetList, uploadFile, deleteAsset } from "../helpers/assets.js";
 
 /**
- * AssetsTabManager - Manages the assets tab in the sidebar.
+ * AssetsTab - Manages the assets tab in the sidebar.
  * @extends EventTarget
  */
-export class AssetsTabManager extends EventTarget {
-  #toastManager;
+export class AssetsTab extends EventTarget {
+  #toastService;
 
   #assetsCountEl;
   #assetsSizeEl;
@@ -16,11 +16,11 @@ export class AssetsTabManager extends EventTarget {
   #btnUploadAssets;
 
   /**
-   * @param {import("./ToastManager.js").ToastManager} toastManager
+   * @param {import("./ToastService.js").ToastService} toastService
    */
-  constructor(toastManager) {
+  constructor(toastService) {
     super();
-    this.#toastManager = toastManager;
+    this.#toastService = toastService;
   }
 
   init() {
@@ -111,7 +111,7 @@ export class AssetsTabManager extends EventTarget {
       if (!confirm(`Delete "${name}"?`)) return;
       await deleteAsset(name);
       wrap.remove();
-      this.#toastManager.toast(`Deleted ${name}.`);
+      this.#toastService.toast(`Deleted ${name}.`);
       await this.loadGallery();
     });
     wrap.appendChild(del);
@@ -124,12 +124,12 @@ export class AssetsTabManager extends EventTarget {
       try {
         const { ok, data } = await uploadFile(file);
         if (ok) {
-          this.#toastManager.toast(`Uploaded ${data.filename}`, "success");
+          this.#toastService.toast(`Uploaded ${data.filename}`, "success");
         } else {
-          this.#toastManager.toast(`${file.name}: ${data.detail}`, "error");
+          this.#toastService.toast(`${file.name}: ${data.detail}`, "error");
         }
       } catch (_) {
-        this.#toastManager.toast(`Upload failed for ${file.name}.`, "error");
+        this.#toastService.toast(`Upload failed for ${file.name}.`, "error");
       }
     }
     this.loadGallery();

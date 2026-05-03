@@ -1,9 +1,9 @@
 /**
- * GauntletManager - Manages opponent patterns and leaderboard.
+ * GauntletWidget - Manages opponent patterns and leaderboard.
  * @extends EventTarget
  */
 
-export class GauntletManager extends EventTarget {
+export class GauntletWidget extends EventTarget {
   #patterns = [];
   #leaderboard = [];
   #isRunning = false;
@@ -98,7 +98,9 @@ export class GauntletManager extends EventTarget {
 
       item.addEventListener("click", () => {
         if (!this.#isRunning) {
-          this.dispatchEvent(new CustomEvent("startGauntlet", { detail: { startIdx: i } }));
+          this.dispatchEvent(
+            new CustomEvent("startGauntlet", { detail: { startIdx: i } }),
+          );
         }
       });
 
@@ -236,3 +238,4 @@ export class GauntletManager extends EventTarget {
     this.#leaderboardEl.appendChild(fragment);
   }
 }
+

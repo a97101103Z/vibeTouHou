@@ -1,7 +1,7 @@
 import {
   render as renderPattern,
-  publishPattern as publishPatternApi,
-} from "../patternApi.js";
+  publishPattern as publishPattern,
+} from "../helpers/patternApi.js";
 
 const PATTERN_SAMPLE = `import math
 import imageio
@@ -52,13 +52,13 @@ print("Done! output.mp4 created.")
 `;
 
 /**
- * PatternTabManager - Manages the pattern editor tab in the sidebar.
+ * PatternTab - Manages the pattern editor tab in the sidebar.
  * @extends EventTarget
  */
-export class PatternTabManager extends EventTarget {
+export class PatternTab extends EventTarget {
   #editor = null;
   #patternUrl = "/api/video/my";
-  #toastManager;
+  #toastService;
 
   #btnPlaytest;
   #btnRenderPattern;
@@ -66,11 +66,11 @@ export class PatternTabManager extends EventTarget {
   #renderStatusEl;
 
   /**
-   * @param {import("./ToastManager.js").ToastManager} toastManager
+   * @param {import("./ToastService.js").ToastService} toastService
    */
-  constructor(toastManager) {
+  constructor(toastService) {
     super();
-    this.#toastManager = toastManager;
+    this.#toastService = toastService;
   }
 
   async init() {
@@ -95,15 +95,15 @@ export class PatternTabManager extends EventTarget {
 
   async publishPattern(trajectory) {
     try {
-      const result = await publishPatternApi(trajectory);
+      const result = await publishPattern(trajectory);
       if (result.ok) {
-        this.#toastManager.toast(result.message, "success");
+        this.#toastService.toast(result.message, "success");
         this.#setVerified(true);
       } else {
-        this.#toastManager.toast(result.message, "error");
+        this.#toastService.toast(result.message, "error");
       }
     } catch (_) {
-      this.#toastManager.toast("Network error.", "error");
+      this.#toastService.toast("Network error.", "error");
     }
   }
 
@@ -159,7 +159,7 @@ export class PatternTabManager extends EventTarget {
       this.#setRendered(true);
     } catch (err) {
       this.#setRenderStatus("error", err.message);
-      this.#toastManager.toast(err.message, "error");
+      this.#toastService.toast(err.message, "error");
     }
   }
 
