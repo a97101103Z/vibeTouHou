@@ -178,6 +178,70 @@ body::before {
   color: #44ee88;
 }
 
+/* Token Input Section */
+.token-input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.token-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-glass);
+  color: var(--text);
+  font-family: var(--font-code);
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  text-align: center;
+  transition: var(--transition);
+}
+
+.token-input::placeholder {
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  letter-spacing: normal;
+}
+
+.token-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+
+.claim-btn {
+  width: 100%;
+  padding: 14px 24px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: #000;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: var(--transition);
+  text-transform: uppercase;
+}
+
+.claim-btn:hover {
+  filter: brightness(1.15);
+  box-shadow: 0 0 24px var(--accent-glow);
+  transform: translateY(-1px);
+}
+
+.claim-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  filter: none;
+}
+
 /* Navbar */
 #navbar {
   position: fixed;
