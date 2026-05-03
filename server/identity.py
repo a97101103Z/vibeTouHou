@@ -14,6 +14,7 @@ import secrets
 import threading
 from typing import Literal
 
+import scores
 from config import DATA_DIR, TEAM_SIZE, ADMIN_TOKEN, TEAM_TOKENS
 
 _SESSIONS_FILE = DATA_DIR / "sessions.json"
@@ -118,5 +119,6 @@ def remove(admin_token: str, team: str, index: int) -> bool | None:
 
         token = _claimed.pop(key)
         _sessions.pop(token, None)
+        scores.clear(team, index)
         _save()
         return True

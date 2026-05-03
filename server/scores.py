@@ -63,3 +63,12 @@ def submit(team: str, index: int, hits: int, infinite_time: float | None) -> Non
             data[team][slot_id] = current
 
         _save(data)
+
+
+def clear(team: str, index: int) -> None:
+    """Remove a slot's scores entirely (used when resetting a slot)."""
+    with _lock:
+        data = _load()
+        slot_id = str(index)
+        data.setdefault(team, {}).pop(slot_id, None)
+        _save(data)
