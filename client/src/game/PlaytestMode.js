@@ -1,9 +1,10 @@
 /**
  * PlaytestMode — Survive 10 seconds with zero hits to verify a pattern.
  */
-export function startPlaytest(hud, sidebarWidget, url) {
+export function initPlaytest(hud, sidebarWidget, onDone) {
   let engine = null;
   let running = false;
+  let patternUrl = "";
 
   function stopEngine() {
     if (engine) {
@@ -13,10 +14,23 @@ export function startPlaytest(hud, sidebarWidget, url) {
     hud.stopTimerSync();
   }
 
-  async function run() {
+  async function run(url) {
     if (running) return;
+    if (url) {
+      patternUrl = url;
+    }
+    if (!patternUrl) {
+      hud.showOverlay(
+        "No Pattern",
+        "Render your pattern first to generate a playtest URL.",
+        [],
+      );
+      onDone?.("blocked");
+      return;
+    }
 
-    sidebarWidget.collapse();
+    running = true;
+
     hud.showOverlay(
       "Playtest Mode",
       "Survive 10 seconds with zero hits to verify your pattern. Hitbox is slightly larger here.",
@@ -27,11 +41,10 @@ export function startPlaytest(hud, sidebarWidget, url) {
   }
 
   function startGame() {
-    running = true;
     hud.setModeIndicator("playtest");
 
     stopEngine();
-    engine = hud.createPlaytestEngine(url);
+    engine = hud.createPlaytestEngine(patternUrl);
 
     engine.addEventListener("hit", (e) => {
       hud.setHits(`Hits: ${e.detail.hits}`);
@@ -39,17 +52,13 @@ export function startPlaytest(hud, sidebarWidget, url) {
     engine.addEventListener("finish", (e) => {
       onFinish(e.detail.hits, e.detail.trajectory);
     });
-    engine.addEventListener("restart", () => {
-      running = false;
-      startGame();
-    });
+    engine.addEventListener("restart", () => startGame());
     engine.addEventListener("videoerror", () => {
       running = false;
-      hud.showOverlay(
-        "Video Error",
-        "Could not load your pattern video.",
-        [{ text: "Retry", action: () => run() }],
-      );
+      hud.showOverlay("Video Error", "Could not load your pattern video.", [
+        { text: "Retry", action: () => run() },
+      ]);
+      onDone?.("error");
     });
 
     engine.start().catch(() => {
@@ -57,6 +66,7 @@ export function startPlaytest(hud, sidebarWidget, url) {
       hud.showOverlay("Error", "Could not start playtest.", [
         { text: "Retry", action: () => run() },
       ]);
+      onDone?.("error");
     });
 
     hud.hideOverlay();
@@ -67,6 +77,7 @@ export function startPlaytest(hud, sidebarWidget, url) {
 
   function onFinish(hits, trajectory) {
     running = false;
+    stopEngine();
 
     if (hits === 0) {
       hud.showOverlay(
@@ -87,6 +98,8 @@ export function startPlaytest(hud, sidebarWidget, url) {
         [{ text: "Retry", action: () => run() }],
       );
     }
+
+    onDone?.("finished");
   }
 
   return { run };

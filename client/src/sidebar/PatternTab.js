@@ -66,7 +66,7 @@ export class PatternTab extends EventTarget {
   #renderStatusEl;
 
   /**
-   * @param {import("./ToastService.js").ToastService} toastService
+   * @param {import("../ToastService.js").ToastService} toastService
    */
   constructor(toastService) {
     super();
@@ -78,6 +78,7 @@ export class PatternTab extends EventTarget {
     await this.#initEditor();
     this.#setupEventListeners();
     this.#setRendered(false);
+    this.#setRenderStatus("idle");
   }
 
   #cacheDOM() {
@@ -122,7 +123,7 @@ export class PatternTab extends EventTarget {
     }
   }
 
-  #setRenderStatus(status, stderr = "", durationStr = "") {
+  #setRenderStatus(status, durationStr = "") {
     if (!this.#renderStatusEl) return;
 
     const STATUS_LABELS = {
@@ -137,14 +138,6 @@ export class PatternTab extends EventTarget {
     this.#renderStatusEl.textContent =
       (STATUS_LABELS[status] ?? status.toUpperCase()) +
       (durationStr ? ` (${durationStr})` : "");
-
-    const errEl = document.getElementById("render-stderr");
-    if (stderr && errEl) {
-      errEl.setAttribute("data-visible", "true");
-      errEl.textContent = stderr;
-    } else if (errEl) {
-      errEl.setAttribute("data-visible", "false");
-    }
   }
 
   // ── Event handlers ─────────────────────────────────────
@@ -158,7 +151,7 @@ export class PatternTab extends EventTarget {
       this.#setRenderStatus("done");
       this.#setRendered(true);
     } catch (err) {
-      this.#setRenderStatus("error", err.message);
+      this.#setRenderStatus("error");
       this.#toastService.toast(err.message, "error");
     }
   }

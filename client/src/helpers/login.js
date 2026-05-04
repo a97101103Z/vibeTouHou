@@ -10,7 +10,10 @@
  * or by showing the login UI and waiting for user input.
  * @returns {Promise<SessionInfo>}
  */
-export async function login() {
+/**
+ * @param {import("../ToastService.js").ToastService} toastService
+ */
+export async function login(toastService) {
   // First, check for existing session
   const existingSession = await checkSession();
   if (existingSession) {
@@ -20,31 +23,25 @@ export async function login() {
 
   // No existing session, show login UI
   return new Promise((resolve, reject) => {
-    const { tokenInput, statusEl, claimBtn } = setupLoginUI();
+    const { tokenInput, claimBtn } = setupLoginUI();
 
     const tryClaim = async () => {
       const token = tokenInput.value.trim();
       if (!token) {
-        statusEl.className = "login-status error";
-        statusEl.textContent = "Please enter your team token.";
+        toastService.toast("Please enter your team token.", "error");
         return;
       }
 
-      statusEl.className = "login-status";
-      statusEl.textContent = "Claiming slot…";
-
       try {
         const result = await claimSlot(token);
-        statusEl.className = "login-status success";
-        statusEl.textContent = `✓ Assigned to ${result.slot.toUpperCase()}!`;
-        setTimeout(() => {
-          activateApp(result);
-          resolve(result);
-        }, 500);
+        toastService.toast(
+          `Assigned to ${result.slot.toUpperCase()}!`,
+          "success"
+        );
+        activateApp(result);
+        resolve(result);
       } catch (err) {
-        statusEl.className = "login-status error";
-        statusEl.textContent = `✗ ${err.message}`;
-        reject(err);
+        toastService.toast(err.message, "error");
       }
     };
 
@@ -105,7 +102,6 @@ async function claimSlot(token) {
 
 function setupLoginUI() {
   const tokenInput = document.getElementById("token-input");
-  const statusEl = document.getElementById("login-status");
   const claimBtn = document.getElementById("btn-claim");
 
   if (!tokenInput) {
@@ -114,7 +110,7 @@ function setupLoginUI() {
 
   tokenInput.focus();
 
-  return { tokenInput, statusEl, claimBtn };
+  return { tokenInput, claimBtn };
 }
 
 /**

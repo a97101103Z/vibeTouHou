@@ -15,9 +15,9 @@ export async function uploadFile(file) {
 }
 
 export async function deleteAsset(name) {
-  await fetch(`/api/assets/${encodeURIComponent(name)}`, {
+  const res = await fetch(`/api/assets/${encodeURIComponent(name)}`, {
     method: "DELETE",
     credentials: "include",
   });
+  return { ok: res.ok, data: await res.json() };
 }
-

@@ -6,7 +6,6 @@
 export class GauntletWidget extends EventTarget {
   #patterns = [];
   #leaderboard = [];
-  #isRunning = false;
   #lbPollTimer = null;
 
   // DOM references
@@ -21,14 +20,6 @@ export class GauntletWidget extends EventTarget {
 
   get leaderboard() {
     return this.#leaderboard;
-  }
-
-  get isRunning() {
-    return this.#isRunning;
-  }
-
-  set isRunning(value) {
-    this.#isRunning = value;
   }
 
   init() {
@@ -97,11 +88,9 @@ export class GauntletWidget extends EventTarget {
       item.appendChild(hitsEl);
 
       item.addEventListener("click", () => {
-        if (!this.#isRunning) {
-          this.dispatchEvent(
-            new CustomEvent("startGauntlet", { detail: { startIdx: i } }),
-          );
-        }
+        this.dispatchEvent(
+          new CustomEvent("startGauntlet", { detail: { startIdx: i } }),
+        );
       });
 
       this.#patternList.appendChild(item);
@@ -238,4 +227,3 @@ export class GauntletWidget extends EventTarget {
     this.#leaderboardEl.appendChild(fragment);
   }
 }
-

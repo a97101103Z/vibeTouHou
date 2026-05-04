@@ -16,7 +16,7 @@ export class AssetsTab extends EventTarget {
   #btnUploadAssets;
 
   /**
-   * @param {import("./ToastService.js").ToastService} toastService
+   * @param {import("../ToastService.js").ToastService} toastService
    */
   constructor(toastService) {
     super();
@@ -109,10 +109,17 @@ export class AssetsTab extends EventTarget {
     del.addEventListener("click", async (e) => {
       e.stopPropagation();
       if (!confirm(`Delete "${name}"?`)) return;
-      await deleteAsset(name);
-      wrap.remove();
-      this.#toastService.toast(`Deleted ${name}.`);
-      await this.loadGallery();
+      const { ok: deleteOk } = await deleteAsset(name);
+      if (deleteOk) {
+        wrap.remove();
+        this.#toastService.toast(`Deleted ${name}.`);
+        await this.loadGallery();
+      } else {
+        this.#toastService.toast(
+          "Error occurred while deleting. Please try again later.",
+          "error",
+        );
+      }
     });
     wrap.appendChild(del);
 

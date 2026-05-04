@@ -1,7 +1,7 @@
 import { createHudControl } from "./game/HudControl.js";
-import { startPlaytest } from "./game/PlaytestMode.js";
-import { startGauntlet } from "./game/GauntletMode.js";
-import { startInfinite } from "./game/InfiniteMode.js";
+import { initPlaytest } from "./game/PlaytestMode.js";
+import { initGauntlet } from "./game/GauntletMode.js";
+import { initInfinite } from "./game/InfiniteMode.js";
 
 /**
  * GameWidget — Orchestrates game modes.
@@ -11,36 +11,76 @@ export class GameWidget {
   #hud;
   #sidebarWidget;
   #gauntletWidget;
+  #playtestMode;
+  #gauntletMode;
+  #infiniteMode;
+  #toast;
+  #running;
 
   /**
    * @param {import('./GauntletWidget.js').GauntletWidget} gauntletWidget
    * @param {import('./SidebarWidget.js').SidebarWidget} sidebarWidget
+   * @param {import('./ToastService.js').ToastService} toastService
    */
-  constructor(gauntletWidget, sidebarWidget) {
+  constructor(gauntletWidget, sidebarWidget, toastService) {
     this.#gauntletWidget = gauntletWidget;
     this.#sidebarWidget = sidebarWidget;
+    this.#toast = toastService;
+    this.#running = false;
   }
 
   init() {
     this.#hud = createHudControl("game-canvas");
+    this.#playtestMode = initPlaytest(
+      this.#hud,
+      this.#sidebarWidget,
+      this.#onModeDone,
+    );
+    this.#gauntletMode = initGauntlet(
+      this.#hud,
+      this.#gauntletWidget,
+      this.#onModeDone,
+    );
+    this.#infiniteMode = initInfinite(
+      this.#hud,
+      this.#gauntletWidget,
+      this.#onModeDone,
+    );
     this.#hud.showOverlay("Play", "Select a mode to begin.", []);
     this.#setupEvents();
   }
 
   #setupEvents() {
     this.#sidebarWidget.addEventListener("startPlaytest", (e) => {
-      const mode = startPlaytest(this.#hud, this.#sidebarWidget, e.detail.url);
-      mode.run();
+      this.#startMode(() => {
+        this.#playtestMode.run(e?.detail?.url);
+      });
     });
 
     this.#gauntletWidget.addEventListener("startGauntlet", (e) => {
-      const mode = startGauntlet(this.#hud, this.#gauntletWidget, this.#sidebarWidget, e?.detail?.startIdx);
-      mode.run(e?.detail?.startIdx);
+      this.#startMode(() => {
+        this.#gauntletMode.run(e?.detail?.startIdx);
+      });
     });
 
     this.#gauntletWidget.addEventListener("beginInfinite", () => {
-      const mode = startInfinite(this.#hud, this.#gauntletWidget);
-      mode.begin();
+      this.#startMode(() => {
+        this.#infiniteMode.begin();
+      });
     });
+  }
+
+  #startMode(start) {
+    if (this.#running) {
+      this.#toast?.toast("A game mode is already running.");
+      return;
+    }
+    this.#running = true;
+    this.#sidebarWidget.collapse();
+    start();
+  }
+
+  #onModeDone(_reason) {
+    this.#running = false;
   }
 }

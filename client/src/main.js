@@ -9,14 +9,14 @@
 import { ToastService } from "./ToastService.js";
 import { SidebarWidget } from "./SidebarWidget.js";
 import { GauntletWidget } from "./GauntletWidget.js";
-import { GameWidget } from "./GameWidget";
+import { GameWidget } from "./GameWidget.js";
 import { login } from "./helpers/login.js";
 
 // Instantiate widgets
 const toast = new ToastService();
 const sidebar = new SidebarWidget(toast);
 const gauntlet = new GauntletWidget();
-const game = new GameWidget(gauntlet, sidebar);
+const game = new GameWidget(gauntlet, sidebar, toast);
 
 // Global error handling
 window.addEventListener("unhandledrejection", (e) => {
@@ -24,7 +24,7 @@ window.addEventListener("unhandledrejection", (e) => {
 });
 
 async function main() {
-  await login();
+  await login(toast);
 
   // Initialize after login
   await sidebar.init();

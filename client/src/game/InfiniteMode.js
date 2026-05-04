@@ -1,7 +1,7 @@
 /**
  * InfiniteMode — Survive through an endless shuffled loop of opponent patterns.
  */
-export function startInfinite(hud, gauntletWidget) {
+export function initInfinite(hud, gauntletWidget, onDone) {
   const INFINITE_MAX_HITS = 3;
 
   let engine = null;
@@ -20,6 +20,16 @@ export function startInfinite(hud, gauntletWidget) {
   }
 
   function begin() {
+    if (running) return;
+    if (!gauntletWidget.patterns.length) {
+      hud.showOverlay(
+        "No Patterns",
+        "The opposing team has not published any patterns yet.",
+        [],
+      );
+      onDone?.("blocked");
+      return;
+    }
     running = true;
     hits = 0;
     totalTime = 0;
@@ -97,6 +107,8 @@ export function startInfinite(hud, gauntletWidget) {
       "Infinite Mode complete. Your score has been recorded.",
       [{ text: "\u21a9 Run Again", action: () => startGauntlet() }],
     );
+
+    onDone?.("finished");
   }
 
   function startGauntlet() {

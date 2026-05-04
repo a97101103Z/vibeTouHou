@@ -1,7 +1,7 @@
 /**
  * GauntletMode — Face every pattern published by the opposing team.
  */
-export function startGauntlet(hud, gauntletWidget, sidebarWidget, startIdx) {
+export function initGauntlet(hud, gauntletWidget, onDone) {
   let engine = null;
   let running = false;
   let currentIdx = 0;
@@ -24,24 +24,23 @@ export function startGauntlet(hud, gauntletWidget, sidebarWidget, startIdx) {
         "The opposing team has not published any patterns yet.",
         [],
       );
+      onDone?.("blocked");
       return;
     }
 
-    currentIdx = idx ?? 0;
+    running = true;
 
-    sidebarWidget.collapse();
     hud.showOverlay(
       "Gauntlet Mode",
       "Face every pattern published by the opposing team. Real hitbox. No mercy.",
       [],
     );
     await hud.startCountdown();
-    startGame();
+    startGame(idx);
   }
 
-  function startGame() {
-    running = true;
-    currentIdx = 0;
+  function startGame(idx) {
+    currentIdx = idx ?? 0;
     totalHits = 0;
     hitsPerPattern = new Array(gauntletWidget.patterns.length).fill(null);
 
@@ -69,10 +68,7 @@ export function startGauntlet(hud, gauntletWidget, sidebarWidget, startIdx) {
       hud.setHits(`Hits: ${e.detail.hits}`);
     });
     engine.addEventListener("finish", () => onPatternFinish(idx));
-    engine.addEventListener("restart", () => {
-      running = false;
-      startGame();
-    });
+    engine.addEventListener("restart", () => startGame());
     engine.addEventListener("videoerror", () => {
       hitsPerPattern[idx] = 99;
       gauntletWidget.setPatternItemHits(idx, 99);
@@ -109,12 +105,12 @@ export function startGauntlet(hud, gauntletWidget, sidebarWidget, startIdx) {
     gauntletWidget.deactivatePatternItem(idx);
     gauntletWidget.setPatternItemHits(idx, hits);
 
+    // stop engine early to prevent restart within delay to next pattern
+    const player = engine ? { ...engine.player } : null;
+    stopEngine();
     setTimeout(() => {
-      stopEngine();
       if (idx + 1 < gauntletWidget.patterns.length) {
-        playPattern(idx + 1, engine
-          ? { x: engine.player.x, y: engine.player.y }
-          : null);
+        playPattern(idx + 1, player);
       } else {
         endGauntlet();
       }
@@ -148,7 +144,11 @@ export function startGauntlet(hud, gauntletWidget, sidebarWidget, startIdx) {
         "\ud83c\udf89 Perfect Gauntlet!",
         `You took 0 hits across all ${gauntletWidget.patterns.length} patterns.<br><br>`,
         [
-          { text: "\u267e Infinite Mode", action: () => gauntletWidget.dispatchEvent(new CustomEvent("beginInfinite")) },
+          {
+            text: "\u267e Infinite Mode",
+            action: () =>
+              gauntletWidget.dispatchEvent(new CustomEvent("beginInfinite")),
+          },
           { text: "\u21a9 Run Again", action: () => run() },
         ],
         summaryContainer,
@@ -161,6 +161,8 @@ export function startGauntlet(hud, gauntletWidget, sidebarWidget, startIdx) {
         summaryContainer,
       );
     }
+
+    onDone?.("finished");
   }
 
   async function submitScore() {

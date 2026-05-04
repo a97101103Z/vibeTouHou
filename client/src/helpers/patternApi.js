@@ -26,7 +26,13 @@ export async function render(script) {
  * @returns {Promise<string>} - Resolves with the video URL
  */
 async function pollRenderStatus() {
+  const timeoutMs = 30000;
+  const start = Date.now();
   while (true) {
+    if (Date.now() - start >= timeoutMs) {
+      throw new Error("Render timed out. Try again later.");
+    }
+
     const res = await fetch("/api/render/status", {
       credentials: "include",
     });
