@@ -34,17 +34,17 @@ export class GameWidget {
     this.#playtestMode = initPlaytest(
       this.#hud,
       this.#sidebarWidget,
-      this.#onModeDone,
+      (reason) => this.#onModeDone(reason),
     );
     this.#gauntletMode = initGauntlet(
       this.#hud,
       this.#gauntletWidget,
-      this.#onModeDone,
+      (reason) => this.#onModeDone(reason),
     );
     this.#infiniteMode = initInfinite(
       this.#hud,
       this.#gauntletWidget,
-      this.#onModeDone,
+      (reason) => this.#onModeDone(reason),
     );
     this.#hud.showOverlay("Play", "Select a mode to begin.", []);
     this.#setupEvents();
