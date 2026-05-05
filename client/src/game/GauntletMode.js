@@ -1,0 +1,180 @@
+/**
+ * GauntletMode — Face every pattern published by the opposing team.
+ */
+export function initGauntlet(hud, gauntletWidget, onDone) {
+  let engine = null;
+  let running = false;
+  let currentIdx = 0;
+  let totalHits = 0;
+  let hitsPerPattern = [];
+
+  function stopEngine() {
+    if (engine) {
+      engine.stop();
+      engine = null;
+    }
+    hud.stopTimerSync();
+  }
+
+  async function run(idx) {
+    if (running) return;
+    if (!gauntletWidget.patterns.length) {
+      hud.showOverlay(
+        "No Patterns",
+        "The opposing team has not published any patterns yet.",
+        [],
+      );
+      onDone?.("blocked");
+      return;
+    }
+
+    running = true;
+
+    hud.showOverlay(
+      "Gauntlet Mode",
+      "Face every pattern published by the opposing team. Real hitbox. No mercy.",
+      [],
+    );
+    await hud.startCountdown();
+    startGame(idx);
+  }
+
+  function startGame(idx) {
+    currentIdx = idx ?? 0;
+    totalHits = 0;
+    hitsPerPattern = new Array(gauntletWidget.patterns.length).fill(null);
+
+    hud.setModeIndicator("gauntlet");
+    gauntletWidget.resetAllPatternItems();
+
+    playPattern(currentIdx, null);
+  }
+
+  function playPattern(idx, initialPlayer) {
+    const p = gauntletWidget.patterns[idx];
+    if (!p) {
+      endGauntlet();
+      return;
+    }
+
+    gauntletWidget.activatePatternItem(idx, hitsPerPattern);
+    hud.setPattern(`${idx + 1} / ${gauntletWidget.patterns.length}`);
+    hud.hideOverlay();
+
+    stopEngine();
+    engine = hud.createRealEngine(p.video_url, initialPlayer);
+
+    engine.addEventListener("hit", (e) => {
+      hud.setHits(`Hits: ${e.detail.hits}`);
+    });
+    engine.addEventListener("finish", () => onPatternFinish(idx));
+    engine.addEventListener("restart", () => startGame());
+    engine.addEventListener("videoerror", () => {
+      hitsPerPattern[idx] = 99;
+      gauntletWidget.setPatternItemHits(idx, 99);
+      const savedPlayer = engine
+        ? { x: engine.player.x, y: engine.player.y }
+        : null;
+      stopEngine();
+      if (idx + 1 < gauntletWidget.patterns.length) {
+        playPattern(idx + 1, savedPlayer);
+      } else {
+        endGauntlet();
+      }
+    });
+
+    engine.start().catch(() => {
+      hitsPerPattern[idx] = 99;
+      gauntletWidget.setPatternItemHits(idx, 99);
+      stopEngine();
+      if (idx + 1 < gauntletWidget.patterns.length) {
+        playPattern(idx + 1, initialPlayer);
+      } else {
+        endGauntlet();
+      }
+    });
+
+    hud.syncTimer(engine.video);
+  }
+
+  function onPatternFinish(idx) {
+    const hits = engine ? engine.hits : 0;
+    hitsPerPattern[idx] = hits;
+    totalHits += hits;
+
+    gauntletWidget.deactivatePatternItem(idx);
+    gauntletWidget.setPatternItemHits(idx, hits);
+
+    // stop engine early to prevent restart within delay to next pattern
+    const player = engine ? { ...engine.player } : null;
+    stopEngine();
+    setTimeout(() => {
+      if (idx + 1 < gauntletWidget.patterns.length) {
+        playPattern(idx + 1, player);
+      } else {
+        endGauntlet();
+      }
+    }, 750);
+  }
+
+  function endGauntlet() {
+    running = false;
+
+    submitScore();
+
+    const patternsSummary = gauntletWidget.patterns
+      .map((p, i) => {
+        const h = hitsPerPattern[i];
+        return `<div class="summary-list">
+                  <span>#${i + 1} ${p.slot}</span>
+                  <span class="summary-item ${h === 0 ? "success" : "error"}">${h}h</span>
+                </div>`;
+      })
+      .join("");
+    const summaryContainer = `
+      <div>
+        ${patternsSummary}
+        <div class="summary-item" style="margin-top: 10px">
+          Total: ${totalHits} hit${totalHits !== 1 ? "s" : ""}
+        </div>
+      </div>`;
+
+    if (totalHits === 0) {
+      hud.showOverlay(
+        "\ud83c\udf89 Perfect Gauntlet!",
+        `You took 0 hits across all ${gauntletWidget.patterns.length} patterns.<br><br>`,
+        [
+          {
+            text: "\u267e Infinite Mode",
+            action: () =>
+              gauntletWidget.dispatchEvent(new CustomEvent("beginInfinite")),
+          },
+          { text: "\u21a9 Run Again", action: () => run() },
+        ],
+        summaryContainer,
+      );
+    } else {
+      hud.showOverlay(
+        `${totalHits} Hit${totalHits !== 1 ? "s" : ""} Total`,
+        "Run the gauntlet again to improve your score.<br><br>",
+        [{ text: "\u21a9 Run Again", action: () => run() }],
+        summaryContainer,
+      );
+    }
+
+    onDone?.("finished");
+  }
+
+  async function submitScore() {
+    try {
+      await fetch("/api/score", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hits: totalHits, infinite_time: null }),
+      });
+    } catch (_) {}
+  }
+
+  return { run };
+}
