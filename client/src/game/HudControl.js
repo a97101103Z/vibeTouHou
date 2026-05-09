@@ -95,6 +95,11 @@ export function createHudControl(canvasId) {
       if (el) el.textContent = text;
     },
 
+    setPatternVisible(visible) {
+      const el = dom("hud-pattern");
+      if (el) el.style.display = visible ? "" : "none";
+    },
+
     setModeIndicator(mode) {
       const el = dom("play-mode-indicator");
       if (!el) return;

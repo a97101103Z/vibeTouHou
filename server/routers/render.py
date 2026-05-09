@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 import renderer
+import phase
 from responses import media_file_response, version_for
 from routers import require_session
 
@@ -22,6 +23,8 @@ class RenderBody(BaseModel):
 
 @router.post("/render")
 def submit_render(body: RenderBody, slot: str = Depends(require_session)):
+    if phase.is_locked():
+        raise HTTPException(423, "Coding is locked — gauntlet is now active.")
     team, idx = slot.rsplit("-", 1)
     err = renderer.start_render(team, int(idx), body.script)
     if err:

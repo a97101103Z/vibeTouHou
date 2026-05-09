@@ -12,6 +12,7 @@ from pydantic import BaseModel
 
 import renderer
 import validator
+import phase
 from routers import require_session
 
 router = APIRouter()
@@ -29,6 +30,8 @@ class PublishBody(BaseModel):
 
 @router.post("/publish")
 def publish(body: PublishBody, slot: str = Depends(require_session)):
+    if phase.is_locked():
+        raise HTTPException(423, "Publishing is locked — gauntlet is now active.")
     team, idx = slot.rsplit("-", 1)
     d = renderer.slot_dir(team, int(idx))
     draft = d / "output.mp4"

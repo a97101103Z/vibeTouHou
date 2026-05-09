@@ -2,6 +2,7 @@ import { createHudControl } from "./game/HudControl.js";
 import { initPlaytest } from "./game/PlaytestMode.js";
 import { initGauntlet } from "./game/GauntletMode.js";
 import { initInfinite } from "./game/InfiniteMode.js";
+import { phaseService } from "./helpers/phase.js";
 
 /**
  * GameWidget — Orchestrates game modes.
@@ -31,10 +32,12 @@ export class GameWidget {
 
   init() {
     this.#hud = createHudControl("game-canvas");
+    this.#hud.setPatternVisible(false);  // hidden until gauntlet mode activates it
     this.#playtestMode = initPlaytest(
       this.#hud,
       this.#sidebarWidget,
       (reason) => this.#onModeDone(reason),
+      phaseService,
     );
     this.#gauntletMode = initGauntlet(
       this.#hud,

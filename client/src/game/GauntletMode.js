@@ -59,6 +59,7 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
 
     gauntletWidget.activatePatternItem(idx, hitsPerPattern);
     hud.setPattern(`${idx + 1} / ${gauntletWidget.patterns.length}`);
+    hud.setPatternVisible(true);
     hud.hideOverlay();
 
     stopEngine();
@@ -119,6 +120,7 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
 
   function endGauntlet() {
     running = false;
+    hud.setPatternVisible(false);  // hide pattern counter on result screen
 
     submitScore();
 

@@ -1,15 +1,19 @@
 """
 Auth / identity endpoints.
 
-POST /api/claim → claim a slot with team token, receive session cookie
-POST /api/admin/reset-slot → admin: free a claimed slot
-GET /api/me → check current session identity
+POST /api/claim               → claim a slot with team token, receive session cookie
+POST /api/admin/reset-slot    → admin: free a claimed slot
+GET  /api/me                  → check current session identity
+GET  /api/phase               → current phase state (public)
+POST /api/admin/set-phase     → admin: switch to 'code' or 'gauntlet' (60s grace)
+POST /api/admin/reset-phase   → admin: immediately reset to 'code'
 """
 
 from fastapi import APIRouter, Cookie, Response, HTTPException
 from pydantic import BaseModel, Field
 
 import identity
+import phase
 from config import TEAM_SIZE
 
 router = APIRouter()
@@ -23,6 +27,15 @@ class ResetBody(BaseModel):
     admin_token: str = Field(..., min_length=1)
     team: str = Field(..., pattern="^(red|blue)$")
     index: int = Field(..., ge=1, le=TEAM_SIZE)
+
+
+class SetPhaseBody(BaseModel):
+    admin_token: str = Field(..., min_length=1)
+    phase: str = Field(..., pattern="^(code|gauntlet)$")
+
+
+class AdminTokenBody(BaseModel):
+    admin_token: str = Field(..., min_length=1)
 
 
 @router.post("/claim")
@@ -61,3 +74,29 @@ def reset_slot(body: ResetBody):
 def whoami(session: str | None = Cookie(default=None)):
     """Let the client check their current identity on page load."""
     return {"slot": identity.get_slot(session) if session else None}
+
+
+# ── Phase endpoints ────────────────────────────────────────────────────────────
+
+@router.get("/phase")
+def get_phase():
+    """Public: return current phase and when the lock becomes active."""
+    return phase.get_phase()
+
+
+@router.post("/admin/set-phase")
+def set_phase(body: SetPhaseBody):
+    """Admin: switch phase. Switching to 'gauntlet' starts a 60-second grace period."""
+    result = phase.set_phase(body.admin_token, body.phase)
+    if result is None:
+        raise HTTPException(401, "Invalid admin token.")
+    return {"ok": True, **phase.get_phase()}
+
+
+@router.post("/admin/reset-phase")
+def reset_phase(body: AdminTokenBody):
+    """Admin: immediately reset phase back to 'code'."""
+    result = phase.reset_phase(body.admin_token)
+    if result is None:
+        raise HTTPException(401, "Invalid admin token.")
+    return {"ok": True, **phase.get_phase()}

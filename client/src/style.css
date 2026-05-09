@@ -711,6 +711,10 @@ main {
   text-transform: uppercase;
 }
 
+.mode-indicator:empty {
+  display: none;
+}
+
 .mode-indicator[data-mode="playtest"] {
   border-color: #50ff8c;
   color: #50ff8c;
@@ -1227,3 +1231,98 @@ canvas#game-canvas {
     height: 100%;
   }
 }
+
+/* ── Phase Lock ────────────────────────────────────────────────────────────── */
+
+/* Gauntlet locked (code phase) — blurred overlay with lock message */
+#gauntlet-section[data-locked="true"] {
+  position: relative;
+}
+
+#gauntlet-section[data-locked="true"]::after {
+  content: "\1F512\00A0\00A0Gauntlet locked \2014 coding phase";
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: rgba(7, 7, 26, 0.78);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+/* Gauntlet pending (countdown running) — show countdown overlay, no ::after text */
+#gauntlet-section[data-locked="pending"] {
+  position: relative;
+}
+
+/* Countdown overlay — mounted as a real DOM child inside #gauntlet-section */
+#phase-countdown {
+  position: absolute;
+  inset: 0;
+  z-index: 11;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(7, 7, 26, 0.88);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  pointer-events: none;
+}
+
+.phase-countdown-icon {
+  font-size: 2rem;
+  margin-bottom: 4px;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.phase-countdown-label {
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.phase-countdown-timer {
+  font-family: var(--font-ui);
+  font-size: 2.6rem;
+  font-weight: 900;
+  color: #ffb030;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-shadow: 0 0 24px rgba(255, 160, 48, 0.5);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.phase-countdown-sub {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Sidebar locked (gauntlet phase) — dim the action buttons + editor */
+#sidebar[data-locked="true"] #btn-playtest,
+#sidebar[data-locked="true"] #btn-render-pattern {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+#sidebar[data-locked="true"] #editor-wrap {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
