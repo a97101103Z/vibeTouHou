@@ -2,6 +2,7 @@ import { createHudControl } from "./game/HudControl.js";
 import { initPlaytest } from "./game/PlaytestMode.js";
 import { initGauntlet } from "./game/GauntletMode.js";
 import { initInfinite } from "./game/InfiniteMode.js";
+import { initView } from "./game/ViewMode.js";
 import { phaseService } from "./helpers/phase.js";
 
 /**
@@ -12,19 +13,23 @@ export class GameWidget {
   #hud;
   #sidebarWidget;
   #gauntletWidget;
+  #galleryWidget;
   #playtestMode;
   #gauntletMode;
   #infiniteMode;
+  #viewMode;
   #toast;
   #running;
 
   /**
    * @param {import('./GauntletWidget.js').GauntletWidget} gauntletWidget
+   * @param {import('./GalleryWidget.js').GalleryWidget} galleryWidget
    * @param {import('./SidebarWidget.js').SidebarWidget} sidebarWidget
    * @param {import('./ToastService.js').ToastService} toastService
    */
-  constructor(gauntletWidget, sidebarWidget, toastService) {
+  constructor(gauntletWidget, galleryWidget, sidebarWidget, toastService) {
     this.#gauntletWidget = gauntletWidget;
+    this.#galleryWidget = galleryWidget;
     this.#sidebarWidget = sidebarWidget;
     this.#toast = toastService;
     this.#running = false;
@@ -32,10 +37,11 @@ export class GameWidget {
 
   init() {
     this.#hud = createHudControl("game-canvas");
-    this.#hud.setPatternVisible(false);  // hidden until gauntlet mode activates it
+    this.#hud.setPatternVisible(false); // hidden until gauntlet mode activates it
     this.#playtestMode = initPlaytest(
       this.#hud,
       this.#sidebarWidget,
+      this.#gauntletWidget,
       (reason) => this.#onModeDone(reason),
       phaseService,
     );
@@ -49,6 +55,7 @@ export class GameWidget {
       this.#gauntletWidget,
       (reason) => this.#onModeDone(reason),
     );
+    this.#viewMode = initView(this.#hud, (reason) => this.#onModeDone(reason));
     this.#hud.showOverlay("Play", "Select a mode to begin.", []);
     this.#setupEvents();
   }
@@ -71,6 +78,10 @@ export class GameWidget {
         this.#infiniteMode.begin();
       });
     });
+
+    this.#galleryWidget.addEventListener("playGalleryEntry", (e) => {
+      this.playGalleryVideo(e.detail.url);
+    });
   }
 
   #startMode(start) {
@@ -85,5 +96,15 @@ export class GameWidget {
 
   #onModeDone(_reason) {
     this.#running = false;
+  }
+
+  /**
+   * Play a gallery video in view-only mode (no publish, no phase lock).
+   * @param {string} url
+   */
+  playGalleryVideo(url) {
+    this.#startMode(() => {
+      this.#viewMode.run(url);
+    });
   }
 }

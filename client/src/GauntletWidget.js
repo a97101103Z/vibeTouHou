@@ -7,6 +7,7 @@ export class GauntletWidget extends EventTarget {
   #patterns = [];
   #leaderboard = [];
   #lbPollTimer = null;
+  #countdownInterval = null;
   #locked = true;  // locked by default until admin starts gauntlet phase
 
   // DOM references
@@ -70,6 +71,50 @@ export class GauntletWidget extends EventTarget {
 
     if (!locked && !skipLoad) {
       this.#unlockWithDelay();
+    }
+  }
+
+  showCountdown(activeAt) {
+    this.hideCountdown();
+
+    if (!this.#gauntletSection) return;
+
+    // Switch to 'pending' state so the ::after lock overlay doesn't overlap
+    this.#gauntletSection.setAttribute("data-locked", "pending");
+
+    const banner = document.createElement("div");
+    banner.id = "phase-countdown";
+    banner.innerHTML = `
+      <div class="phase-countdown-icon">⚔️</div>
+      <div class="phase-countdown-label">Gauntlet starts in</div>
+      <div class="phase-countdown-timer" id="phase-countdown-timer">1:00</div>
+      <div class="phase-countdown-sub">Finish what you're doing!</div>
+    `;
+
+    this.#gauntletSection.appendChild(banner);
+
+    const tick = () => {
+      const secsLeft = Math.max(0, Math.ceil(activeAt - Date.now() / 1000));
+      const mins = Math.floor(secsLeft / 60);
+      const secs = String(secsLeft % 60).padStart(2, "0");
+      const timerEl = document.getElementById("phase-countdown-timer");
+      if (timerEl) timerEl.textContent = `${mins}:${secs}`;
+      if (secsLeft === 0) this.hideCountdown();
+    };
+
+    tick();
+    this.#countdownInterval = setInterval(tick, 500);
+  }
+
+  hideCountdown() {
+    if (this.#countdownInterval) {
+      clearInterval(this.#countdownInterval);
+      this.#countdownInterval = null;
+    }
+    document.getElementById("phase-countdown")?.remove();
+    // Restore data-locked to 'true' so the lock overlay comes back until phaselocked fires
+    if (this.#gauntletSection && this.#gauntletSection.getAttribute("data-locked") === "pending") {
+      this.#gauntletSection.setAttribute("data-locked", "true");
     }
   }
 

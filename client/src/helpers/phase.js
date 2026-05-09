@@ -2,7 +2,7 @@
  * PhaseService — polls /api/phase every 5 seconds and fires window events
  * when the phase or lock state changes.
  *
- * Events dispatched on `window`:
+ * Events dispatched on `this` (PhaseService):
  *   "phasechange"  — { detail: { phase, active_at } }   phase changed
  *   "phaselocked"  — fired once when grace period expires and lock becomes active
  */
@@ -66,7 +66,7 @@ class PhaseService extends EventTarget {
     this.#active_at = active_at ?? null;
 
     if (phaseChanged) {
-      window.dispatchEvent(
+      this.dispatchEvent(
         new CustomEvent("phasechange", { detail: { phase, active_at } }),
       );
     }
@@ -79,14 +79,14 @@ class PhaseService extends EventTarget {
       if (msUntilLock > 0) {
         this.#lockTimer = setTimeout(() => {
           this.#locked = true;
-          window.dispatchEvent(new CustomEvent("phaselocked"));
+          this.dispatchEvent(new CustomEvent("phaselocked"));
         }, msUntilLock);
       } else if (!this.#locked) {
         // Already past the lock time (e.g. page loaded mid-gauntlet)
         this.#locked = true;
         // Dispatch asynchronously so listeners have time to register
         setTimeout(
-          () => window.dispatchEvent(new CustomEvent("phaselocked")),
+          () => this.dispatchEvent(new CustomEvent("phaselocked")),
           0,
         );
       }
