@@ -8,10 +8,13 @@ import imageio
 import numpy as np
 import gizeh
 
+# ─────────────────────────────────────────────────────────────
 # vibeTouHou — Bullet Pattern Script
+#
 # This script generates a 10-second bullet-hell pattern video.
 # Edit the PATTERN SETTINGS section below to create your own!
 # The script should produce a file called "output.mp4".
+# ─────────────────────────────────────────────────────────────
 
 # Canvas settings (keep these as-is)
 WIDTH, HEIGHT = 800, 600
@@ -19,6 +22,10 @@ FPS = 30
 DURATION = 10 # seconds
 
 # Pattern settings — edit freely!
+# Uploaded assets are staged into the script's working directory,
+# so you can load them directly by filename (e.g., "sprite.png").
+# Try \`imageio.imread("sprite.png")\`, then put it into \`gizeh.ImagePattern()\`.
+
 PELLETS = 24 # number of pellets in the ring
 PELLET_RADIUS = 5 # size of each pellet (pixels)
 SPEED = 130 # expansion speed (pixels / second)
@@ -29,23 +36,25 @@ frames = []
 
 for frame_num in range(FPS * DURATION):
     t = frame_num / FPS # current time in seconds (0 → 10)
-    
+
     surface = gizeh.Surface(width=WIDTH, height=HEIGHT, bg_color=(0, 0, 0))
-    
+
     # Draw each pellet evenly spaced around a ring that grows over time
     for i in range(PELLETS):
         angle = (2 * math.pi / PELLETS) * i # even spacing
         dist = SPEED * t # ring expands with time
         x = WIDTH / 2 + math.cos(angle) * dist
         y = HEIGHT / 2 + math.sin(angle) * dist
-        
+
         circle = gizeh.circle(r=PELLET_RADIUS, xy=(x, y), fill=COLOR)
         circle.draw(surface)
-    
+
     # Capture frame
     frames.append(surface.get_npimage())
 
 # DO NOT CHANGE THE FILENAME BELOW
+# The server explicitly looks for 'output.mp4'. If you change this,
+# the submission will fail because the server won't find the file!
 imageio.mimwrite("output.mp4", frames, fps=FPS, macro_block_size=None,
     output_params=["-preset", "ultrafast", "-crf", "28"])
 print("Done! output.mp4 created.")
