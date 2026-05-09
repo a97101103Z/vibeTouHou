@@ -373,6 +373,7 @@ body::before {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  height: 100%;
 }
 
 #sidebar[data-expanded="true"] #sidebar-collapsed {
@@ -484,6 +485,39 @@ body::before {
   color: var(--text-muted);
   padding: 4px 12px;
   font-style: italic;
+}
+
+/* AI Links */
+.ai-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+}
+
+.ai-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  opacity: 0.6;
+  transition: var(--transition);
+  text-decoration: none;
+}
+
+.ai-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.ai-icon:hover {
+  opacity: 1;
+  transform: translateY(-2px);
 }
 
 /* Expanded Sidebar Content */
