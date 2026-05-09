@@ -113,9 +113,15 @@ export class SidebarWidget extends EventTarget {
   #setupEventListeners() {
     this.#btnExpand.addEventListener("click", () => this.toggle());
 
+    document.addEventListener("mousedown", (event) => {
+      if (!this.#isExpanded || !this.#sidebar) return;
+      if (!this.#sidebar.contains(event.target)) {
+        this.collapse();
+      }
+    });
+
     this.#sidebarTabs.forEach((tab) => {
       tab.addEventListener("click", () => this.switchTab(tab.dataset.tab));
     });
   }
 }
-
