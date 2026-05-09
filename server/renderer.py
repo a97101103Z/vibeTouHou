@@ -140,6 +140,9 @@ def _worker_loop() -> None:
 def _run_job(key: str, team: str, index: int, script: str) -> None:
     _set_status(key, "running")
     d = slot_dir(team, index)
+    # Remove stale output from any previous run so a failed render
+    # doesn't incorrectly look like it succeeded.
+    (d / "output.mp4").unlink(missing_ok=True)
     script_path = d / "script.py"
     script_path.write_text(script, encoding="utf-8")
     _stage_assets_for_runtime(d)
@@ -360,7 +363,9 @@ def _run_subprocess(key: str, d: Path):
             timeout=MAX_RENDER_SECONDS,
         )
         out_path = d / "output.mp4"
-        if not out_path.exists():
+        if result.returncode != 0:
+            _set_status(key, "error", WARNING + (result.stderr or "Script exited with non-zero status."))
+        elif not out_path.exists():
             _set_status(key, "error", WARNING + (result.stderr or "No output.mp4 was created."))
         else:
             _set_status(key, "done", WARNING + result.stderr)
