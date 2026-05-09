@@ -80,11 +80,6 @@ async function main() {
     gauntlet.setLocked(false); // triggers the 1–3s loading delay internally
     gauntlet.hideCountdown();
   });
-
-  // Playtest finished during gauntlet phase — auto-launch gauntlet
-  window.addEventListener("autoStartGauntlet", () => {
-    gauntlet.dispatchEvent(new CustomEvent("startGauntlet"));
-  });
 }
 
 main();

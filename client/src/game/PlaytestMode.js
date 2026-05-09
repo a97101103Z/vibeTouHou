@@ -4,7 +4,7 @@
  * @param {ReturnType<import('../helpers/phase.js').PhaseService>} phaseService
  *   Injected so the mode can check whether gauntlet is now active.
  */
-export function initPlaytest(hud, sidebarWidget, onDone, phaseService) {
+export function initPlaytest(hud, sidebarWidget, gauntletWidget, onDone, phaseService) {
   let engine = null;
   let running = false;
   let patternUrl = "";
@@ -72,7 +72,7 @@ export function initPlaytest(hud, sidebarWidget, onDone, phaseService) {
       // Block restart if gauntlet became active while playtest was running
       if (phaseService?.isGauntletActive()) {
         running = false;
-        window.dispatchEvent(new CustomEvent("autoStartGauntlet"));
+        gauntletWidget.dispatchEvent(new CustomEvent("startGauntlet"));
         onDone?.("finished");
         return;
       }
@@ -105,7 +105,7 @@ export function initPlaytest(hud, sidebarWidget, onDone, phaseService) {
 
     // If gauntlet phase is now active, skip the replay/publish screen entirely
     if (phaseService?.isGauntletActive()) {
-      window.dispatchEvent(new CustomEvent("autoStartGauntlet"));
+      gauntletWidget.dispatchEvent(new CustomEvent("startGauntlet"));
       onDone?.("finished");
       return;
     }

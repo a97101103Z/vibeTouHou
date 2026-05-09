@@ -37,10 +37,11 @@ export class GameWidget {
 
   init() {
     this.#hud = createHudControl("game-canvas");
-    this.#hud.setPatternVisible(false);  // hidden until gauntlet mode activates it
+    this.#hud.setPatternVisible(false); // hidden until gauntlet mode activates it
     this.#playtestMode = initPlaytest(
       this.#hud,
       this.#sidebarWidget,
+      this.#gauntletWidget,
       (reason) => this.#onModeDone(reason),
       phaseService,
     );
@@ -54,10 +55,7 @@ export class GameWidget {
       this.#gauntletWidget,
       (reason) => this.#onModeDone(reason),
     );
-    this.#viewMode = initView(
-      this.#hud,
-      (reason) => this.#onModeDone(reason),
-    );
+    this.#viewMode = initView(this.#hud, (reason) => this.#onModeDone(reason));
     this.#hud.showOverlay("Play", "Select a mode to begin.", []);
     this.#setupEvents();
   }
