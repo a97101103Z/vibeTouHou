@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reset a claimed slot via /api/admin/reset-slot."""
+"""Reset one or more claimed slots via /api/admin/reset-slot."""
 
 from __future__ import annotations
 
@@ -10,29 +10,67 @@ import urllib.error
 import urllib.request
 
 
-def _prompt_team() -> str:
+TEAM_SIZE = 12
+
+
+def _prompt_team() -> list[str]:
     while True:
-        value = input("Team (red/blue): ").strip().lower()
+        value = input("Team (red/blue/both): ").strip().lower()
+        if value == "both":
+            return ["red", "blue"]
         if value in ("red", "blue"):
-            return value
-        print("Please enter 'red' or 'blue'.")
+            return [value]
+        print("Please enter 'red', 'blue', or 'both'.")
 
 
-def _prompt_index() -> int:
+def _prompt_index() -> list[int]:
     while True:
-        raw = input("Index (1+): ").strip()
-        try:
-            value = int(raw)
-        except ValueError:
-            print("Please enter a number.")
-            continue
-        if value >= 1:
-            return value
-        print("Index must be 1 or greater.")
+        raw = input("Index (1+ / comma-separated / all): ").strip().lower()
+        if raw == "all":
+            return list(range(1, TEAM_SIZE + 1))
+
+        parts = [p.strip() for p in raw.split(",")]
+        indices: list[int] = []
+        for part in parts:
+            try:
+                value = int(part)
+            except ValueError:
+                print(f"Invalid number: '{part}'")
+                break
+            if value < 1:
+                print(f"Index must be 1 or greater, got {value}.")
+                break
+            indices.append(value)
+        else:
+            return indices
+
+
+def _reset_slot(url: str, admin_token: str, team: str, index: int) -> bool:
+    payload = json.dumps(
+        {"admin_token": admin_token, "team": team, "index": index}
+    ).encode("utf-8")
+    request = urllib.request.Request(
+        url,
+        data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request) as response:
+            body = response.read().decode("utf-8").strip()
+        print(f"  {team}-{index}  OK: {body or '{"ok": true}'}")
+        return True
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8").strip()
+        print(f"  {team}-{index}  FAILED ({exc.code}): {detail or exc.reason}")
+        return False
+    except urllib.error.URLError as exc:
+        print(f"  {team}-{index}  FAILED: {exc.reason}")
+        return False
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Reset a claimed slot.")
+    parser = argparse.ArgumentParser(description="Reset one or more claimed slots.")
     parser.add_argument(
         "--url",
         default="http://localhost:8000",
@@ -45,32 +83,20 @@ def main() -> int:
         print("Admin token is required.")
         return 2
 
-    team = _prompt_team()
-    index = _prompt_index()
+    teams = _prompt_team()
+    indices = _prompt_index()
 
-    payload = json.dumps(
-        {"admin_token": admin_token, "team": team, "index": index}
-    ).encode("utf-8")
     url = args.url.rstrip("/") + "/api/admin/reset-slot"
-    request = urllib.request.Request(
-        url,
-        data=payload,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
+    failures = 0
+    for team in teams:
+        for index in indices:
+            if not _reset_slot(url, admin_token, team, index):
+                failures += 1
 
-    try:
-        with urllib.request.urlopen(request) as response:
-            body = response.read().decode("utf-8").strip()
-    except urllib.error.HTTPError as exc:
-        detail = exc.read().decode("utf-8").strip()
-        print(f"Request failed ({exc.code}): {detail or exc.reason}")
+    if failures:
+        print(f"\n{failures} reset(s) failed.")
         return 1
-    except urllib.error.URLError as exc:
-        print(f"Request failed: {exc.reason}")
-        return 1
-
-    print(f"OK: {body or '{"ok": true}'}")
+    print("\nAll resets succeeded.")
     return 0
 
 
