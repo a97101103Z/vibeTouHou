@@ -13,6 +13,7 @@ export class GameWidget {
   #hud;
   #sidebarWidget;
   #gauntletWidget;
+  #galleryWidget;
   #playtestMode;
   #gauntletMode;
   #infiniteMode;
@@ -22,11 +23,13 @@ export class GameWidget {
 
   /**
    * @param {import('./GauntletWidget.js').GauntletWidget} gauntletWidget
+   * @param {import('./GalleryWidget.js').GalleryWidget} galleryWidget
    * @param {import('./SidebarWidget.js').SidebarWidget} sidebarWidget
    * @param {import('./ToastService.js').ToastService} toastService
    */
-  constructor(gauntletWidget, sidebarWidget, toastService) {
+  constructor(gauntletWidget, galleryWidget, sidebarWidget, toastService) {
     this.#gauntletWidget = gauntletWidget;
+    this.#galleryWidget = galleryWidget;
     this.#sidebarWidget = sidebarWidget;
     this.#toast = toastService;
     this.#running = false;
@@ -76,6 +79,10 @@ export class GameWidget {
       this.#startMode(() => {
         this.#infiniteMode.begin();
       });
+    });
+
+    this.#galleryWidget.addEventListener("playGalleryEntry", (e) => {
+      this.playGalleryVideo(e.detail.url);
     });
   }
 
