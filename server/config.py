@@ -40,16 +40,6 @@ STATIC_DIR = Path(__file__).parent / "static"
 # sandbox containers aren't sibling Docker containers).
 HOST_DATA_DIR = Path(os.getenv("HOST_DATA_DIR", str(DATA_DIR)))
 
-# ── HTTP ───────────────────────────────────────────────────────────────────────
-CORS_ORIGINS = [
-    origin.strip()
-    for origin in os.getenv(
-        "CORS_ORIGINS",
-        "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000,http://127.0.0.1:8000",
-    ).split(",")
-    if origin.strip()
-]
-
 # ── Teams ──────────────────────────────────────────────────────────────────────
 TEAMS = ("red", "blue")
 TEAM_SIZE = 12 # slots per team (1 – TEAM_SIZE)

@@ -12,28 +12,18 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.exception_handlers import http_exception_handler
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import FileResponse
 
 from routers import auth, render, assets, patterns, scores_router, publish, gallery_router
-from config import STATIC_DIR, DATA_DIR, CORS_ORIGINS
+from config import STATIC_DIR, DATA_DIR
 
 # ── Application ────────────────────────────────────────────────────────────────
 app = FastAPI(
     title="vibeTouHou",
     description="Competitive bullet-hell web platform",
     version="1.0.0",
-)
-
-# ── CORS (allow local network origins during dev) ──────────────────────────────
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
 )
 
 # ── API Routers ────────────────────────────────────────────────────────────────
