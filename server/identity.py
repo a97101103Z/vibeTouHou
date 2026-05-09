@@ -11,6 +11,7 @@ Sessions are persisted to data/sessions.json so server restarts
 
 import json
 import secrets
+import shutil
 import threading
 from typing import Literal
 
@@ -120,5 +121,11 @@ def remove(admin_token: str, team: str, index: int) -> bool | None:
         token = _claimed.pop(key)
         _sessions.pop(token, None)
         scores.clear(team, index)
+        user_dir = DATA_DIR / team / str(index)
+        if user_dir.exists():
+            if user_dir.is_dir():
+                shutil.rmtree(user_dir)
+            else:
+                user_dir.unlink()
         _save()
         return True
