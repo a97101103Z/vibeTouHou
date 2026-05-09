@@ -64,13 +64,13 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
     hud.hideOverlay();
 
     const nextEngine = hud.createRealEngine(p.video_url, initialPlayer);
-    try { await nextEngine.loadVideo(); } catch (_) {}
+    try { await nextEngine.loadVideo(); } catch (_) { }
 
     stopEngine();
     engine = nextEngine;
 
     engine.addEventListener("hit", (e) => {
-      hud.setHits(e.detail.hits);
+      hud.setHits(`Hits: ${e.detail.hits}`);
       hud.flashHits();
     });
     engine.addEventListener("finish", () => onPatternFinish(idx));
@@ -87,7 +87,7 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
       await engine.runTransition(750, 'black');
     }
     await engine.runTransition(1000, 'fade-in');
-    
+
     engine.start().catch(() => onPatternFinish(idx));
   }
 
@@ -172,7 +172,7 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ hits: totalHits, infinite_time: null }),
       });
-    } catch (_) {}
+    } catch (_) { }
   }
 
   return { run };
