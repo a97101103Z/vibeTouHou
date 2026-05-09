@@ -73,6 +73,7 @@ export class PatternTab extends EventTarget {
   #btnRenderPattern;
   #patternStatus;
   #renderStatusEl;
+  #renderErrorEl;
 
   /**
    * @param {import("../ToastService.js").ToastService} toastService
@@ -95,6 +96,7 @@ export class PatternTab extends EventTarget {
     this.#btnRenderPattern = document.getElementById("btn-render-pattern");
     this.#patternStatus = document.getElementById("pattern-status-text");
     this.#renderStatusEl = document.getElementById("render-status");
+    this.#renderErrorEl = document.getElementById("render-error");
   }
 
   // ── Public ──────────────────────────────────────────────
@@ -132,8 +134,9 @@ export class PatternTab extends EventTarget {
     }
   }
 
-  #setRenderStatus(status, durationStr = "") {
+  #setRenderStatus(status, durationStr = "", errorMessage = "") {
     if (!this.#renderStatusEl) return;
+    if (!this.#renderErrorEl) return;
 
     const STATUS_LABELS = {
       idle: "● IDLE",
@@ -147,6 +150,10 @@ export class PatternTab extends EventTarget {
     this.#renderStatusEl.textContent =
       (STATUS_LABELS[status] ?? status.toUpperCase()) +
       (durationStr ? ` (${durationStr})` : "");
+
+    const hasMessage = Boolean(errorMessage);
+    this.#renderErrorEl.textContent = hasMessage ? errorMessage : "";
+    this.#renderErrorEl.setAttribute("data-visible", hasMessage ? "true" : "false");
   }
 
   // ── Event handlers ─────────────────────────────────────
@@ -160,8 +167,8 @@ export class PatternTab extends EventTarget {
       this.#setRenderStatus("done");
       this.#setRendered(true);
     } catch (err) {
-      this.#setRenderStatus("error");
-      this.#toastService.toast(err.message, "error");
+      this.#setRenderStatus("error", "", err.message);
+      this.#toastService.toast("Error occured on render. Check the Pattern tab.", "error");
     }
   }
 
