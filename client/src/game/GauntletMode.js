@@ -40,6 +40,7 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
   }
 
   function startGame(idx) {
+    stopEngine(); // Ensure current engine/transitions are halted immediately on restart
     currentIdx = idx ?? 0;
     totalHits = 0;
     hitsPerPattern = new Array(gauntletWidget.patterns.length).fill(null);
@@ -47,10 +48,10 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
     hud.setModeIndicator("gauntlet");
     gauntletWidget.resetAllPatternItems();
 
-    playPattern(currentIdx, null);
+    playPattern(currentIdx, null, true);
   }
 
-  function playPattern(idx, initialPlayer) {
+  async function playPattern(idx, initialPlayer, isFirst = false) {
     const p = gauntletWidget.patterns[idx];
     if (!p) {
       endGauntlet();
@@ -62,60 +63,56 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
     hud.setPatternVisible(true);
     hud.hideOverlay();
 
+    const nextEngine = hud.createRealEngine(p.video_url, initialPlayer);
+    try { await nextEngine.loadVideo(); } catch (_) {}
+
     stopEngine();
-    engine = hud.createRealEngine(p.video_url, initialPlayer);
+    engine = nextEngine;
 
     engine.addEventListener("hit", (e) => {
-      hud.setHits(`Hits: ${e.detail.hits}`);
+      hud.setHits(e.detail.hits);
+      hud.flashHits();
     });
     engine.addEventListener("finish", () => onPatternFinish(idx));
     engine.addEventListener("restart", () => startGame());
     engine.addEventListener("videoerror", () => {
       hitsPerPattern[idx] = 99;
       gauntletWidget.setPatternItemHits(idx, 99);
-      const savedPlayer = engine
-        ? { x: engine.player.x, y: engine.player.y }
-        : null;
-      stopEngine();
-      if (idx + 1 < gauntletWidget.patterns.length) {
-        playPattern(idx + 1, savedPlayer);
-      } else {
-        endGauntlet();
-      }
-    });
-
-    engine.start().catch(() => {
-      hitsPerPattern[idx] = 99;
-      gauntletWidget.setPatternItemHits(idx, 99);
-      stopEngine();
-      if (idx + 1 < gauntletWidget.patterns.length) {
-        playPattern(idx + 1, initialPlayer);
-      } else {
-        endGauntlet();
-      }
+      onPatternFinish(idx);
     });
 
     hud.syncTimer(engine.video);
+
+    if (!isFirst) {
+      await engine.runTransition(750, 'black');
+    }
+    await engine.runTransition(1000, 'fade-in');
+    
+    engine.start().catch(() => onPatternFinish(idx));
   }
 
-  function onPatternFinish(idx) {
+  async function onPatternFinish(idx) {
     const hits = engine ? engine.hits : 0;
-    hitsPerPattern[idx] = hits;
-    totalHits += hits;
+    if (hitsPerPattern[idx] === null || hitsPerPattern[idx] === undefined) {
+      hitsPerPattern[idx] = hits;
+    }
+    const finalHits = hitsPerPattern[idx];
+    if (finalHits !== 99) totalHits += finalHits;
 
     gauntletWidget.deactivatePatternItem(idx);
-    gauntletWidget.setPatternItemHits(idx, hits);
+    gauntletWidget.setPatternItemHits(idx, finalHits);
 
-    // stop engine early to prevent restart within delay to next pattern
-    const player = engine ? { ...engine.player } : null;
-    stopEngine();
-    setTimeout(() => {
-      if (idx + 1 < gauntletWidget.patterns.length) {
-        playPattern(idx + 1, player);
-      } else {
-        endGauntlet();
+    if (idx + 1 < gauntletWidget.patterns.length) {
+      if (engine) {
+        await engine.runTransition(1000, 'fade-out');
+        engine.runTransition(999999, 'black');
       }
-    }, 750);
+      playPattern(idx + 1, engine ? engine.player : null, false);
+    } else {
+      if (engine) await engine.runTransition(1000, 'fade-out');
+      stopEngine();
+      endGauntlet();
+    }
   }
 
   function endGauntlet() {
