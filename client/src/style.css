@@ -927,6 +927,11 @@ canvas#game-canvas {
   margin-bottom: 12px;
 }
 
+#gauntlet-section[data-locked="true"] .section-header,
+#gauntlet-section[data-locked="true"] .gauntlet-content {
+  display: none;
+}
+
 /* Pattern List */
 .pattern-list {
   display: flex;
@@ -1415,4 +1420,4 @@ canvas#game-canvas {
   opacity: 0.5;
   pointer-events: none;
 }
-
+
