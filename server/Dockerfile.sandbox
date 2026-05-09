@@ -40,6 +40,7 @@ RUN useradd -m -u 1000 sandbox
 # Watcher script — polls /work/trigger, runs script.py, writes /work/result
 COPY watcher.py /watcher.py
 
+RUN mkdir /work && chown sandbox:sandbox /work
 USER sandbox
 WORKDIR /work
 
