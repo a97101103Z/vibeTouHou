@@ -2,6 +2,7 @@ import { createHudControl } from "./game/HudControl.js";
 import { initPlaytest } from "./game/PlaytestMode.js";
 import { initGauntlet } from "./game/GauntletMode.js";
 import { initInfinite } from "./game/InfiniteMode.js";
+import { initView } from "./game/ViewMode.js";
 import { phaseService } from "./helpers/phase.js";
 
 /**
@@ -15,6 +16,7 @@ export class GameWidget {
   #playtestMode;
   #gauntletMode;
   #infiniteMode;
+  #viewMode;
   #toast;
   #running;
 
@@ -47,6 +49,10 @@ export class GameWidget {
     this.#infiniteMode = initInfinite(
       this.#hud,
       this.#gauntletWidget,
+      (reason) => this.#onModeDone(reason),
+    );
+    this.#viewMode = initView(
+      this.#hud,
       (reason) => this.#onModeDone(reason),
     );
     this.#hud.showOverlay("Play", "Select a mode to begin.", []);
@@ -85,5 +91,15 @@ export class GameWidget {
 
   #onModeDone(_reason) {
     this.#running = false;
+  }
+
+  /**
+   * Play a gallery video in view-only mode (no publish, no phase lock).
+   * @param {string} url
+   */
+  playGalleryVideo(url) {
+    this.#startMode(() => {
+      this.#viewMode.run(url);
+    });
   }
 }

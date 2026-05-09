@@ -17,7 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import FileResponse
 
-from routers import auth, render, assets, patterns, scores_router, publish
+from routers import auth, render, assets, patterns, scores_router, publish, gallery_router
 from config import STATIC_DIR, DATA_DIR, CORS_ORIGINS
 
 # ── Application ────────────────────────────────────────────────────────────────
@@ -43,6 +43,7 @@ app.include_router(assets.router,        prefix="/api", tags=["assets"])
 app.include_router(patterns.router,      prefix="/api", tags=["patterns"])
 app.include_router(scores_router.router, prefix="/api", tags=["scores"])
 app.include_router(publish.router,       prefix="/api", tags=["publish"])
+app.include_router(gallery_router.router, prefix="/api", tags=["gallery"])
 
 
 @app.get("/api/health")

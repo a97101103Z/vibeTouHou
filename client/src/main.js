@@ -11,6 +11,7 @@ import { ToastService } from "./ToastService.js";
 import { SidebarWidget } from "./SidebarWidget.js";
 import { GauntletWidget } from "./GauntletWidget.js";
 import { GameWidget } from "./GameWidget.js";
+import { GalleryWidget } from "./GalleryWidget.js";
 import { login } from "./helpers/login.js";
 import { phaseService } from "./helpers/phase.js";
 
@@ -18,6 +19,7 @@ import { phaseService } from "./helpers/phase.js";
 const toast = new ToastService();
 const sidebar = new SidebarWidget(toast);
 const gauntlet = new GauntletWidget();
+const gallery = new GalleryWidget();
 const game = new GameWidget(gauntlet, sidebar, toast);
 
 // Global error handling
@@ -107,7 +109,13 @@ async function main() {
   // Initialize after login
   await sidebar.init();
   gauntlet.init();
+  gallery.init();
   game.init();
+
+  // Gallery entry clicked → play the video in the game canvas (view-only)
+  gallery.addEventListener("playGalleryEntry", (e) => {
+    game.playGalleryVideo(e.detail.url);
+  });
 
   // Start polling and apply initial phase (no countdown on page load)
   phaseService.start();

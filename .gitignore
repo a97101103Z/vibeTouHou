@@ -18,6 +18,7 @@ env/
 
 # ── Server runtime data (generated, never commit) ──────────────────────────────
 data/
+gallery/
 server/static/
 
 # ── Node / client ───────────────────────────────────────────────────────────────
