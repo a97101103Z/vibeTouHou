@@ -38,6 +38,7 @@ Dark cyberpunk aesthetic, team-color accents (red / blue)
   --sidebar-collapsed-w: 180px;
   --sidebar-expanded-w: clamp(692px, 80vw, 864px);
   --transition: 200ms ease;
+  --canvas-max-h: calc(100vh - var(--nav-h) - 120px);
 }
 
 body.team-red {
@@ -726,8 +727,8 @@ main {
 /* Canvas */
 .canvas-wrap {
   position: relative;
-  width: min(800px, 100%);
-  height: auto;
+  max-height: min(600px, var(--canvas-max-h));
+  max-width: min(800px, 100%);
   aspect-ratio: 4 / 3;
   border: 2px solid var(--accent);
   border-radius: var(--radius-sm);
@@ -1217,8 +1218,9 @@ canvas#game-canvas {
   }
 
   .canvas-wrap {
-    width: 100%;
-    height: auto;
+    width: auto;
+    height: min(460px, var(--canvas-max-h));
+    max-width: 100%;
     aspect-ratio: 4/3;
   }
 
