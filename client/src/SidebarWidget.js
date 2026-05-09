@@ -92,6 +92,22 @@ export class SidebarWidget extends EventTarget {
     );
   }
 
+  // ── Phase lock ─────────────────────────────────────────
+
+  /**
+   * Lock or unlock the coding sidebar (render/playtest buttons).
+   * @param {boolean} locked
+   */
+  setLocked(locked) {
+    if (!this.#sidebar) return;
+    this.#sidebar.setAttribute("data-locked", locked ? "true" : "false");
+
+    const btnPlaytest = document.getElementById("btn-playtest");
+    const btnRender = document.getElementById("btn-render-pattern");
+    if (btnPlaytest) btnPlaytest.disabled = locked;
+    if (btnRender) btnRender.disabled = locked;
+  }
+
   // ── Event listeners ────────────────────────────────────
 
   #setupEventListeners() {

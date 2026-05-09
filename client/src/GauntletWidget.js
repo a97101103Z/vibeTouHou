@@ -7,12 +7,14 @@ export class GauntletWidget extends EventTarget {
   #patterns = [];
   #leaderboard = [];
   #lbPollTimer = null;
+  #locked = true;  // locked by default until admin starts gauntlet phase
 
   // DOM references
   #btnStartGauntlet;
   #patternList;
   #patternItems = [];
   #leaderboardEl;
+  #gauntletSection;
 
   get patterns() {
     return this.#patterns;
@@ -25,7 +27,8 @@ export class GauntletWidget extends EventTarget {
   init() {
     this.#cacheDOM();
     this.#setupEventListeners();
-    this.loadPatterns();
+    // Start locked — phase service will unlock when gauntlet phase is active
+    this.setLocked(true, /* skipLoad */ true);
     this.startLeaderboardPoll();
   }
 
@@ -33,14 +36,65 @@ export class GauntletWidget extends EventTarget {
     this.#btnStartGauntlet = document.getElementById("btn-start-gauntlet");
     this.#patternList = document.getElementById("pattern-list");
     this.#leaderboardEl = document.getElementById("leaderboard");
+    this.#gauntletSection = document.getElementById("gauntlet-section");
   }
 
   #setupEventListeners() {
     if (this.#btnStartGauntlet) {
       this.#btnStartGauntlet.addEventListener("click", () => {
+        if (this.#locked) return;
         this.dispatchEvent(new CustomEvent("startGauntlet"));
       });
     }
+  }
+
+  // ── Phase lock ──────────────────────────────────────────────────────────────
+
+  /**
+   * Lock or unlock the gauntlet section.
+   * @param {boolean} locked
+   * @param {boolean} [skipLoad=false]  If true, don't trigger loadPatterns on unlock
+   */
+  setLocked(locked, skipLoad = false) {
+    this.#locked = locked;
+
+    if (this.#gauntletSection) {
+      this.#gauntletSection.setAttribute(
+        "data-locked",
+        locked ? "true" : "false",
+      );
+    }
+    if (this.#btnStartGauntlet) {
+      this.#btnStartGauntlet.disabled = locked;
+    }
+
+    if (!locked && !skipLoad) {
+      this.#unlockWithDelay();
+    }
+  }
+
+  /**
+   * After the grace period expires, show a fake "Loading patterns…" state for
+   * 1–3 seconds before actually fetching, then make the gauntlet interactive.
+   */
+  #unlockWithDelay() {
+    // Show loading state immediately
+    if (this.#patternList) {
+      this.#patternList.innerHTML =
+        '<div class="loading-message">⏳ Loading opponent videos…</div>';
+    }
+    if (this.#btnStartGauntlet) {
+      this.#btnStartGauntlet.disabled = true;
+    }
+
+    const delay = 1000 + Math.random() * 2000; // 1–3 seconds
+    setTimeout(async () => {
+      await this.loadPatterns();
+      // Re-enable Begin only if still unlocked
+      if (!this.#locked && this.#btnStartGauntlet) {
+        this.#btnStartGauntlet.disabled = false;
+      }
+    }, delay);
   }
 
   async loadPatterns() {
@@ -88,6 +142,7 @@ export class GauntletWidget extends EventTarget {
       item.appendChild(hitsEl);
 
       item.addEventListener("click", () => {
+        if (this.#locked) return;
         this.dispatchEvent(
           new CustomEvent("startGauntlet", { detail: { startIdx: i } }),
         );
