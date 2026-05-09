@@ -63,6 +63,7 @@ _RESERVED_RUNTIME_NAMES = {"script.py", "output.mp4", "published.mp4", _ASSET_LI
 def slot_dir(team: str, index: int) -> Path:
     path = DATA_DIR / team / str(index)
     path.mkdir(parents=True, exist_ok=True)
+    path.chmod(0o777)
     (path / "assets").mkdir(exist_ok=True)
     return path
 

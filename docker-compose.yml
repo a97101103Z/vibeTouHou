@@ -2,7 +2,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: server/Dockerfile
+      dockerfile: ./deploy/Dockerfile
     environment:
       CORS_ORIGINS: "http://localhost,http://127.0.0.1,http://localhost:80,http://127.0.0.1:80"
       MAX_RENDER_WORKERS: "3"

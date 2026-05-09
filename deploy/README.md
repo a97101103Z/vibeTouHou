@@ -1,29 +1,90 @@
-# Production Reverse Proxy
+# Deploy vibeTouHou on CSIE Workstations
 
-Run the FastAPI app on `127.0.0.1:8000`, then place nginx in front of it with
-`deploy/nginx.conf`.
+Steps:
 
-Recommended backend command:
+1. Ensure rootless Docker is installed
+2. Build renderer sandbox environment
+3. Build & start server with Docker Compose
 
-```bash
-cd server
-uvicorn main:app --host 127.0.0.1 --port 8000 --proxy-headers
-```
+## 1. Ensure rootless Docker is installed
 
-The proxy keeps all SPA routes on the backend, forwards `/api/*`, allows image
-uploads up to 16 MB, and disables proxy buffering for MP4 responses so browsers
-can use byte-range playback instead of downloading full videos before seeking.
-
-Docker Compose production-like run:
+After installation, you should be able to run these commands (without `sudo`):
 
 ```bash
-docker compose up --build -d
+docker version
+docker compose version
 ```
 
-This starts:
-- `api`: FastAPI with built frontend assets served from `server/static`
-- `nginx`: reverse proxy on `http://localhost`
+Installation steps (reference: [NASA Lab](https://nasalab.csie.ntu.edu.tw/workstation/docker_tutorial.html), [Docker Compose Docs](https://docs.docker.com/compose/install/linux/#install-the-plugin-manually)):
 
-Notes:
-- `./data` is mounted for persistence.
-- `/var/run/docker.sock` is mounted so render sandbox jobs can use Docker from inside the API container.
+```bash
+# Enable system features
+linger-switch enable
+subuid-register
+
+# Download and start installation automatically (binaries go to $HOME/bin)
+curl -fsSL https://get.docker.com/rootless | sh
+
+# Add required environment variables
+echo "export PATH=$HOME/bin:\$PATH" >> $HOME/.bashrc
+echo "export DOCKER_HOST=unix:///run/user/$UID/docker.sock" >> $HOME/.bashrc
+
+# Use /tmp2 for Docker data (more space available)
+mkdir -p $HOME/.config/docker
+echo "{ \"data-root\": \"/tmp2/$(whoami)/docker\" }" >> $HOME/.config/docker/daemon.json
+systemctl --user daemon-reload
+systemctl --user restart docker
+
+# Install Docker Compose
+DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
+mkdir -p $DOCKER_CONFIG/cli-plugins
+curl -SL https://github.com/docker/compose/releases/download/v5.1.2/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
+chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
+
+# Verify installation
+docker version
+docker compose version
+```
+
+## 2. Build renderer sandbox environment
+
+Go to `vibeTouHou/server/` and run:
+
+```bash
+docker build -f Dockerfile.sandbox -t vibetouhou-sandbox .
+```
+
+This creates a Docker image tagged `vibetouhou-sandbox`.
+
+## 3. Build & start server with Docker Compose
+
+Go to `vibeTouHou/` and build:
+
+```bash
+docker compose build
+```
+
+Docker Compose will automatically locate the server Dockerfile. Then, start the stack:
+
+```bash
+docker compose up -d
+```
+
+> [!NOTE]
+> `docker compose up` builds the image automatically if it hasn't been built yet,
+> so the explicit `build` step is optional on the first run.
+>
+> However, if the code changes (e.g. after a `git pull`), you **must** manually rebuild
+> the image - otherwise Docker Compose will keep using the stale image with old code.
+
+To view logs:
+
+```bash
+docker compose logs
+```
+
+And, to stop the stack:
+
+```bash
+docker compose down
+```

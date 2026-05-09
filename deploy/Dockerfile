@@ -20,10 +20,6 @@ RUN python -m pip install --upgrade pip && pip install -r /tmp/requirements.txt
 COPY --from=client-build /src/server /app/server
 COPY deploy /app/deploy
 
-# Non-root sandbox user — cannot write outside /work
-RUN useradd -m -u 1000 sandbox
-USER sandbox
-
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
