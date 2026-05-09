@@ -32,6 +32,14 @@ ALLOWED_IMPORTS = {
 DATA_DIR   = Path(__file__).parent.parent / "data"
 STATIC_DIR = Path(__file__).parent / "static"
 
+# When running inside Docker with /var/run/docker.sock mounted,
+# sandbox containers need bind-mount paths resolved on the HOST,
+# not inside this container.  Set HOST_DATA_DIR to the absolute
+# host path of the ./data directory (e.g. /data/code/vibeTouHou/data).
+# Falls back to DATA_DIR (works for local subprocess mode or when
+# sandbox containers aren't sibling Docker containers).
+HOST_DATA_DIR = Path(os.getenv("HOST_DATA_DIR", str(DATA_DIR)))
+
 # ── HTTP ───────────────────────────────────────────────────────────────────────
 CORS_ORIGINS = [
     origin.strip()

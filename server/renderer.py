@@ -38,6 +38,7 @@ from typing import Any, Optional
 
 from config import (
     DATA_DIR,
+    HOST_DATA_DIR,
     MAX_RENDER_SECONDS,
     ALLOWED_IMPORTS,
     MAX_RENDER_WORKERS,
@@ -261,11 +262,20 @@ def _get_or_create_watcher(key: str, d: Path) -> Any:
         assets_dir = d / "assets"
         assets_dir.mkdir(exist_ok=True)
 
+        # When spawning sibling containers through the host Docker daemon,
+        # bind-mount paths must be valid on the HOST, not inside this container.
+        # If HOST_DATA_DIR differs from DATA_DIR, remap the slot path accordingly.
+        # The slot directory is already created by slot_dir() in _run_job.
+        host_d = d
+        if HOST_DATA_DIR != DATA_DIR:
+            rel = d.relative_to(DATA_DIR)
+            host_d = HOST_DATA_DIR / rel
+
         c = docker_sdk.from_env().containers.run(
             DOCKER_IMAGE,
             volumes={
-                str(d.resolve()):           {"bind": "/work",        "mode": "rw"},
-                str(assets_dir.resolve()):  {"bind": "/work/assets", "mode": "ro"},
+                str(host_d.resolve()):             {"bind": "/work",        "mode": "rw"},
+                str(host_d.resolve() / "assets"):  {"bind": "/work/assets", "mode": "ro"},
             },
             working_dir="/work",
             network_disabled=True,
