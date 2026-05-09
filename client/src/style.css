@@ -36,7 +36,7 @@ Dark cyberpunk aesthetic, team-color accents (red / blue)
 
   --nav-h: 62px;
   --sidebar-collapsed-w: 180px;
-  --sidebar-expanded-w: clamp(520px, 60vw, 648px);
+  --sidebar-expanded-w: clamp(692px, 80vw, 864px);
   --transition: 200ms ease;
 }
 
@@ -45,6 +45,7 @@ body.team-red {
   --accent-dim: var(--red-dim);
   --accent-glow: var(--red-glow);
 }
+
 body.team-blue {
   --accent: var(--blue);
   --accent-dim: var(--blue-dim);
@@ -78,16 +79,12 @@ body::before {
   inset: 0;
   z-index: 0;
   background:
-    radial-gradient(
-      ellipse at 20% 30%,
+    radial-gradient(ellipse at 20% 30%,
       rgba(80, 40, 160, 0.12) 0%,
-      transparent 60%
-    ),
-    radial-gradient(
-      ellipse at 80% 70%,
+      transparent 60%),
+    radial-gradient(ellipse at 80% 70%,
       rgba(30, 60, 160, 0.1) 0%,
-      transparent 60%
-    );
+      transparent 60%);
   pointer-events: none;
 }
 
@@ -99,11 +96,9 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(
-    ellipse at 50% 40%,
-    rgba(30, 20, 80, 0.95) 0%,
-    rgba(7, 7, 26, 0.98) 100%
-  );
+  background: radial-gradient(ellipse at 50% 40%,
+      rgba(30, 20, 80, 0.95) 0%,
+      rgba(7, 7, 26, 0.98) 100%);
   backdrop-filter: blur(12px);
 }
 
@@ -125,6 +120,7 @@ body::before {
     opacity: 0;
     transform: translateY(24px) scale(0.97);
   }
+
   to {
     opacity: 1;
     transform: none;
@@ -134,24 +130,28 @@ body::before {
 .login-logo {
   margin-bottom: 8px;
 }
+
 .logo-vibe {
   font-family: var(--font-ui);
   font-size: 2.4rem;
   font-weight: 900;
   color: var(--text);
 }
+
 .logo-tou {
   font-family: var(--font-ui);
   font-size: 2.4rem;
   font-weight: 900;
   color: var(--red);
 }
+
 .logo-hou {
   font-family: var(--font-ui);
   font-size: 2.4rem;
   font-weight: 900;
   color: var(--blue);
 }
+
 .logo-sub {
   font-family: var(--font-body);
   font-size: 0.85rem;
@@ -165,6 +165,7 @@ body::before {
   margin: 20px 0 28px;
   font-size: 0.92rem;
 }
+
 /* Token Input Section */
 .token-input-section {
   display: flex;
@@ -603,22 +604,26 @@ body::before {
   background: var(--bg-glass);
   color: var(--text-muted);
 }
+
 .status-badge[data-status="queued"] {
   background: rgba(255, 200, 0, 0.1);
   color: #ffcc00;
   border-color: rgba(255, 200, 0, 0.3);
 }
+
 .status-badge[data-status="running"] {
   background: rgba(80, 180, 255, 0.1);
   color: #50b4ff;
   border-color: rgba(80, 180, 255, 0.3);
   animation: pulse 1.2s ease-in-out infinite;
 }
+
 .status-badge[data-status="done"] {
   background: rgba(80, 255, 140, 0.1);
   color: #50ff8c;
   border-color: rgba(80, 255, 140, 0.3);
 }
+
 .status-badge[data-status="error"] {
   background: rgba(255, 60, 80, 0.1);
   color: #ff3c50;
@@ -645,10 +650,12 @@ body::before {
 }
 
 @keyframes pulse {
+
   0%,
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.6;
   }
@@ -813,7 +820,7 @@ canvas#game-canvas {
   padding: 16px;
 }
 
-.gauntlet-subsection + .gauntlet-subsection {
+.gauntlet-subsection+.gauntlet-subsection {
   border-top: 1px solid var(--border);
 }
 
@@ -898,17 +905,21 @@ canvas#game-canvas {
 .lb-row.lb-red {
   border-left: 3px solid var(--red);
 }
+
 .lb-row.lb-blue {
   border-left: 3px solid var(--blue);
 }
+
 .lb-slot {
   font-weight: 700;
   min-width: 60px;
 }
+
 .lb-score {
   margin-left: auto;
   color: var(--text-dim);
 }
+
 .lb-score.best {
   color: #44ee88;
 }
@@ -978,13 +989,16 @@ canvas#game-canvas {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--border-hi);
   border-radius: 99px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-dim);
 }
@@ -1021,6 +1035,7 @@ canvas#game-canvas {
   border-color: rgba(80, 255, 140, 0.4);
   color: #50ff8c;
 }
+
 .toast.toast-error {
   border-color: rgba(255, 60, 80, 0.4);
   color: #ff5060;
@@ -1031,15 +1046,18 @@ canvas#game-canvas {
     opacity: 0;
     transform: translateX(24px);
   }
+
   to {
     opacity: 1;
     transform: none;
   }
 }
+
 @keyframes toastOut {
   from {
     opacity: 1;
   }
+
   to {
     opacity: 0;
     transform: translateY(8px);
@@ -1052,24 +1070,30 @@ canvas#game-canvas {
   gap: 16px;
   align-items: flex-start;
 }
+
 .row.center {
   align-items: center;
 }
+
 .col {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
+
 .grow {
   flex: 1;
   min-width: 0;
 }
+
 .mt {
   margin-top: 16px;
 }
+
 .mt-sm {
   margin-top: 8px;
 }
+
 .gap-sm {
   gap: 8px;
 }
