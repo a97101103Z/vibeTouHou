@@ -88,7 +88,7 @@ export class GameEngine extends EventTarget {
 
   /** Wait for video to be ready, then start the game loop. */
   async start() {
-    await this._loadVideo();
+    await this.loadVideo();
 
     window.addEventListener('keydown', this._onKeyDown);
     window.addEventListener('keyup',   this._onKeyUp);
@@ -121,12 +121,14 @@ export class GameEngine extends EventTarget {
   }
 
   /**
-   * Black-canvas grace period between patterns.
-   * The player can still move; key listeners remain active.
-   * Resolves after durationMs, or never if stop() is called first.
+   * Playable transition period between patterns.
+   * mode can be 'black', 'fade-in', or 'fade-out'.
    */
-  runGrace(durationMs) {
+  runTransition(durationMs, mode = 'black') {
     return new Promise(resolve => {
+      window.addEventListener('keydown', this._onKeyDown);
+      window.addEventListener('keyup',   this._onKeyUp);
+      
       const start = performance.now();
       let lastTs  = null;
 
@@ -135,12 +137,28 @@ export class GameEngine extends EventTarget {
         lastTs = ts;
 
         this._movePlayer(dt);
+        if (this.invincTimer > 0) this.invincTimer -= dt;
+        if (this.flashTimer  > 0) this.flashTimer  -= dt;
+
+        let videoAlpha = 0;
+        const progress = (ts - start) / durationMs;
+        if (mode === 'fade-in') videoAlpha = Math.min(1, progress);
+        if (mode === 'fade-out') videoAlpha = Math.max(0, 1 - progress);
 
         // Black background
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-        // Draw player dot (same glow as normal)
+        // Draw video frame with opacity
+        if (videoAlpha > 0) {
+          try {
+            this.ctx.globalAlpha = videoAlpha;
+            this.ctx.drawImage(this.video, 0, 0, WIDTH, HEIGHT);
+            this.ctx.globalAlpha = 1.0;
+          } catch (_) {}
+        }
+
+        // Draw player dot
         const blink = this.invincTimer > 0 && Math.floor(this.invincTimer * 10) % 2 === 0;
         if (!blink) {
           const r = this.playerRadius;
@@ -159,7 +177,7 @@ export class GameEngine extends EventTarget {
           this.ctx.fill();
         }
 
-        if (ts - start < durationMs) {
+        if (ts - start < durationMs && this._graceRafId !== null) {
           this._graceRafId = requestAnimationFrame(loop);
         } else {
           this._graceRafId = null;
@@ -171,7 +189,7 @@ export class GameEngine extends EventTarget {
     });
   }
 
-  async _loadVideo() {
+  async loadVideo() {
     if (this.video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) return;
 
     await new Promise((resolve, reject) => {
