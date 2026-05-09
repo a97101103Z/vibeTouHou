@@ -71,7 +71,6 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
 
     engine.addEventListener("hit", (e) => {
       hud.setHits(`Hits: ${e.detail.hits}`);
-      hud.flashHits();
     });
     engine.addEventListener("finish", () => onPatternFinish(idx));
     engine.addEventListener("restart", () => startGame());
