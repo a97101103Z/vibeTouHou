@@ -2,11 +2,11 @@
 
 Steps:
 
-1. Ensure rootless Docker is installed
-2. Build renderer sandbox environment
-3. Build & start server with Docker Compose
+1. [Ensure rootless Docker is installed](#ensure-rootless-docker-is-installed)
+2. [Build renderer sandbox environment](#build-renderer-sandbox-environment)
+3. [Build & start server with Docker Compose](#build--start-server-with-docker-compose)
 
-## 1. Ensure rootless Docker is installed
+## Ensure rootless Docker is installed
 
 After installation, you should be able to run these commands (without `sudo`):
 
@@ -46,7 +46,7 @@ docker version
 docker compose version
 ```
 
-## 2. Build renderer sandbox environment
+## Build renderer sandbox environment
 
 Go to `vibeTouHou/server/` and run:
 
@@ -56,7 +56,7 @@ docker build -f Dockerfile.sandbox -t vibetouhou-sandbox .
 
 This creates a Docker image tagged `vibetouhou-sandbox`.
 
-## 3. Build & start server with Docker Compose
+## Build & start server with Docker Compose
 
 Go to `vibeTouHou/` and build:
 
