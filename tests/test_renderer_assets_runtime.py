@@ -1,5 +1,7 @@
 from pathlib import Path
 
+SANDBOX_SUBDIR = "sandbox"
+
 
 def test_stage_assets_for_runtime_makes_assets_available_in_cwd(tmp_path):
     import renderer
@@ -10,10 +12,15 @@ def test_stage_assets_for_runtime_makes_assets_available_in_cwd(tmp_path):
     (assets_dir / "7.png").write_bytes(b"png")
     (assets_dir / "bg.webp").write_bytes(b"webp")
 
-    renderer._stage_assets_for_runtime(slot_path)
+    sandbox = slot_path / SANDBOX_SUBDIR
+    sandbox.mkdir(parents=True, exist_ok=True)
+    # Simulate the Docker bind-mount: slot_path/assets → sandbox/assets
+    (sandbox / "assets").symlink_to(assets_dir, target_is_directory=True)
 
-    runtime_img = slot_path / "7.png"
-    runtime_bg = slot_path / "bg.webp"
+    renderer._stage_assets_for_runtime(slot_path, sandbox)
+
+    runtime_img = sandbox / "7.png"
+    runtime_bg = sandbox / "bg.webp"
     assert runtime_img.exists()
     assert runtime_bg.exists()
     assert runtime_img.read_bytes() == b"png"
@@ -29,9 +36,14 @@ def test_stage_assets_for_runtime_cleans_deleted_assets(tmp_path):
     img = assets_dir / "only.png"
     img.write_bytes(b"one")
 
-    renderer._stage_assets_for_runtime(slot_path)
-    assert (slot_path / "only.png").exists()
+    sandbox = slot_path / SANDBOX_SUBDIR
+    sandbox.mkdir(parents=True, exist_ok=True)
+    # Simulate the Docker bind-mount: slot_path/assets → sandbox/assets
+    (sandbox / "assets").symlink_to(assets_dir, target_is_directory=True)
+
+    renderer._stage_assets_for_runtime(slot_path, sandbox)
+    assert (sandbox / "only.png").exists()
 
     img.unlink()
-    renderer._stage_assets_for_runtime(slot_path)
-    assert not (slot_path / "only.png").exists()
+    renderer._stage_assets_for_runtime(slot_path, sandbox)
+    assert not (sandbox / "only.png").exists()
