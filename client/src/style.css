@@ -1369,14 +1369,26 @@ canvas#game-canvas {
 }
 
 #gauntlet-section[data-locked="true"]::after {
-  content: var(--str-gauntlet-locked, "\1F512\00A0\00A0Gauntlet locked \2014 coding phase");
+  content: "";
   position: absolute;
   inset: 0;
   z-index: 10;
   background: rgba(7, 7, 26, 0.78);
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
+  pointer-events: none;
+}
+
+/* Text label inside the lock overlay — shown only when locked */
+#gauntlet-section .gauntlet-lock-label {
+  display: none;
+}
+
+#gauntlet-section[data-locked="true"] .gauntlet-lock-label {
   display: flex;
+  position: absolute;
+  inset: 0;
+  z-index: 11;
   align-items: center;
   justify-content: center;
   font-family: var(--font-ui);
@@ -1386,6 +1398,8 @@ canvas#game-canvas {
   color: var(--text-muted);
   text-transform: uppercase;
   pointer-events: none;
+  white-space: pre-wrap;
+  text-align: center;
 }
 
 /* Gauntlet pending (countdown running) — show countdown overlay, no ::after text */

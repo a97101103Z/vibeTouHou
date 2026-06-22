@@ -29,10 +29,4 @@ export function applyStrings() {
     const key = el.dataset.i18nHtml;
     if (typeof S[key] === "string") el.innerHTML = S[key];
   });
-
-  // CSS variable — used by #gauntlet-section[data-locked]::after { content: var(...) }
-  document.documentElement.style.setProperty(
-    "--str-gauntlet-locked",
-    `"${S.GAUNTLET_LOCKED_CSS}"`,
-  );
 }

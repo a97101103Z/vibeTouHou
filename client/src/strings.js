@@ -101,8 +101,12 @@ export const GALLERY_HITS_DISPLAY  = tf((h) => `${h}h`,                         
 export const SECTION_PLAY          = t("Play",                                                 "試玩");
 export const OVERLAY_TITLE_DEFAULT = t("Play",                                                 "試玩");
 export const OVERLAY_SUB_DEFAULT   = t("Select a mode to begin.",                             "選擇模式以開始。");
-export const HUD_HITS_INIT         = t("Hits: 0",                                             "受傷次數：0");
-export const HITS_DISPLAY          = tf((n) => `Hits: ${n}`,                                   (n) => `受傷次數：${n}`);
+export const HUD_HITS_INIT         = t("Hits: 0",                                             "受傷：0");
+export const HITS_DISPLAY          = tf((n) => `Hits: ${n}`,                                   (n) => `受傷：${n}`);
+export const MODE_PLAYTEST         = t("PLAYTEST",                                            "試玩模式");
+export const MODE_GAUNTLET         = t("GAUNTLET",                                            "實戰模式");
+export const MODE_INFINITE         = t("INFINITE",                                            "無盡模式");
+export const MODE_VIEW             = t("VIEW",                                                "畫廊模式");
 
 // ── Playtest mode ──────────────────────────────────────────────────────────────
 export const GAUNTLET_ACTIVE_TITLE = t("⚔️ Gauntlet Active",                                  "⚔️ 實戰進行中");
@@ -119,8 +123,8 @@ export const BTN_RETRY             = t("Retry",                                 
 export const FLAWLESS_TITLE        = t("🎉 Flawless Clear!",                                  "🎉 完美過關！");
 export const FLAWLESS_SUB          = t("Pattern confirmed survivable!",                       "彈幕已確認可以存活！");
 export const BTN_REPLAY            = t("Replay",                                              "再玩一次");
-export const BTN_PUBLISH           = t("Publish",                                             "發布");
-export const TRY_AGAIN_SUB         = t("Try again to unlock Publish.",                        "再試一次以解鎖發布功能。");
+export const BTN_PUBLISH           = t("Publish",                                             "提交彈幕");
+export const TRY_AGAIN_SUB         = t("Try again to unlock Publish.",                        "再試一次，無傷通關以解鎖彈幕提交功能。");
 export const HITS_TAKEN_TITLE      = tf((n) => `${n} Hit${n > 1 ? "s" : ""} Taken`,          (n) => `被打中 ${n} 次`);
 
 // ── Gauntlet mode ──────────────────────────────────────────────────────────────
@@ -130,8 +134,8 @@ export const GAUNTLET_MODE_TITLE   = t("Gauntlet Mode",                         
 export const GAUNTLET_MODE_SUB     = t("Face every pattern published by the opposing team. Real hitbox. No mercy.", "挑戰對手隊伍發布的全部彈幕。盡可能無傷通關吧！");
 export const PERFECT_GAUNTLET_TITLE= t("🎉 Perfect Gauntlet!",                               "🎉 完美通關！");
 export const BTN_INFINITE          = t("♾ Infinite Mode",                                     "♾ 無盡模式");
-export const BTN_RUN_AGAIN         = t("↩ Run Again",                                         "↩ 再挑一次");
-export const IMPROVE_SCORE_SUB     = t("Run the gauntlet again to improve your score.<br><br>", "再挑一次以提升成績。<br><br>");
+export const BTN_RUN_AGAIN         = t("↩ Run Again",                                         "↩ 再挑戰一次");
+export const IMPROVE_SCORE_SUB     = t("Run the gauntlet again to improve your score.<br><br>", "再挑戰一次以提升成績。<br><br>");
 export const PERFECT_GAUNTLET_SUB  = tf((n) => `You took 0 hits across all ${n} patterns.<br><br>`, (n) => `全部 ${n} 個彈幕均零次受傷。<br><br>`);
 export const TOTAL_HITS_TITLE      = tf((n) => `${n} Hit${n !== 1 ? "s" : ""} Total`,         (n) => `共被打中 ${n} 次`);
 export const SUMMARY_HITS          = tf((h) => `${h}h`,                                        (h) => `${h} 次`);
@@ -156,3 +160,5 @@ export const BTN_VIEW_REPLAY       = t("Replay",                                
 
 // ── Game widget ────────────────────────────────────────────────────────────────
 export const TOAST_ALREADY_RUNNING = t("A game mode is already running.",                     "目前有其他正在執行中的彈幕。");
+
+

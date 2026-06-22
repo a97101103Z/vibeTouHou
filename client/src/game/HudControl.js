@@ -1,4 +1,5 @@
 import { GameEngine } from "./engine.js";
+import { MODE_PLAYTEST, MODE_GAUNTLET, MODE_INFINITE, MODE_VIEW } from "../strings.js";
 
 const TEST_RADIUS = 14;
 const REAL_RADIUS = 8;
@@ -103,7 +104,14 @@ export function createHudControl(canvasId) {
     setModeIndicator(mode) {
       const el = dom("play-mode-indicator");
       if (!el) return;
-      el.textContent = mode.toUpperCase();
+      
+      let text = mode.toUpperCase();
+      if (mode === "playtest") text = MODE_PLAYTEST;
+      if (mode === "gauntlet") text = MODE_GAUNTLET;
+      if (mode === "infinite") text = MODE_INFINITE;
+      if (mode === "view") text = MODE_VIEW;
+
+      el.textContent = text;
       el.setAttribute("data-mode", mode);
     },
 
