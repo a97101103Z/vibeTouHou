@@ -1,4 +1,9 @@
 import { loadAssetList, uploadFile, deleteAsset } from "../helpers/assets.js";
+import {
+  LOADING, NO_ASSETS, ERR_LOAD_ASSETS,
+  ASSETS_COUNT, DEL_BTN_TITLE, CONFIRM_DELETE,
+  TOAST_DELETED, ERR_DELETE, TOAST_UPLOADED, TOAST_UPLOAD_FAIL,
+} from "../strings.js";
 
 /**
  * AssetsTab - Manages the assets tab in the sidebar.
@@ -44,7 +49,7 @@ export class AssetsTab extends EventTarget {
     if (!this.#assetGallery) return;
 
     this.#assetGallery.innerHTML =
-      '<div class="loading-message" style="grid-column:1/-1">Loading…</div>';
+      `<div class="loading-message" style="grid-column:1/-1">${LOADING}</div>`;
 
     try {
       const data = await loadAssetList();
@@ -52,7 +57,7 @@ export class AssetsTab extends EventTarget {
         this.#setAssetsCount(0);
         this.#setAssetsSize(0);
         this.#assetGallery.innerHTML =
-          '<div class="loading-message" style="grid-column:1/-1">No assets uploaded yet.</div>';
+          `<div class="loading-message" style="grid-column:1/-1">${NO_ASSETS}</div>`;
       } else {
         this.#assetGallery.innerHTML = "";
         data.files.forEach((f) => {
@@ -67,7 +72,7 @@ export class AssetsTab extends EventTarget {
       this.#setAssetsCount(0);
       this.#setAssetsSize(0);
       this.#assetGallery.innerHTML =
-        '<div class="loading-message error" style="grid-column:1/-1">Could not load assets.</div>';
+        `<div class="loading-message error" style="grid-column:1/-1">${ERR_LOAD_ASSETS}</div>`;
     }
   }
 
@@ -75,7 +80,7 @@ export class AssetsTab extends EventTarget {
 
   #setAssetsCount(value) {
     if (this.#assetsCountEl) {
-      this.#assetsCountEl.textContent = `${value} asset${value !== 1 ? "s" : ""}`;
+      this.#assetsCountEl.textContent = ASSETS_COUNT(value);
     }
   }
 
@@ -104,19 +109,19 @@ export class AssetsTab extends EventTarget {
 
     const del = document.createElement("button");
     del.className = "asset-del";
-    del.title = "Delete";
+    del.title = DEL_BTN_TITLE;
     del.textContent = "×";
     del.addEventListener("click", async (e) => {
       e.stopPropagation();
-      if (!confirm(`Delete "${name}"?`)) return;
+      if (!confirm(CONFIRM_DELETE(name))) return;
       const { ok: deleteOk } = await deleteAsset(name);
       if (deleteOk) {
         wrap.remove();
-        this.#toastService.toast(`Deleted ${name}.`);
+        this.#toastService.toast(TOAST_DELETED(name));
         await this.loadGallery();
       } else {
         this.#toastService.toast(
-          "Error occurred while deleting. Please try again later.",
+          ERR_DELETE,
           "error",
         );
       }
@@ -131,12 +136,12 @@ export class AssetsTab extends EventTarget {
       try {
         const { ok, data } = await uploadFile(file);
         if (ok) {
-          this.#toastService.toast(`Uploaded ${data.filename}`, "success");
+          this.#toastService.toast(TOAST_UPLOADED(data.filename), "success");
         } else {
           this.#toastService.toast(`${file.name}: ${data.detail}`, "error");
         }
       } catch (_) {
-        this.#toastService.toast(`Upload failed for ${file.name}.`, "error");
+        this.#toastService.toast(TOAST_UPLOAD_FAIL(file.name), "error");
       }
     }
     this.loadGallery();

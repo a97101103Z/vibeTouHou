@@ -13,6 +13,8 @@
 /**
  * @param {import("../ToastService.js").ToastService} toastService
  */
+import { TOAST_ENTER_TOKEN, TOAST_ASSIGNED, TOAST_CLAIM_FAIL } from "../strings.js";
+
 export async function login(toastService) {
   // First, check for existing session
   const existingSession = await checkSession();
@@ -28,16 +30,13 @@ export async function login(toastService) {
     const tryClaim = async () => {
       const token = tokenInput.value.trim();
       if (!token) {
-        toastService.toast("Please enter your team token.", "error");
+        toastService.toast(TOAST_ENTER_TOKEN, "error");
         return;
       }
 
       try {
         const result = await claimSlot(token);
-        toastService.toast(
-          `Assigned to ${result.slot.toUpperCase()}!`,
-          "success"
-        );
+        toastService.toast(TOAST_ASSIGNED(result.slot.toUpperCase()), "success");
         activateApp(result);
         resolve(result);
       } catch (err) {
@@ -88,7 +87,7 @@ async function claimSlot(token) {
 
   if (!res.ok) {
     const err = await res.json();
-    throw new Error(err.detail || "Could not claim slot.");
+    throw new Error(err.detail || TOAST_CLAIM_FAIL);
   }
 
   const data = await res.json();

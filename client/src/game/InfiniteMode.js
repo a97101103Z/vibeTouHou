@@ -1,6 +1,13 @@
 /**
  * InfiniteMode — Survive through an endless shuffled loop of opponent patterns.
  */
+import {
+  NO_PATTERNS_TITLE, NO_PATTERNS_SUB,
+  HP_DISPLAY, HITS_DISPLAY,
+  INFINITE_SURVIVED, INFINITE_COMPLETE_SUB,
+  BTN_RUN_AGAIN,
+} from "../strings.js";
+
 export function initInfinite(hud, gauntletWidget, onDone) {
   const INFINITE_MAX_HITS = 3;
 
@@ -22,11 +29,7 @@ export function initInfinite(hud, gauntletWidget, onDone) {
   function begin() {
     if (running) return;
     if (!gauntletWidget.patterns.length) {
-      hud.showOverlay(
-        "No Patterns",
-        "The opposing team has not published any patterns yet.",
-        [],
-      );
+      hud.showOverlay(NO_PATTERNS_TITLE, NO_PATTERNS_SUB, []);
       onDone?.("blocked");
       return;
     }
@@ -38,7 +41,7 @@ export function initInfinite(hud, gauntletWidget, onDone) {
 
     hud.setModeIndicator("infinite");
     hud.hideOverlay();
-    hud.setHits(`HP: ${INFINITE_MAX_HITS} / ${INFINITE_MAX_HITS}`);
+    hud.setHits(HP_DISPLAY(INFINITE_MAX_HITS, INFINITE_MAX_HITS));
     hud.setPattern("\u221e");
 
     playPattern(null);
@@ -58,7 +61,7 @@ export function initInfinite(hud, gauntletWidget, onDone) {
     engine.addEventListener("hit", () => {
       hits++;
       const remaining = Math.max(0, INFINITE_MAX_HITS - hits);
-      hud.setHits(`HP: ${remaining} / ${INFINITE_MAX_HITS}`);
+      hud.setHits(HP_DISPLAY(remaining, INFINITE_MAX_HITS));
       if (hits >= INFINITE_MAX_HITS) {
         engine.stop();
         endInfinite();
@@ -103,9 +106,9 @@ export function initInfinite(hud, gauntletWidget, onDone) {
     submitScore();
 
     hud.showOverlay(
-      `\u267e ${totalTime.toFixed(1)}s Survived`,
-      "Infinite Mode complete. Your score has been recorded.",
-      [{ text: "\u21a9 Run Again", action: () => startGauntlet() }],
+      INFINITE_SURVIVED(totalTime.toFixed(1)),
+      INFINITE_COMPLETE_SUB,
+      [{ text: BTN_RUN_AGAIN, action: () => startGauntlet() }],
     );
 
     onDone?.("finished");

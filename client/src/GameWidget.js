@@ -4,6 +4,7 @@ import { initGauntlet } from "./game/GauntletMode.js";
 import { initInfinite } from "./game/InfiniteMode.js";
 import { initView } from "./game/ViewMode.js";
 import { phaseService } from "./helpers/phase.js";
+import { OVERLAY_TITLE_DEFAULT, OVERLAY_SUB_DEFAULT, TOAST_ALREADY_RUNNING } from "./strings.js";
 
 /**
  * GameWidget — Orchestrates game modes.
@@ -56,7 +57,7 @@ export class GameWidget {
       (reason) => this.#onModeDone(reason),
     );
     this.#viewMode = initView(this.#hud, (reason) => this.#onModeDone(reason));
-    this.#hud.showOverlay("Play", "Select a mode to begin.", []);
+    this.#hud.showOverlay(OVERLAY_TITLE_DEFAULT, OVERLAY_SUB_DEFAULT, []);
     this.#setupEvents();
   }
 
@@ -86,7 +87,7 @@ export class GameWidget {
 
   #startMode(start) {
     if (this.#running) {
-      this.#toast?.toast("A game mode is already running.");
+      this.#toast?.toast(TOAST_ALREADY_RUNNING);
       return;
     }
     this.#running = true;

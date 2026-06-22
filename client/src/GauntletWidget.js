@@ -3,6 +3,14 @@
  * @extends EventTarget
  */
 
+import {
+  COUNTDOWN_LABEL, COUNTDOWN_SUB,
+  LOADING_OPP_VIDEOS, LOADING,
+  NO_PATTERNS_YET, ERR_LOAD_PATTERNS,
+  NO_SCORES, LB_SCORE_PERFECT, LB_SCORE_HITS,
+  SUMMARY_HITS,
+} from "./strings.js";
+
 export class GauntletWidget extends EventTarget {
   #patterns = [];
   #leaderboard = [];
@@ -86,9 +94,9 @@ export class GauntletWidget extends EventTarget {
     banner.id = "phase-countdown";
     banner.innerHTML = `
       <div class="phase-countdown-icon">⚔️</div>
-      <div class="phase-countdown-label">Gauntlet starts in</div>
+      <div class="phase-countdown-label">${COUNTDOWN_LABEL}</div>
       <div class="phase-countdown-timer" id="phase-countdown-timer">1:00</div>
-      <div class="phase-countdown-sub">Finish what you're doing!</div>
+      <div class="phase-countdown-sub">${COUNTDOWN_SUB}</div>
     `;
 
     this.#gauntletSection.appendChild(banner);
@@ -126,7 +134,7 @@ export class GauntletWidget extends EventTarget {
     // Show loading state immediately
     if (this.#patternList) {
       this.#patternList.innerHTML =
-        '<div class="loading-message">⏳ Loading opponent videos…</div>';
+        `<div class="loading-message">${LOADING_OPP_VIDEOS}</div>`;
     }
     if (this.#btnStartGauntlet) {
       this.#btnStartGauntlet.disabled = true;
@@ -145,7 +153,7 @@ export class GauntletWidget extends EventTarget {
   async loadPatterns() {
     if (!this.#patternList) return;
 
-    this.#patternList.innerHTML = '<div class="loading-message">Loading…</div>';
+    this.#patternList.innerHTML = `<div class="loading-message">${LOADING}</div>`;
 
     try {
       const res = await fetch("/api/patterns/opponent", {
@@ -156,14 +164,14 @@ export class GauntletWidget extends EventTarget {
 
       if (!this.#patterns.length) {
         this.#patternList.innerHTML =
-          '<div class="loading-message">No published patterns yet.</div>';
+          `<div class="loading-message">${NO_PATTERNS_YET}</div>`;
         return;
       }
 
       this.#renderPatternList();
     } catch (_) {
       this.#patternList.innerHTML =
-        '<div class="loading-message error">Could not load patterns.</div>';
+        `<div class="loading-message error">${ERR_LOAD_PATTERNS}</div>`;
     }
   }
 
@@ -232,8 +240,7 @@ export class GauntletWidget extends EventTarget {
   setPatternItemHits(idx, hits) {
     const item = this.#patternItems[idx];
     if (!item) return;
-    item.hitsEl.textContent =
-      hits === 0 ? "✓" : `${hits} hit${hits > 1 ? "s" : ""}`;
+    item.hitsEl.textContent = hits === 0 ? "✓" : SUMMARY_HITS(hits);
   }
 
   /**
@@ -292,7 +299,7 @@ export class GauntletWidget extends EventTarget {
 
     if (rows.length === 0) {
       this.#leaderboardEl.innerHTML =
-        '<div class="empty-message">No scores yet.</div>';
+        `<div class="empty-message">${NO_SCORES}</div>`;
       return;
     }
 
@@ -304,8 +311,8 @@ export class GauntletWidget extends EventTarget {
         h == null
           ? "—"
           : h === 0 && it != null
-            ? `Perfect + ${it.toFixed(0)}s∞`
-            : `${h} hit${h !== 1 ? "s" : ""}`;
+            ? LB_SCORE_PERFECT(it.toFixed(0))
+            : LB_SCORE_HITS(h);
 
       const row = document.createElement("div");
       row.className = `lb-row lb-${r.team}`;

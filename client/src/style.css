@@ -1369,7 +1369,7 @@ canvas#game-canvas {
 }
 
 #gauntlet-section[data-locked="true"]::after {
-  content: "\1F512\00A0\00A0Gauntlet locked \2014 coding phase";
+  content: var(--str-gauntlet-locked, "\1F512\00A0\00A0Gauntlet locked \2014 coding phase");
   position: absolute;
   inset: 0;
   z-index: 10;

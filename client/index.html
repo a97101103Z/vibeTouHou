@@ -25,7 +25,7 @@
           ><span class="logo-hou">Hou</span>
           <div class="logo-sub">彈幕競技場</div>
         </div>
-        <p class="login-tagline">Enter your team token to claim your slot.</p>
+        <p class="login-tagline" data-i18n="LOGIN_TAGLINE">Enter your team token to claim your slot.</p>
         <div class="token-input-section">
           <input
             id="token-input"
@@ -33,10 +33,11 @@
             class="token-input"
             placeholder="Enter your team token"
             aria-label="Team token"
+            data-i18n-placeholder="TOKEN_PLACEHOLDER"
             autocomplete="off"
             spellcheck="false"
           />
-          <button id="btn-claim" class="claim-btn">Claim Slot</button>
+          <button id="btn-claim" class="claim-btn" data-i18n="CLAIM_BTN">Claim Slot</button>
         </div>
       </div>
     </div>
@@ -55,7 +56,7 @@
         <!-- Sidebar -->
         <aside id="sidebar" data-active-tab="pattern">
           <div id="sidebar-header">
-            <span id="sidebar-title">My Pattern</span>
+            <span id="sidebar-title" data-i18n="SIDEBAR_TITLE">My Pattern</span>
             <button
               id="btn-expand"
               class="btn-expand"
@@ -70,7 +71,7 @@
             <div id="sidebar-collapsed">
               <div id="pattern-status" class="status-row">
                 <span class="status-icon">📝</span>
-                <span id="pattern-status-text">Not tested</span>
+                <span id="pattern-status-text" data-i18n="STATUS_NOT_TESTED">Not tested</span>
               </div>
               <div id="assets-status" class="status-row">
                 <span class="status-icon">🖼️</span>
@@ -101,7 +102,7 @@
               <div class="gallery-collapsed-section">
                 <div class="gallery-collapsed-header">
                   <span class="gallery-icon">🎬</span>
-                  <span>Gallery</span>
+                  <span data-i18n="GALLERY_LABEL">Gallery</span>
                 </div>
                 <div id="gallery-list" class="gallery-list"></div>
               </div>
@@ -110,14 +111,15 @@
             <!-- Expanded Content -->
             <div id="sidebar-expanded">
               <div id="sidebar-tab-container">
-                <button
+                  <button
                   id="tab-pattern"
                   class="sidebar-tab active"
                   data-tab="pattern"
+                  data-i18n="TAB_PATTERN"
                 >
                   Pattern
                 </button>
-                <button id="tab-assets" class="sidebar-tab" data-tab="assets">
+                <button id="tab-assets" class="sidebar-tab" data-tab="assets" data-i18n="TAB_ASSETS">
                   Assets
                 </button>
               </div>
@@ -126,10 +128,10 @@
                 <div id="pattern-tab" class="tab-pane active">
                   <div id="editor-wrap" style="height: 400px"></div>
                   <div class="tab-actions">
-                    <button id="btn-playtest" class="btn btn-primary">
+                    <button id="btn-playtest" class="btn btn-primary" data-i18n="BTN_PLAYTEST">
                       ▶ Playtest
                     </button>
-                    <button id="btn-render-pattern" class="btn btn-outline">
+                    <button id="btn-render-pattern" class="btn btn-outline" data-i18n="BTN_RENDER">
                       ⬆ Render
                     </button>
                   </div>
@@ -139,11 +141,11 @@
                 <div id="assets-tab" class="tab-pane">
                   <div id="drop-zone" class="drop-zone">
                     <div class="drop-icon">📁</div>
-                    <div>
+                    <div data-i18n-html="DROPZONE_TEXT_HTML">
                       Drag & drop images here, or
                       <strong>click to browse</strong>
                     </div>
-                    <div class="asset-hint">
+                    <div class="asset-hint" data-i18n="ASSET_HINT">
                       PNG, JPG, GIF, BMP, WebP — max 10 MB each
                     </div>
                   </div>
@@ -158,25 +160,27 @@
                   <div class="assets-gallery-container">
                     <div class="row center" style="margin-bottom: 12px">
                       <span class="card-title" style="margin: 0"
+                        data-i18n="YOUR_ASSETS"
                         >Your Assets</span
                       >
                       <button
                         id="btn-refresh-assets"
                         class="btn btn-outline"
                         style="margin-left: auto; padding: 6px 14px"
+                        data-i18n="BTN_REFRESH"
                       >
                         ↻ Refresh
                       </button>
                     </div>
                     <div id="asset-gallery" class="asset-grid">
-                      <div class="loading-message" style="grid-column: 1/-1">
+                      <div class="loading-message" style="grid-column: 1/-1" data-i18n="LOADING">
                         Loading…
                       </div>
                     </div>
                   </div>
 
                   <div class="tab-actions">
-                    <button id="btn-upload-assets" class="btn btn-outline">
+                    <button id="btn-upload-assets" class="btn btn-outline" data-i18n="BTN_UPLOAD">
                       ⬆ Upload
                     </button>
                   </div>
@@ -190,7 +194,7 @@
             class="status-row"
             style="margin-top: auto"
           >
-            <div id="render-status" class="status-badge status-idle">
+            <div id="render-status" class="status-badge status-idle" data-i18n="RENDER_STATUS_IDLE">
               ● IDLE
             </div>
           </div>
@@ -201,7 +205,7 @@
           <!-- Play Section -->
           <section id="play-section" class="main-section">
             <div class="section-header">
-              <h2 class="section-title">Play</h2>
+              <h2 class="section-title" data-i18n="SECTION_PLAY">Play</h2>
               <span id="play-mode-indicator" class="mode-indicator"></span>
             </div>
             <div class="canvas-wrap">
@@ -209,14 +213,15 @@
               <div class="canvas-hud">
                 <span id="hud-pattern">—</span>
                 <span id="hud-time">10.0s</span>
-                <span id="hud-hits">Hits: 0</span>
+                <span id="hud-hits" data-i18n="HUD_HITS_INIT">Hits: 0</span>
                 <span style="color: var(--text-muted); font-size: 0.65rem"
+                  data-i18n="CONTROLS_HINT"
                   >SHIFT = focus · WASD / ↕↔ = move</span
                 >
               </div>
               <div id="canvas-overlay" class="canvas-overlay">
-                <h2 id="overlay-title">Play</h2>
-                <p id="overlay-subtitle">Select a mode to begin.</p>
+                <h2 id="overlay-title" data-i18n="OVERLAY_TITLE_DEFAULT">Play</h2>
+                <p id="overlay-subtitle" data-i18n="OVERLAY_SUB_DEFAULT">Select a mode to begin.</p>
                 <div id="overlay-actions"></div>
                 <div id="overlay-summary"></div>
               </div>
@@ -226,11 +231,12 @@
           <!-- Gauntlet Section -->
           <section id="gauntlet-section" class="main-section">
             <div class="section-header">
-              <h2 class="section-title">Gauntlet</h2>
+              <h2 class="section-title" data-i18n="SECTION_GAUNTLET">Gauntlet</h2>
               <button
                 id="btn-start-gauntlet"
                 class="btn btn-primary"
                 style="padding: 6px 14px"
+                data-i18n="BTN_BEGIN"
               >
                 ▶ Begin
               </button>
@@ -238,16 +244,16 @@
 
             <div id="gauntlet-content" class="gauntlet-content">
               <div class="gauntlet-subsection">
-                <h3 class="subsection-title">Opponent Patterns</h3>
+                <h3 class="subsection-title" data-i18n="OPPONENT_PATTERNS">Opponent Patterns</h3>
                 <div id="pattern-list" class="pattern-list">
-                  <div class="loading-message">Loading…</div>
+                  <div class="loading-message" data-i18n="LOADING">Loading…</div>
                 </div>
               </div>
 
               <div class="gauntlet-subsection">
-                <h3 class="subsection-title">Leaderboard</h3>
+                <h3 class="subsection-title" data-i18n="LEADERBOARD">Leaderboard</h3>
                 <div id="leaderboard" class="leaderboard">
-                  <div class="empty-message">Loading…</div>
+                  <div class="empty-message" data-i18n="LOADING">Loading…</div>
                 </div>
               </div>
             </div>

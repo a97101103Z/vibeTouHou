@@ -2,6 +2,12 @@ import {
   render as renderPattern,
   publishPattern as publishPattern,
 } from "../helpers/patternApi.js";
+import {
+  STATUS_NOT_TESTED, STATUS_TESTED,
+  RENDER_STATUS_IDLE, RENDER_STATUS_QUEUED, RENDER_STATUS_RUNNING,
+  RENDER_STATUS_DONE, RENDER_STATUS_ERROR,
+  TOAST_RENDER_ERROR, TOAST_NETWORK_ERROR,
+} from "../strings.js";
 
 const PATTERN_SAMPLE = `import math
 import imageio
@@ -115,7 +121,7 @@ export class PatternTab extends EventTarget {
         this.#toastService.toast(result.message, "error");
       }
     } catch (_) {
-      this.#toastService.toast("Network error.", "error");
+      this.#toastService.toast(TOAST_NETWORK_ERROR, "error");
     }
   }
 
@@ -129,7 +135,7 @@ export class PatternTab extends EventTarget {
 
   #setVerified(value) {
     if (this.#patternStatus) {
-      this.#patternStatus.textContent = value ? "✓ Tested" : "Not tested";
+      this.#patternStatus.textContent = value ? STATUS_TESTED : STATUS_NOT_TESTED;
       this.#patternStatus.setAttribute("data-tested", value ? "true" : "false");
     }
   }
@@ -139,11 +145,11 @@ export class PatternTab extends EventTarget {
     if (!this.#renderErrorEl) return;
 
     const STATUS_LABELS = {
-      idle: "● IDLE",
-      queued: "◌ QUEUED",
-      running: "◉ RENDERING…",
-      done: "✓ DONE",
-      error: "✗ ERROR",
+      idle:    RENDER_STATUS_IDLE,
+      queued:  RENDER_STATUS_QUEUED,
+      running: RENDER_STATUS_RUNNING,
+      done:    RENDER_STATUS_DONE,
+      error:   RENDER_STATUS_ERROR,
     };
 
     this.#renderStatusEl.setAttribute("data-status", status);
@@ -168,7 +174,7 @@ export class PatternTab extends EventTarget {
       this.#setRendered(true);
     } catch (err) {
       this.#setRenderStatus("error", "", err.message);
-      this.#toastService.toast("Error occured on render. Check the Pattern tab.", "error");
+      this.#toastService.toast(TOAST_RENDER_ERROR, "error");
     }
   }
 

@@ -1,10 +1,12 @@
+import { ERR_EDITOR_EMPTY, ERR_SUBMISSION_FAIL, ERR_RENDER_TIMEOUT, ERR_RENDER_FAIL, TOAST_PUBLISH_OK, TOAST_VALIDATION_FAIL } from "../strings.js";
+
 /**
  * @param {string} script The pattern script to render
  * @returns {Promise<string>} Resolves with the video URL
  */
 export async function render(script) {
   if (!script.trim()) {
-    throw new Error("Editor is empty");
+    throw new Error(ERR_EDITOR_EMPTY);
   }
 
   const res = await fetch("/api/render", {
@@ -16,7 +18,7 @@ export async function render(script) {
 
   if (!res.ok) {
     const data = await res.json();
-    throw new Error(data.detail || "Submission failed.");
+    throw new Error(data.detail || ERR_SUBMISSION_FAIL);
   }
 
   return await pollRenderStatus();
@@ -30,7 +32,7 @@ async function pollRenderStatus() {
   const start = Date.now();
   while (true) {
     if (Date.now() - start >= timeoutMs) {
-      throw new Error("Render timed out. Try again later.");
+      throw new Error(ERR_RENDER_TIMEOUT);
     }
 
     const res = await fetch("/api/render/status", {
@@ -41,7 +43,7 @@ async function pollRenderStatus() {
     if (data.status === "done") {
       return data.video_url || "/api/video/my";
     } else if (data.status === "error") {
-      throw new Error(data.stderr || "Render failed");
+      throw new Error(data.stderr || ERR_RENDER_FAIL);
     }
 
     await new Promise((resolve) => setTimeout(resolve, 500));
@@ -63,7 +65,7 @@ export async function publishPattern(trajectory) {
   const data = await res.json();
 
   if (res.ok) {
-    return { ok: true, message: data.message || "Published!" };
+    return { ok: true, message: data.message || TOAST_PUBLISH_OK };
   }
-  return { ok: false, message: data.detail || "Validation failed." };
+  return { ok: false, message: data.detail || TOAST_VALIDATION_FAIL };
 }

@@ -1,6 +1,16 @@
 /**
  * GauntletMode — Face every pattern published by the opposing team.
  */
+import {
+  NO_PATTERNS_TITLE, NO_PATTERNS_SUB,
+  GAUNTLET_MODE_TITLE, GAUNTLET_MODE_SUB,
+  PERFECT_GAUNTLET_TITLE, PERFECT_GAUNTLET_SUB,
+  TOTAL_HITS_TITLE, IMPROVE_SCORE_SUB,
+  BTN_INFINITE, BTN_RUN_AGAIN,
+  SUMMARY_HITS, SUMMARY_TOTAL,
+  HITS_DISPLAY, HUD_HITS_INIT,
+} from "../strings.js";
+
 export function initGauntlet(hud, gauntletWidget, onDone) {
   let engine = null;
   let running = false;
@@ -19,22 +29,14 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
   async function run(idx) {
     if (running) return;
     if (!gauntletWidget.patterns.length) {
-      hud.showOverlay(
-        "No Patterns",
-        "The opposing team has not published any patterns yet.",
-        [],
-      );
+      hud.showOverlay(NO_PATTERNS_TITLE, NO_PATTERNS_SUB, []);
       onDone?.("blocked");
       return;
     }
 
     running = true;
 
-    hud.showOverlay(
-      "Gauntlet Mode",
-      "Face every pattern published by the opposing team. Real hitbox. No mercy.",
-      [],
-    );
+    hud.showOverlay(GAUNTLET_MODE_TITLE, GAUNTLET_MODE_SUB, []);
     await hud.startCountdown();
     startGame(idx);
   }
@@ -70,7 +72,7 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
     engine = nextEngine;
 
     engine.addEventListener("hit", (e) => {
-      hud.setHits(`Hits: ${e.detail.hits}`);
+      hud.setHits(HITS_DISPLAY(e.detail.hits));
     });
     engine.addEventListener("finish", () => onPatternFinish(idx));
     engine.addEventListener("restart", () => startGame());
@@ -125,7 +127,7 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
         const h = hitsPerPattern[i];
         return `<div class="summary-list">
                   <span>#${i + 1} ${p.slot}</span>
-                  <span class="summary-item ${h === 0 ? "success" : "error"}">${h}h</span>
+                  <span class="summary-item ${h === 0 ? "success" : "error"}">${SUMMARY_HITS(h)}</span>
                 </div>`;
       })
       .join("");
@@ -133,29 +135,28 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
       <div>
         ${patternsSummary}
         <div class="summary-item" style="margin-top: 10px">
-          Total: ${totalHits} hit${totalHits !== 1 ? "s" : ""}
+          ${SUMMARY_TOTAL(totalHits)}
         </div>
       </div>`;
 
     if (totalHits === 0) {
       hud.showOverlay(
-        "\ud83c\udf89 Perfect Gauntlet!",
-        `You took 0 hits across all ${gauntletWidget.patterns.length} patterns.<br><br>`,
+        PERFECT_GAUNTLET_TITLE,
+        PERFECT_GAUNTLET_SUB(gauntletWidget.patterns.length),
         [
           {
-            text: "\u267e Infinite Mode",
-            action: () =>
-              gauntletWidget.dispatchEvent(new CustomEvent("beginInfinite")),
+            text: BTN_INFINITE,
+            action: () => gauntletWidget.dispatchEvent(new CustomEvent("beginInfinite")),
           },
-          { text: "\u21a9 Run Again", action: () => run() },
+          { text: BTN_RUN_AGAIN, action: () => run() },
         ],
         summaryContainer,
       );
     } else {
       hud.showOverlay(
-        `${totalHits} Hit${totalHits !== 1 ? "s" : ""} Total`,
-        "Run the gauntlet again to improve your score.<br><br>",
-        [{ text: "\u21a9 Run Again", action: () => run() }],
+        TOTAL_HITS_TITLE(totalHits),
+        IMPROVE_SCORE_SUB,
+        [{ text: BTN_RUN_AGAIN, action: () => run() }],
         summaryContainer,
       );
     }

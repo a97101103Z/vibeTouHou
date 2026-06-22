@@ -4,6 +4,19 @@
  * @param {ReturnType<import('../helpers/phase.js').PhaseService>} phaseService
  *   Injected so the mode can check whether gauntlet is now active.
  */
+import {
+  GAUNTLET_ACTIVE_TITLE, GAUNTLET_ACTIVE_SUB,
+  NO_PATTERN_TITLE, NO_PATTERN_SUB,
+  PLAYTEST_TITLE, PLAYTEST_SUB,
+  VIDEO_ERR_TITLE, VIDEO_ERR_SUB_PT,
+  ERR_TITLE, ERR_START_PLAYTEST,
+  BTN_RETRY,
+  FLAWLESS_TITLE, FLAWLESS_SUB,
+  BTN_REPLAY, BTN_PUBLISH, TRY_AGAIN_SUB,
+  HITS_TAKEN_TITLE,
+  HITS_DISPLAY, HUD_HITS_INIT,
+} from "../strings.js";
+
 export function initPlaytest(hud, sidebarWidget, gauntletWidget, onDone, phaseService) {
   let engine = null;
   let running = false;
@@ -22,11 +35,7 @@ export function initPlaytest(hud, sidebarWidget, gauntletWidget, onDone, phaseSe
 
     // If gauntlet is now active, don't allow starting (or restarting) a playtest
     if (phaseService?.isGauntletActive()) {
-      hud.showOverlay(
-        "⚔️ Gauntlet Active",
-        "Coding phase is over. Head to the Gauntlet panel to play!",
-        [],
-      );
+      hud.showOverlay(GAUNTLET_ACTIVE_TITLE, GAUNTLET_ACTIVE_SUB, []);
       onDone?.("blocked");
       return;
     }
@@ -35,22 +44,14 @@ export function initPlaytest(hud, sidebarWidget, gauntletWidget, onDone, phaseSe
       patternUrl = url;
     }
     if (!patternUrl) {
-      hud.showOverlay(
-        "No Pattern",
-        "Render your pattern first to generate a playtest URL.",
-        [],
-      );
+      hud.showOverlay(NO_PATTERN_TITLE, NO_PATTERN_SUB, []);
       onDone?.("blocked");
       return;
     }
 
     running = true;
 
-    hud.showOverlay(
-      "Playtest Mode",
-      "Survive 10 seconds with zero hits to verify your pattern. Hitbox is slightly larger here.",
-      [],
-    );
+    hud.showOverlay(PLAYTEST_TITLE, PLAYTEST_SUB, []);
     await hud.startCountdown();
     startGame();
   }
@@ -63,7 +64,7 @@ export function initPlaytest(hud, sidebarWidget, gauntletWidget, onDone, phaseSe
     engine = hud.createPlaytestEngine(patternUrl);
 
     engine.addEventListener("hit", (e) => {
-      hud.setHits(`Hits: ${e.detail.hits}`);
+      hud.setHits(HITS_DISPLAY(e.detail.hits));
     });
     engine.addEventListener("finish", (e) => {
       onFinish(e.detail.hits, e.detail.trajectory);
@@ -80,22 +81,22 @@ export function initPlaytest(hud, sidebarWidget, gauntletWidget, onDone, phaseSe
     });
     engine.addEventListener("videoerror", () => {
       running = false;
-      hud.showOverlay("Video Error", "Could not load your pattern video.", [
-        { text: "Retry", action: () => run() },
+      hud.showOverlay(VIDEO_ERR_TITLE, VIDEO_ERR_SUB_PT, [
+        { text: BTN_RETRY, action: () => run() },
       ]);
       onDone?.("error");
     });
 
     engine.start().catch(() => {
       running = false;
-      hud.showOverlay("Error", "Could not start playtest.", [
-        { text: "Retry", action: () => run() },
+      hud.showOverlay(ERR_TITLE, ERR_START_PLAYTEST, [
+        { text: BTN_RETRY, action: () => run() },
       ]);
       onDone?.("error");
     });
 
     hud.hideOverlay();
-    hud.setHits("Hits: 0");
+    hud.setHits(HUD_HITS_INIT);
     hud.syncTimer(engine.video);
   }
 
@@ -112,21 +113,18 @@ export function initPlaytest(hud, sidebarWidget, gauntletWidget, onDone, phaseSe
 
     if (hits === 0) {
       hud.showOverlay(
-        "\ud83c\udf89 Flawless Clear!",
-        "Pattern confirmed survivable!",
+        FLAWLESS_TITLE,
+        FLAWLESS_SUB,
         [
-          { text: "Replay", action: () => run() },
-          {
-            text: "Publish",
-            action: () => sidebarWidget.publishPattern(trajectory),
-          },
+          { text: BTN_REPLAY, action: () => run() },
+          { text: BTN_PUBLISH, action: () => sidebarWidget.publishPattern(trajectory) },
         ],
       );
     } else {
       hud.showOverlay(
-        `${hits} Hit${hits > 1 ? "s" : ""} Taken`,
-        "Try again to unlock Publish.",
-        [{ text: "Retry", action: () => run() }],
+        HITS_TAKEN_TITLE(hits),
+        TRY_AGAIN_SUB,
+        [{ text: BTN_RETRY, action: () => run() }],
       );
     }
 

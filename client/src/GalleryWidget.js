@@ -8,6 +8,7 @@
  */
 
 import { fetchGallery, getGalleryVideoUrl } from "./helpers/galleryApi.js";
+import { NO_GALLERY_ENTRIES, GALLERY_VIDEO_LABEL, GALLERY_HITS_DISPLAY } from "./strings.js";
 
 const REFRESH_INTERVAL = 30_000;
 
@@ -40,7 +41,7 @@ export class GalleryWidget extends EventTarget {
 
     if (this.#entries.length === 0) {
       this.#listEl.innerHTML =
-        '<div class="gallery-empty">No entries yet.</div>';
+        `<div class="gallery-empty">${NO_GALLERY_ENTRIES}</div>`;
       return;
     }
 
@@ -53,11 +54,11 @@ export class GalleryWidget extends EventTarget {
 
       const label = document.createElement("span");
       label.className = "ge-label";
-      label.textContent = entry.title || `Video ${i + 1}`;
+      label.textContent = entry.title || GALLERY_VIDEO_LABEL(i + 1);
 
       const hits = document.createElement("span");
       hits.className = "ge-hits";
-      hits.textContent = `${entry.avg_hits}h`;
+      hits.textContent = GALLERY_HITS_DISPLAY(entry.avg_hits);
 
       row.appendChild(label);
       row.appendChild(hits);

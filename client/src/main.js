@@ -14,6 +14,10 @@ import { GameWidget } from "./GameWidget.js";
 import { GalleryWidget } from "./GalleryWidget.js";
 import { login } from "./helpers/login.js";
 import { phaseService } from "./helpers/phase.js";
+import { applyStrings } from "./i18n.js";
+
+// Apply translations immediately before anything else renders
+applyStrings();
 
 // Instantiate widgets
 const toast = new ToastService();
