@@ -43,11 +43,92 @@
 
 ---
 
+針對你的三個問題，以下是詳細的解答：
+
+### 1. 全重置要先 `docker compose down` 嗎？
+**強烈建議先 `down`。**
+你的流程 `down` ➔ `跑腳本` ➔ `up -d` 是**最完美且最安全**的做法。如果伺服器還在運作時強制搬移 `data` 資料夾，有可能會因為檔案正在被寫入而產生錯誤（尤其是 Windows 系統很容易卡 File Lock）。先 down 掉就可以確保所有檔案都解除佔用，安全乾淨地重置。
+
+### 2. down、full reset、up之間，鎖定的程式會自動解鎖嗎？
+**會自動解鎖。**
+伺服器的狀態（包含現在是不是鎖定的 gauntlet 階段）會隨著 Docker 容器被 down 掉而清空記憶體。再加上 full reset 已經把 `data` 目錄整個換新了，所以當你重新 `up` 起來時，伺服器會完全回到剛啟動的預設狀態——也就是**所有人解鎖、可以自由寫程式的階段**。
+
+### 3. 那些反斜線是 Windows 在用的吧？到時候架在 Linux 上還要嗎？
+**你說到重點了！** 那些 `\"` 是為了在 Windows 的 CMD 裡面讓「雙引號包住雙引號」才妥協加上的。
+如果之後架在 Linux 上（使用 bash 等終端機），最外層請直接改用**單引號 (`'`)**，裡面就**完全不用加反斜線了**，指令會變得超級乾淨！
+
+---
+
+這裡幫你把你整理的**「四、關主操作方式」**稍微微調一下，把 Linux 版乾淨的指令也放進去，你可以直接複製去更新你的 README：
+
+```markdown
 ## 四、關主操作方式
 
-github上有把docker之類的東西弄好的方法
+### 每輪 / 輪跟輪之間大致步驟
+1. 關閉伺服器：`docker compose down`
+2. 執行全重置腳本
+3. 啟動伺服器：`docker compose up -d`
+4. (若有需要，中途可執行單獨帳號重置)
+5. 程式寫得差不多後，打指令鎖定程式 (進入 Gauntlet 階段)
+6. 實戰玩完後，把很酷的彈幕加進畫廊
+
+### 具體指令
+
+GitHub 上有把 Docker 環境建置好的說明：
 https://github.com/a97101103Z/vibeTouHou/blob/main/deploy/README.md
 
+記得去創一個 `.env` 並提供 Team Token，如以下示範：
+
+```env
+# .env
+RED_TEAM_TOKEN=super_secret_red_key_123
+BLUE_TEAM_TOKEN=super_secret_blue_key_456
+ADMIN_TOKEN=super_secret_admin_key_789
+```
+
+建議每次對戰都獨立改一組 token，以免有人亂登、提早登，或登到別人隊的帳號。
+
+
+一、遊戲告終的 Full Reset   
+直接在 Host 機器上依序跑：
+```bash
+docker compose down
+python reset_environment.py
+docker compose up -d
+```
+
+二、某人搞事帳號炸了時的單 Slot Reset
+直接在 Host 機器上跑：
+```bash
+python reset_slot.py --url http://localhost:12345
+```
+
+三、進實戰段落，程式不能再寫時的鎖定 (Gauntlet Phase)  
+(注意：要把 `your_admin_secret_here` 換成你的 ADMIN_TOKEN)
+```bash
+# Linux / Mac ：
+curl -X POST -H "Content-Type: application/json" -d '{"admin_token":"your_admin_secret_here","phase":"gauntlet"}' http://localhost:12345/api/admin/set-phase
+```
+
+四、假設鎖爛了，要重新開放寫程式 (Reset Phase)
+(這個也要把 `your_admin_secret_here` 換成你的 ADMIN_TOKEN) 
+```bash
+# Linux / Mac：
+curl -X POST -H "Content-Type: application/json" -d '{"admin_token":"your_admin_secret_here"}' http://localhost:12345/api/admin/reset-phase
+```
+
+五、把表現不錯的彈幕設計加入畫廊 (Gallery)
+(注意：要填入標題 title、平均受傷次數 avg_hits、隊伍 team 與編號 index)
+```bash
+# Linux / Mac：
+curl -X POST -H "Content-Type: application/json" -d '{"admin_token":"your_admin_secret_here","title":"RED-3","avg_hits":2.4,"team":"red","index":3}' http://localhost:12345/api/admin/gallery
+```
+
+六、撤回一組進畫廊的東西  
+```bash
+# Linux / Mac：
+curl -X DELETE -H "Content-Type: application/json" -d '{"admin_token":"your_admin_secret_here","id":"abc123"}' http://localhost:12345/api/admin/gallery
+```
 
 --- 
 

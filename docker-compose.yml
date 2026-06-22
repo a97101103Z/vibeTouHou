@@ -15,6 +15,7 @@ services:
       ADMIN_TOKEN: "${ADMIN_TOKEN}"
     volumes:
       - ./data:/app/data
+      - ./gallery:/app/gallery
       - ${XDG_RUNTIME_DIR}/docker.sock:/var/run/docker.sock
     expose:
       - "8000"
