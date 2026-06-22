@@ -64,6 +64,9 @@
 ```markdown
 ## 四、關主操作方式
 
+遊戲網址
+http://ws1.csie.ntu.edu.tw:12345/
+
 ### 每輪 / 輪跟輪之間大致步驟
 1. 關閉伺服器：`docker compose down`
 2. 執行全重置腳本
@@ -98,6 +101,8 @@ docker compose up -d
 ```
 
 二、某人搞事帳號炸了時的單 Slot Reset
+(注意，在gauntlet模式下跑會導致他就少一個彈幕也不能提交程式)
+
 直接在 Host 機器上跑：
 ```bash
 python reset_slot.py --url http://localhost:12345
