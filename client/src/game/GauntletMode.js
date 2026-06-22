@@ -144,10 +144,6 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
         PERFECT_GAUNTLET_TITLE,
         PERFECT_GAUNTLET_SUB(gauntletWidget.patterns.length),
         [
-          {
-            text: BTN_INFINITE,
-            action: () => gauntletWidget.dispatchEvent(new CustomEvent("beginInfinite")),
-          },
           { text: BTN_RUN_AGAIN, action: () => run() },
         ],
         summaryContainer,
