@@ -10,6 +10,9 @@ services:
       # Docker siblings via /var/run/docker.sock) can bind-mount it.
       # Override with an explicit path if ${PWD} doesn't resolve correctly.
       HOST_DATA_DIR: "${PWD}/data"
+      RED_TEAM_TOKEN: "${RED_TEAM_TOKEN}"
+      BLUE_TEAM_TOKEN: "${BLUE_TEAM_TOKEN}"
+      ADMIN_TOKEN: "${ADMIN_TOKEN}"
     volumes:
       - ./data:/app/data
       - ${XDG_RUNTIME_DIR}/docker.sock:/var/run/docker.sock
