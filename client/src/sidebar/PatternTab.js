@@ -128,8 +128,22 @@ export class PatternTab extends EventTarget {
   // ── DOM side effects ───────────────────────────────────
 
   #setRendered(value) {
-    if (this.#btnPlaytest) {
-      this.#btnPlaytest.disabled = !value;
+    if (!this.#btnPlaytest || !this.#btnRenderPattern) return;
+
+    if (value) {
+      // Video ready — Playtest is primary action
+      this.#btnPlaytest.classList.remove("btn-secondary");
+      this.#btnPlaytest.classList.add("btn-primary");
+      this.#btnRenderPattern.classList.remove("btn-primary");
+      this.#btnRenderPattern.classList.add("btn-secondary");
+      this.#btnPlaytest.disabled = false;
+    } else {
+      // No video — Render is primary action
+      this.#btnRenderPattern.classList.remove("btn-secondary");
+      this.#btnRenderPattern.classList.add("btn-primary");
+      this.#btnPlaytest.classList.remove("btn-primary");
+      this.#btnPlaytest.classList.add("btn-secondary");
+      this.#btnPlaytest.disabled = true;
     }
   }
 

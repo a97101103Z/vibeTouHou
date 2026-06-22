@@ -65,7 +65,7 @@ export async function publishPattern(trajectory) {
   const data = await res.json();
 
   if (res.ok) {
-    return { ok: true, message: data.message || TOAST_PUBLISH_OK };
+    return { ok: true, message: TOAST_PUBLISH_OK };
   }
   return { ok: false, message: data.detail || TOAST_VALIDATION_FAIL };
 }

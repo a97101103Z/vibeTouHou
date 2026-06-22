@@ -101,8 +101,8 @@ export const GALLERY_HITS_DISPLAY  = tf((h) => `${h}h`,                         
 export const SECTION_PLAY          = t("Play",                                                 "試玩");
 export const OVERLAY_TITLE_DEFAULT = t("Play",                                                 "試玩");
 export const OVERLAY_SUB_DEFAULT   = t("Select a mode to begin.",                             "選擇模式以開始。");
-export const HUD_HITS_INIT         = t("Hits: 0",                                             "受傷：0");
-export const HITS_DISPLAY          = tf((n) => `Hits: ${n}`,                                   (n) => `受傷：${n}`);
+export const HUD_HITS_INIT         = t("Hits: 0",                                             "受傷次數：0");
+export const HITS_DISPLAY          = tf((n) => `Hits: ${n}`,                                   (n) => `受傷次數：${n}`);
 export const MODE_PLAYTEST         = t("PLAYTEST",                                            "試玩模式");
 export const MODE_GAUNTLET         = t("GAUNTLET",                                            "實戰模式");
 export const MODE_INFINITE         = t("INFINITE",                                            "無盡模式");
