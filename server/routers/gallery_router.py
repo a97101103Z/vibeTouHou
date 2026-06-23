@@ -37,7 +37,7 @@ def stream_gallery_video(entry_id: str):
 # ── Admin ──────────────────────────────────────────────────────────────────────
 
 class AddEntryBody(BaseModel):
-    admin_token: str
+    admin_token: str = ""
     title: str = ""
     avg_hits: float
     team: str = Field(..., pattern="^(red|blue)$")
@@ -45,7 +45,7 @@ class AddEntryBody(BaseModel):
 
 
 class DeleteEntryBody(BaseModel):
-    admin_token: str
+    admin_token: str = ""
     id: str
 
 

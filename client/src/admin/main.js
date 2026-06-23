@@ -73,7 +73,6 @@ function showDashboard() {
 
   // Logout
   document.getElementById("btn-admin-logout").addEventListener("click", () => {
-    sessionStorage.removeItem("admin_token");
     document.cookie = "session=; Max-Age=0; path=/;";
     window.location.reload();
   });

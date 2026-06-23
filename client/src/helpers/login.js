@@ -38,7 +38,6 @@ export async function login(toastService) {
         const result = await claimSlot(token);
         if (result.admin) {
           // Admin token detected — redirect to admin panel
-          sessionStorage.setItem("admin_token", token);
           window.location.href = "/admin.html";
           return;
         }
@@ -70,7 +69,6 @@ async function checkSession() {
     if (data.slot) {
       // Admin sessions redirect to admin page
       if (data.slot === "admin") {
-        sessionStorage.setItem("admin_token", "");
         window.location.href = "/admin.html";
         return null;
       }

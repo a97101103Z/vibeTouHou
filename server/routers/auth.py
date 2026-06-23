@@ -33,19 +33,19 @@ class ClaimBody(BaseModel):
 
 
 class ResetBody(BaseModel):
-    admin_token: str = Field(..., min_length=1)
+    admin_token: str = ""
     team: str = Field(..., pattern="^(red|blue)$")
     index: int = Field(..., ge=1, le=TEAM_SIZE)
 
 
 class SetPhaseBody(BaseModel):
-    admin_token: str = Field(..., min_length=1)
+    admin_token: str = ""
     phase: str = Field(..., pattern="^(code|gauntlet)$")
     grace_seconds: int = 60
 
 
 class AdminTokenBody(BaseModel):
-    admin_token: str = Field(..., min_length=1)
+    admin_token: str = ""
 
 
 @router.post("/claim")

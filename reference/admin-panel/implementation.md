@@ -4,12 +4,11 @@
 
 ## Architecture
 
-### Dual Authentication
+### Authentication
 - Admin token entered in `/api/claim` → backend creates an admin session (slot `"admin"`) + sets session cookie
-- Admin endpoints accept **either**: `session` cookie (admin session) OR `admin_token` in request body
-- Cookie auth exists so `<video>` elements (and the embedded game engine) can fetch video without JS
-- Body auth exists for backward compat with library functions that check `admin_token` internally
-- `resolve_admin_token()` helper in `routers/__init__.py` returns the canonical `ADMIN_TOKEN` if either method succeeds, or `None` if both fail
+- Client authenticates all requests via the session cookie only (no `admin_token` stored or sent)
+- Server still accepts either cookie or `admin_token` in body (`resolve_admin_token()` helper in `routers/__init__.py`) for backward compatibility
+- Cookie auth exists so `<video>` elements and the embedded game engine can fetch video without JS
 
 ### Online Tracking
 - Only `GET /api/leaderboard` updates `last_seen` timestamp (polled every 5s by the client)
