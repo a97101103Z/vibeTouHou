@@ -276,6 +276,7 @@ function openVideoPlayer(url, autoplay = false) {
 function launchEngine(url, label) {
   const modal = document.getElementById("game-modal");
   const canvas = document.getElementById("admin-game-canvas");
+  const ctx = canvas.getContext("2d");
   const overlay = document.getElementById("admin-canvas-overlay");
   const titleEl = document.getElementById("admin-overlay-title");
   const subEl = document.getElementById("admin-overlay-subtitle");
@@ -286,19 +287,26 @@ function launchEngine(url, label) {
 
   let engine = null;
   let running = false;
+  let countdownId = null;
+  let closed = false;
 
-  function stop() {
+  function cleanup() {
+    if (countdownId) { clearInterval(countdownId); countdownId = null; }
     running = false;
     if (engine) { engine.stop(); engine = null; }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
 
   function close() {
-    stop();
+    if (closed) return;
+    closed = true;
+    cleanup();
     modal.classList.remove("visible");
     modal.style.display = "";
   }
 
   function startGame() {
+    if (closed) return;
     running = true;
     engine = new GameEngine(canvas, url, {
       playerRadius: 8,
@@ -306,6 +314,7 @@ function launchEngine(url, label) {
     });
 
     engine.addEventListener("hit", (e) => {
+      if (closed) return;
       hitsEl.textContent = `Hits: ${e.detail.hits}`;
     });
 
@@ -314,13 +323,11 @@ function launchEngine(url, label) {
       overlay.setAttribute("data-visible", "true");
       titleEl.textContent = "Finished";
       subEl.textContent = `Pattern: ${label}`;
-      if (engine) {
-        hitsEl.textContent = `Hits: ${engine.hits}`;
-      }
+      hitsEl.textContent = `Hits: ${engine ? engine.hits : "?"}`;
       actionsEl.innerHTML = `<button class="btn-admin play" id="btn-game-replay">Replay</button>
         <button class="btn-admin danger" id="btn-game-close">Close</button>`;
-      document.getElementById("btn-game-replay")?.addEventListener("click", () => ready());
-      document.getElementById("btn-game-close")?.addEventListener("click", close);
+      document.getElementById("btn-game-replay")?.addEventListener("click", () => { closed = false; ready(); }, { once: true });
+      document.getElementById("btn-game-close")?.addEventListener("click", close, { once: true });
     });
 
     engine.addEventListener("videoerror", () => {
@@ -329,49 +336,50 @@ function launchEngine(url, label) {
       titleEl.textContent = "Video Error";
       subEl.textContent = "Failed to load video.";
       actionsEl.innerHTML = `<button class="btn-admin danger" id="btn-game-close">Close</button>`;
-      document.getElementById("btn-game-close")?.addEventListener("click", close);
+      document.getElementById("btn-game-close")?.addEventListener("click", close, { once: true });
     });
 
     overlay.setAttribute("data-visible", "false");
     patternEl.textContent = label;
     timeEl.textContent = "10.0s";
     hitsEl.textContent = "Hits: 0";
-    engine.start().catch(() => { if (running) close(); });
+    engine.start().catch(() => { if (running) { running = false; close(); } });
   }
 
   function ready() {
-    stop();
+    cleanup();
     overlay.setAttribute("data-visible", "true");
     titleEl.textContent = "Ready";
     subEl.textContent = label;
     actionsEl.innerHTML = `<button class="btn-admin primary" id="btn-game-start">Play</button>
       <button class="btn-admin danger" id="btn-game-cancel">Cancel</button>`;
     document.getElementById("btn-game-start")?.addEventListener("click", () => {
+      if (closed) return;
       let count = 3;
       overlay.setAttribute("data-visible", "true");
       titleEl.textContent = String(count);
       subEl.textContent = "Get ready...";
       actionsEl.innerHTML = "";
-      const interval = setInterval(() => {
+      countdownId = setInterval(() => {
         count--;
         if (count > 0) {
           titleEl.textContent = String(count);
         } else {
-          clearInterval(interval);
+          clearInterval(countdownId);
+          countdownId = null;
           startGame();
         }
       }, 1000);
-    });
-    document.getElementById("btn-game-cancel")?.addEventListener("click", close);
+    }, { once: true });
+    document.getElementById("btn-game-cancel")?.addEventListener("click", close, { once: true });
   }
 
   // Open modal
+  closed = false;
   modal.style.display = "flex";
   modal.classList.add("visible");
   document.getElementById("game-modal-close").onclick = close;
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) close();
-  });
+  modal.addEventListener("click", (e) => { if (e.target === modal) close(); });
 
   ready();
 }
