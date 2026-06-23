@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 import identity
 import phase
 from config import TEAM_SIZE, ADMIN_TOKEN
+from routers import resolve_admin_token
 
 router = APIRouter()
 
@@ -76,11 +77,12 @@ def claim_slot(body: ClaimBody, response: Response):
 
 
 @router.post("/admin/reset-slot")
-def reset_slot(body: ResetBody):
+def reset_slot(body: ResetBody, session: str | None = Cookie(default=None)):
     """Admin: remove a user from a slot. Frees the slot for new claims."""
-    result = identity.remove(body.admin_token, body.team, body.index)
-    if result is None:
+    effective_token = resolve_admin_token(session, body.admin_token)
+    if effective_token is None:
         raise HTTPException(401, "Invalid admin token.")
+    result = identity.remove(effective_token, body.team, body.index)
     if result is False:
         raise HTTPException(404, "Slot not found.")
     return {"ok": True}
@@ -101,18 +103,24 @@ def get_phase():
 
 
 @router.post("/admin/set-phase")
-def set_phase(body: SetPhaseBody):
+def set_phase(body: SetPhaseBody, session: str | None = Cookie(default=None)):
     """Admin: switch phase. Switching to 'gauntlet' starts a 60-second grace period."""
-    result = phase.set_phase(body.admin_token, body.phase)
+    effective_token = resolve_admin_token(session, body.admin_token)
+    if effective_token is None:
+        raise HTTPException(401, "Invalid admin token.")
+    result = phase.set_phase(effective_token, body.phase)
     if result is None:
         raise HTTPException(401, "Invalid admin token.")
     return {"ok": True, **phase.get_phase()}
 
 
 @router.post("/admin/reset-phase")
-def reset_phase(body: AdminTokenBody):
+def reset_phase(body: AdminTokenBody, session: str | None = Cookie(default=None)):
     """Admin: immediately reset phase back to 'code'."""
-    result = phase.reset_phase(body.admin_token)
+    effective_token = resolve_admin_token(session, body.admin_token)
+    if effective_token is None:
+        raise HTTPException(401, "Invalid admin token.")
+    result = phase.reset_phase(effective_token)
     if result is None:
         raise HTTPException(401, "Invalid admin token.")
     return {"ok": True, **phase.get_phase()}
