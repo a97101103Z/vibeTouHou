@@ -179,10 +179,11 @@
                     </div>
                   </div>
 
-                  <div class="tab-actions">
-                    <button id="btn-upload-assets" class="btn btn-outline" data-i18n="BTN_UPLOAD">
-                      ⬆ Upload
-                    </button>
+                  <div class="asset-usage-hint">
+                    <div class="usage-hint-label" data-i18n="ASSETS_USAGE_HINT">Use assets in your pattern code:</div>
+                    <pre><code>img = imageio.imread("image.png")
+pattern = gz.ImagePattern(img, ...)</code></pre>
+                    <div class="usage-hint-note">💡 <span data-i18n="ASSETS_CLICK_HINT">Click an asset to copy its filename</span></div>
                   </div>
                 </div>
               </div>

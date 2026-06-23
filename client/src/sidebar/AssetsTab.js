@@ -3,6 +3,7 @@ import {
   LOADING, NO_ASSETS, ERR_LOAD_ASSETS,
   ASSETS_COUNT, DEL_BTN_TITLE, CONFIRM_DELETE,
   TOAST_DELETED, ERR_DELETE, TOAST_UPLOADED, TOAST_UPLOAD_FAIL,
+  COPIED_LABEL,
 } from "../strings.js";
 
 /**
@@ -18,8 +19,6 @@ export class AssetsTab extends EventTarget {
   #fileInput;
   #assetGallery;
   #btnRefreshAssets;
-  #btnUploadAssets;
-
   /**
    * @param {import("../ToastService.js").ToastService} toastService
    */
@@ -40,7 +39,6 @@ export class AssetsTab extends EventTarget {
     this.#fileInput = document.getElementById("file-input");
     this.#assetGallery = document.getElementById("asset-gallery");
     this.#btnRefreshAssets = document.getElementById("btn-refresh-assets");
-    this.#btnUploadAssets = document.getElementById("btn-upload-assets");
   }
 
   // ── Public ──────────────────────────────────────────────
@@ -96,6 +94,13 @@ export class AssetsTab extends EventTarget {
   #makeThumb({ name }) {
     const wrap = document.createElement("div");
     wrap.className = "asset-thumb";
+    let copyTimer = null;
+    wrap.addEventListener("click", () => {
+      navigator.clipboard.writeText(name);
+      label.textContent = COPIED_LABEL;
+      clearTimeout(copyTimer);
+      copyTimer = setTimeout(() => { label.textContent = name; }, 1500);
+    });
 
     const img = document.createElement("img");
     img.src = `/api/assets/${encodeURIComponent(name)}`;
@@ -172,8 +177,5 @@ export class AssetsTab extends EventTarget {
     });
 
     this.#btnRefreshAssets.addEventListener("click", () => this.loadGallery());
-    this.#btnUploadAssets.addEventListener("click", () =>
-      this.#fileInput.click(),
-    );
   }
 }

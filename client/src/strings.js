@@ -57,7 +57,6 @@ export const DROPZONE_TEXT_HTML    = t("Drag &amp; drop images here, or <strong>
 export const ASSET_HINT            = t("PNG, JPG, GIF, BMP, WebP — max 10 MB each",          "PNG、JPG、GIF、BMP、WebP — 每個最大 10 MB");
 export const YOUR_ASSETS           = t("Your Assets",                                         "我的素材");
 export const BTN_REFRESH           = t("↻ Refresh",                                           "↻ 重新整理");
-export const BTN_UPLOAD            = t("⬆ Upload",                                            "⬆ 上傳");
 export const LOADING               = t("Loading…",                                            "載入中…");
 export const NO_ASSETS             = t("No assets uploaded yet.",                             "尚未上傳任何素材。");
 export const ERR_LOAD_ASSETS       = t("Could not load assets.",                              "無法載入素材。");
@@ -68,6 +67,9 @@ export const CONFIRM_DELETE        = tf((name) => `Delete "${name}"?`,          
 export const TOAST_DELETED         = tf((name) => `Deleted ${name}.`,                         (name) => `已刪除 ${name}。`);
 export const TOAST_UPLOADED        = tf((file) => `Uploaded ${file}`,                         (file) => `已上傳 ${file}`);
 export const TOAST_UPLOAD_FAIL     = tf((name) => `Upload failed for ${name}.`,               (name) => `${name} 上傳失敗。`);
+export const COPIED_LABEL          = t("Copied!",                                              "已複製！");
+export const ASSETS_USAGE_HINT    = t("Use assets in your pattern code:",                   "在代碼中使用素材：");
+export const ASSETS_CLICK_HINT    = t("Click an asset to copy its filename",                "點擊素材即可複製檔名");
 
 // ── Collapsed sidebar ──────────────────────────────────────────────────────────
 export const GALLERY_LABEL         = t("Gallery",                                             "彈幕畫廊");

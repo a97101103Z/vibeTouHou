@@ -618,7 +618,13 @@ body::before {
   background: var(--bg-glass);
   overflow: hidden;
   position: relative;
-  cursor: default;
+  cursor: pointer;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+
+.asset-thumb:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-dim);
 }
 
 .asset-thumb img {
@@ -694,6 +700,41 @@ body::before {
 .asset-hint {
   font-size: 0.75rem;
   margin-top: 6px;
+  color: var(--text-muted);
+}
+
+/* Asset Usage Hint */
+.asset-usage-hint {
+  margin-top: 16px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.25);
+  font-size: 0.78rem;
+}
+
+.asset-usage-hint .usage-hint-label {
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.asset-usage-hint pre {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: #000;
+  overflow-x: auto;
+}
+
+.asset-usage-hint code {
+  font-family: var(--font-code);
+  font-size: 0.75rem;
+  color: var(--accent);
+  line-height: 1.5;
+}
+
+.usage-hint-note {
+  margin-top: 8px;
+  font-size: 0.72rem;
   color: var(--text-muted);
 }
 

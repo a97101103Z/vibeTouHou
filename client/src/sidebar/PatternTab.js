@@ -30,7 +30,9 @@ DURATION = 10 # seconds
 # Pattern settings — edit freely!
 # Uploaded assets are staged into the script's working directory,
 # so you can load them directly by filename (e.g., "sprite.png").
-# Try \`imageio.imread("sprite.png")\`, then put it into \`gizeh.ImagePattern()\`.
+# Try:
+#   img = imageio.imread("sprite.png")
+#   pattern = gizeh.ImagePattern(img)
 
 PELLETS = 24 # number of pellets in the ring
 PELLET_RADIUS = 5 # size of each pellet (pixels)
