@@ -53,7 +53,7 @@ export const adminApi = {
 
   /** Set phase: 'code' or 'gauntlet' with optional grace seconds */
   async setPhase(phase, graceSeconds) {
-    return api("POST", "/api/admin/set-phase", withToken({ phase }));
+    return api("POST", "/api/admin/set-phase", withToken({ phase, grace_seconds: graceSeconds }));
   },
 
   /** Immediately reset to code phase */

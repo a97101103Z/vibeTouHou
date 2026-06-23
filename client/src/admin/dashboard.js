@@ -225,8 +225,9 @@ function openVideoPlayer(team, index) {
 export function setupPhaseControl() {
   document.getElementById("btn-set-phase").addEventListener("click", async () => {
     const phase = document.getElementById("phase-select").value;
+    const graceSeconds = parseInt(document.getElementById("grace-seconds").value) || 60;
     try {
-      await adminApi.setPhase(phase);
+      await adminApi.setPhase(phase, graceSeconds);
       poll();
     } catch (err) {
       alert(err.message);

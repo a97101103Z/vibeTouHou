@@ -41,6 +41,7 @@ class ResetBody(BaseModel):
 class SetPhaseBody(BaseModel):
     admin_token: str = Field(..., min_length=1)
     phase: str = Field(..., pattern="^(code|gauntlet)$")
+    grace_seconds: int = 60
 
 
 class AdminTokenBody(BaseModel):
@@ -116,7 +117,7 @@ def set_phase(body: SetPhaseBody, session: str | None = Cookie(default=None)):
     effective_token = resolve_admin_token(session, body.admin_token)
     if effective_token is None:
         raise HTTPException(401, "Invalid admin token.")
-    result = phase.set_phase(effective_token, body.phase)
+    result = phase.set_phase(effective_token, body.phase, grace_seconds=body.grace_seconds)
     if result is None:
         raise HTTPException(401, "Invalid admin token.")
     return {"ok": True, **phase.get_phase()}
