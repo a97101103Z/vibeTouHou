@@ -34,12 +34,15 @@
 - `_load()`: handle old format migration (string values → dict)
 - `get_slot()`: extract slot string from both old (str) and new (dict) formats
 - `claim()`: store dict with `last_seen` = `None`
-- `remove()`: no change needed
-- Add `update_last_seen(session_token: str)` → sets current timestamp
+- `remove()`: no change needed (still checks admin_token internally)
+- Add `update_last_seen(session_token: str)` → sets current timestamp (in-memory only, no disk write)
+- Add `create_admin_session()` → creates session with slot `"admin"`, no _claimed entry
+- Add `is_claimed(slot_key)` and `get_last_seen(slot_key)` for admin overview
 - `_save()`, `_load()`: persist new dict format
 
 ### scores_router.py changes
-- Before returning leaderboard data, call `identity.update_last_seen()` with the current session
+- Import `identity`, accept `session: str | None = Cookie(default=None)` in leaderboard endpoint
+- Before returning, call `identity.update_last_seen(session)`
 
 ---
 
@@ -49,26 +52,33 @@
 
 ### `/api/claim` change
 - Before checking team tokens, check if `body.token.strip() == ADMIN_TOKEN`
-- If admin: create an admin session with slot key `"admin"`, set session cookie
+- If admin: create an admin session via `identity.create_admin_session()`, set session cookie
 - Return `{"ok": True, "admin": True, "redirect": "/admin.html"}`
-- No sessionStorage needed — cookie handles it
+- The admin frontend also stores the raw token in `sessionStorage` so subsequent POST requests can include `admin_token` in their JSON bodies (backward compat with existing library auth checks)
 
 ---
 
-## Phase 3: Backend — `require_admin()` dependency
+## Phase 3: Backend — `resolve_admin_token()` helper (dual auth)
 
 **Files:** `server/routers/__init__.py`, `server/routers/auth.py`, `server/routers/gallery_router.py`
 
-### `__init__.py` — Add `require_admin()`
-- Checks BOTH: `session` cookie (must be admin session) OR `admin_token` in request body
-- Return the admin token string or raise 401
+**Design note:** FastAPI's `Depends` pattern doesn't handle dual auth (cookie + body) cleanly for POST endpoints where Pydantic models parse the body separately. Instead of a Depends-based dependency, we use inline utility functions called at the top of each endpoint body.
+
+### `__init__.py` — Add `verify_admin()` and `resolve_admin_token()`
+- `verify_admin(session_token, body_admin_token)` → `bool`: returns `True` if either auth method succeeds
+- `resolve_admin_token(session_token, body_admin_token)` → `str | None`: returns the canonical `ADMIN_TOKEN` if cookie auth succeeds, or the body token if it matches `ADMIN_TOKEN`, or `None` if both fail
+- Cookie auth: checks `identity.get_slot(session) == "admin"`
+- Body auth: checks `body_token == ADMIN_TOKEN`
 
 ### `auth.py` — Refactor existing admin endpoints
-- Replace manual `if admin_token != ADMIN_TOKEN` checks with `require_admin()` dependency
+- Replace manual `if admin_token != ADMIN_TOKEN` checks with `resolve_admin_token()` at the top of each endpoint
+- `effective_token = resolve_admin_token(session, body.admin_token)` then `if effective_token is None: raise 401`
+- Pass `effective_token` (not raw body token) to library functions so their internal checks pass
 - Endpoints affected: `reset-slot`, `set-phase`, `reset-phase`
+- `SetPhaseBody` gets new field: `grace_seconds: int = 60`
 
 ### `gallery_router.py` — Refactor admin endpoints
-- Replace manual checks with `require_admin()` dependency
+- Same pattern: `resolve_admin_token()` at entry, pass `effective_token` to `gallery_store` functions
 - Endpoints affected: `add_gallery_entry`, `delete_gallery_entry`
 
 ---
@@ -91,14 +101,14 @@ Requires admin auth. Returns:
       "has_published": true,
       "has_output": true,
       "asset_count": 3,
-      "assets": ["sprite.png"],
-      "scores": { "best_hits": 2, "infinite_time": null }
+      "assets": ["sprite.png"]
     }
   ],
   "gallery": [...],
   "leaderboard": { "red": {...}, "blue": {...} }
 }
 ```
+Note: `leaderboard` is returned at the top level (not per-slot). The frontend joins them client-side.
 
 Online status: `last_seen` within 30 seconds → online.
 
@@ -149,10 +159,14 @@ client/src/admin/
 6. Render dashboard
 
 ### admin/dashboard.js
-- `renderPhaseControl()`: current phase badge + toggle button + countdown input
-- `renderSlotsTable()`: 24 rows with status icons and action buttons
-- `renderGallery()`: gallery entry list with delete + "Add from slot" form
-- Video player modal for test-playing
+- `renderPhase(snapshot)`: current phase badge + countdown timer if grace period active
+- `renderStats(slots, leaderboard)`: 4-stat card (total, claimed, online, published)
+- `renderSlotsTable(slots)`: 24 rows with status icons, reset button, watch button
+- `renderGallery(entries)`: gallery entry list with delete buttons
+- `setupPhaseControl()`: wire phase-select + grace-seconds input + apply button → `adminApi.setPhase()`
+- `setupGalleryAdd()`: wire team/index/title/avg-hits form + add button → `adminApi.addGalleryEntry()`
+- `openVideoPlayer(team, index)`: modal with `<video>` element sourcing from cookie-authed `/api/admin/slot-video/{team}/{index}`
+- `startPolling() / stopPolling()`: polls `/api/admin/overview` every 5s
 
 ### admin/api.js
 - `fetchOverview(adminToken)` → `POST /api/admin/overview`
@@ -167,17 +181,17 @@ client/src/admin/
 
 | File | Change |
 |------|--------|
-| `server/identity.py` | Session dict format, `update_last_seen()` |
-| `server/routers/__init__.py` | `require_admin()` dependency |
-| `server/routers/auth.py` | Admin claim, overview, slot-video; use `require_admin()` |
+| `server/identity.py` | Session dict format, `create_admin_session()`, `update_last_seen()`, `is_claimed()`, `get_last_seen()` |
+| `server/routers/__init__.py` | `verify_admin()`, `resolve_admin_token()` helpers |
+| `server/routers/auth.py` | Admin claim detection, overview, slot-video; refactored admin endpoints with `resolve_admin_token()` |
 | `server/routers/scores_router.py` | Track `last_seen` on leaderboard poll |
-| `server/routers/gallery_router.py` | Use `require_admin()` |
-| `client/vite.config.js` | Multi-page entry config |
-| `client/src/helpers/login.js` | Handle admin redirect |
-| `client/admin.html` | NEW — admin page HTML |
-| `client/src/admin/main.js` | NEW — admin entry point |
-| `client/src/admin/api.js` | NEW — admin API helper |
-| `client/src/admin/dashboard.js` | NEW — dashboard renderer |
+| `server/routers/gallery_router.py` | Refactored admin endpoints with `resolve_admin_token()` |
+| `client/vite.config.js` | Multi-page entry config (`rollupOptions.input`) |
+| `client/src/helpers/login.js` | Handle admin redirect, store token in sessionStorage |
+| `client/admin.html` | NEW — admin page HTML + dashboard containers |
+| `client/src/admin/main.js` | NEW — admin entry point: login check → dashboard |
+| `client/src/admin/api.js` | NEW — admin API helper (cookie + body auth) |
+| `client/src/admin/dashboard.js` | NEW — full dashboard renderer + event wiring |
 
 ## Verification
 
