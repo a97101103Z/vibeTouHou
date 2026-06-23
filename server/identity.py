@@ -132,6 +132,22 @@ def update_last_seen(token: str) -> None:
             # Don't save to disk on every poll — in-memory is fine
 
 
+def get_last_seen(slot_key: str) -> float | None:
+    """Return the last_seen timestamp for a claimed slot, or None."""
+    with _lock:
+        token = _claimed.get(slot_key)
+        if token is None:
+            return None
+        info = _sessions.get(token)
+        return info.get("last_seen") if info else None
+
+
+def is_claimed(slot_key: str) -> bool:
+    """Check whether a slot key (e.g. 'red-1') is currently claimed."""
+    with _lock:
+        return slot_key in _claimed
+
+
 def remove(admin_token: str, team: str, index: int) -> bool | None:
     """
     Admin: remove a user from a slot using the admin token.
