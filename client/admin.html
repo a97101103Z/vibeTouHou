@@ -146,6 +146,18 @@
       <!-- Gallery Management -->
       <div class="card">
         <h3>Gallery</h3>
+
+        <div class="add-gallery-form">
+          <select id="gallery-team" style="background:#1a1a2a;border:1px solid #333;color:#e0e0e0;padding:4px 8px;">
+            <option value="red">RED</option>
+            <option value="blue">BLUE</option>
+          </select>
+          <input id="gallery-index" type="number" placeholder="Slot #" min="1" max="12" value="1" style="width:70px" />
+          <input id="gallery-title" type="text" placeholder="Title" style="width:120px" />
+          <input id="gallery-avg-hits" type="number" placeholder="Avg hits" step="0.1" min="0" value="0" style="width:80px" />
+          <button id="btn-gallery-add" class="btn-admin primary">Add to Gallery</button>
+        </div>
+
         <div id="gallery-admin-list" class="gallery-list-admin"></div>
       </div>
     </div>

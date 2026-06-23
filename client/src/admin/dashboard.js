@@ -222,6 +222,21 @@ function openVideoPlayer(team, index) {
 
 // ── Phase control events ─────────────────────────────────────────────────────
 
+export function setupGalleryAdd() {
+  document.getElementById("btn-gallery-add").addEventListener("click", async () => {
+    const team = document.getElementById("gallery-team").value;
+    const index = parseInt(document.getElementById("gallery-index").value);
+    const title = document.getElementById("gallery-title").value.trim();
+    const avgHits = parseFloat(document.getElementById("gallery-avg-hits").value) || 0;
+    try {
+      await adminApi.addGalleryEntry(title || `${team.toUpperCase()}-${index}`, avgHits, team, index);
+      poll();
+    } catch (err) {
+      alert(err.message);
+    }
+  });
+}
+
 export function setupPhaseControl() {
   document.getElementById("btn-set-phase").addEventListener("click", async () => {
     const phase = document.getElementById("phase-select").value;
