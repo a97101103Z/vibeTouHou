@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+import { resolve } from "path";
 
 export default defineConfig({
   server: {
@@ -25,6 +26,12 @@ export default defineConfig({
     terserOptions: {
       compress: { drop_console: false },
       mangle: true,
+    },
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, "index.html"),
+        admin: resolve(__dirname, "admin.html"),
+      },
     },
   },
 });

@@ -36,6 +36,12 @@ export async function login(toastService) {
 
       try {
         const result = await claimSlot(token);
+        if (result.admin) {
+          // Admin token detected — redirect to admin panel
+          sessionStorage.setItem("admin_token", token);
+          window.location.href = "/admin.html";
+          return;
+        }
         toastService.toast(TOAST_ASSIGNED(result.slot.toUpperCase()), "success");
         activateApp(result);
         resolve(result);
@@ -62,6 +68,12 @@ async function checkSession() {
     const res = await fetch("/api/me", { credentials: "include" });
     const data = await res.json();
     if (data.slot) {
+      // Admin sessions redirect to admin page
+      if (data.slot === "admin") {
+        sessionStorage.setItem("admin_token", "");
+        window.location.href = "/admin.html";
+        return null;
+      }
       const [team, idx] = data.slot.split("-");
       return {
         slot: data.slot,
@@ -91,6 +103,12 @@ async function claimSlot(token) {
   }
 
   const data = await res.json();
+
+  // Admin token detected — return early with no slot info
+  if (data.admin) {
+    return { admin: true };
+  }
+
   const [team, idx] = data.slot.split("-");
   return {
     slot: data.slot,
