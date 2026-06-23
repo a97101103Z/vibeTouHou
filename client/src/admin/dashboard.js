@@ -31,6 +31,7 @@ async function poll() {
 
 function renderPhase(phase) {
   const el = document.getElementById("phase-display");
+  const toggleBtn = document.getElementById("btn-toggle-phase");
   const isGauntlet = phase.phase === "gauntlet";
   const isActive = phase.active_at && Date.now() / 1000 >= phase.active_at;
 
@@ -48,7 +49,7 @@ function renderPhase(phase) {
     <span style="margin-left: 8px; color: #888;">${extra}</span>
   `;
 
-  document.getElementById("phase-select").value = isGauntlet ? "gauntlet" : "code";
+  toggleBtn.textContent = isGauntlet ? "Switch to Code" : "Switch to Gauntlet";
 }
 
 // ── Stats ─────────────────────────────────────────────────────────────────────
@@ -387,11 +388,13 @@ function launchEngine(url, label) {
 // ── Phase control events ─────────────────────────────────────────────────────
 
 export function setupPhaseControl() {
-  document.getElementById("btn-set-phase").addEventListener("click", async () => {
-    const phase = document.getElementById("phase-select").value;
-    const graceSeconds = parseInt(document.getElementById("grace-seconds").value) || 60;
+  document.getElementById("btn-toggle-phase").addEventListener("click", async () => {
+    const btn = document.getElementById("btn-toggle-phase");
+    const isCurrentlyGauntlet = btn.textContent.includes("Code");
+    const targetPhase = isCurrentlyGauntlet ? "code" : "gauntlet";
+    const graceSeconds = targetPhase === "gauntlet" ? parseInt(document.getElementById("grace-seconds").value) || 60 : 0;
     try {
-      await adminApi.setPhase(phase, graceSeconds);
+      await adminApi.setPhase(targetPhase, graceSeconds);
       poll();
     } catch (err) {
       alert(err.message);
