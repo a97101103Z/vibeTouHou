@@ -7,7 +7,7 @@
  */
 
 import { adminApi } from "./api.js";
-import { startPolling, stopPolling, setupPhaseControl, setupGalleryAdd, renderLoading } from "./dashboard.js";
+import { startPolling, stopPolling, setupPhaseControl, renderLoading } from "./dashboard.js";
 
 async function main() {
   // Check existing session
@@ -69,7 +69,6 @@ function showDashboard() {
 
   renderLoading();
   setupPhaseControl();
-  setupGalleryAdd();
   startPolling();
 
   // Logout

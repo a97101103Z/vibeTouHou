@@ -1,8 +1,5 @@
-/**
- * Dashboard renderer for the admin panel.
- */
-
 import { adminApi } from "./api.js";
+import { GameEngine } from "../game/engine.js";
 
 let pollingTimer = null;
 
@@ -108,6 +105,14 @@ function renderSlotsTable(slots) {
         ? `<button class="btn-admin" data-action="watch" data-team="${s.team}" data-index="${s.index}">Watch</button>`
         : "";
 
+      const playBtn = s.has_output
+        ? `<button class="btn-admin play" data-action="play" data-team="${s.team}" data-index="${s.index}" data-slot="${s.slot_key.toUpperCase()}">Play</button>`
+        : "";
+
+      const addGalleryBtn = s.has_output
+        ? `<button class="btn-admin primary" data-action="add-gallery" data-team="${s.team}" data-index="${s.index}" data-slot="${s.slot_key.toUpperCase()}">+Gallery</button>`
+        : "";
+
       return `
         <tr class="${rowClass}">
           <td><strong>${s.slot_key.toUpperCase()}</strong></td>
@@ -120,6 +125,8 @@ function renderSlotsTable(slots) {
           <td>${scoreText}</td>
           <td style="white-space: nowrap;">
             ${watchBtn}
+            ${playBtn}
+            ${addGalleryBtn}
             ${resetBtn}
           </td>
         </tr>
@@ -127,7 +134,6 @@ function renderSlotsTable(slots) {
     })
     .join("");
 
-  // Attach event listeners
   tbody.querySelectorAll("[data-action='reset']").forEach((btn) => {
     btn.addEventListener("click", () => {
       const team = btn.dataset.team;
@@ -142,7 +148,29 @@ function renderSlotsTable(slots) {
     btn.addEventListener("click", () => {
       const team = btn.dataset.team;
       const index = parseInt(btn.dataset.index);
-      openVideoPlayer(team, index);
+      openVideoPlayer(adminApi.slotVideoUrl(team, index), true);
+    });
+  });
+
+  tbody.querySelectorAll("[data-action='play']").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const team = btn.dataset.team;
+      const index = parseInt(btn.dataset.index);
+      const slotLabel = btn.dataset.slot;
+      launchEngine(adminApi.slotVideoUrl(team, index), slotLabel);
+    });
+  });
+
+  tbody.querySelectorAll("[data-action='add-gallery']").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const team = btn.dataset.team;
+      const index = parseInt(btn.dataset.index);
+      const slotLabel = btn.dataset.slot;
+      const title = prompt(`Name for gallery entry from ${slotLabel}:`, slotLabel);
+      if (title === null) return;
+      adminApi.addGalleryEntry(title || slotLabel, 0, team, index)
+        .then(() => poll())
+        .catch((err) => alert(err.message));
     });
   });
 }
@@ -165,6 +193,10 @@ function formatScore(scores) {
 
 // ── Gallery ───────────────────────────────────────────────────────────────────
 
+function galleryVideoUrl(entryId) {
+  return `/api/gallery/${entryId}/video`;
+}
+
 function renderGallery(entries) {
   const container = document.getElementById("gallery-admin-list");
 
@@ -177,16 +209,35 @@ function renderGallery(entries) {
     .map(
       (e) => `
       <div class="gallery-entry-row">
-        <div>
+        <div class="gallery-entry-info">
           <span class="title">${e.title}</span>
           <span class="hits">${e.avg_hits}h</span>
-          <span style="color: #555; font-size: 0.75rem; margin-left: 8px;">(${e.id})</span>
+          <span style="color: #555; font-size: 0.75rem;">(${e.id})</span>
         </div>
-        <button class="btn-admin danger" data-action="gallery-delete" data-id="${e.id}">Delete</button>
+        <div class="gallery-entry-actions">
+          <button class="btn-admin" data-action="gallery-watch" data-id="${e.id}">Watch</button>
+          <button class="btn-admin play" data-action="gallery-play" data-id="${e.id}">Play</button>
+          <button class="btn-admin danger" data-action="gallery-delete" data-id="${e.id}">Delete</button>
+        </div>
       </div>
     `
     )
     .join("");
+
+  container.querySelectorAll("[data-action='gallery-watch']").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      openVideoPlayer(galleryVideoUrl(btn.dataset.id), true);
+    });
+  });
+
+  container.querySelectorAll("[data-action='gallery-play']").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const row = btn.closest(".gallery-entry-row");
+      const titleEl = row?.querySelector(".title");
+      const label = titleEl?.textContent || "Gallery";
+      launchEngine(galleryVideoUrl(btn.dataset.id), label);
+    });
+  });
 
   container.querySelectorAll("[data-action='gallery-delete']").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -200,11 +251,11 @@ function renderGallery(entries) {
 
 // ── Video Player ──────────────────────────────────────────────────────────────
 
-function openVideoPlayer(team, index) {
+function openVideoPlayer(url, autoplay = false) {
   const modal = document.getElementById("video-modal");
   const video = document.getElementById("admin-video-player");
-  const url = adminApi.slotVideoUrl(team, index);
 
+  video.autoplay = autoplay;
   video.src = url;
   modal.classList.add("visible");
 
@@ -220,22 +271,112 @@ function openVideoPlayer(team, index) {
   });
 }
 
-// ── Phase control events ─────────────────────────────────────────────────────
+// ── Game Engine Play ─────────────────────────────────────────────────────────
 
-export function setupGalleryAdd() {
-  document.getElementById("btn-gallery-add").addEventListener("click", async () => {
-    const team = document.getElementById("gallery-team").value;
-    const index = parseInt(document.getElementById("gallery-index").value);
-    const title = document.getElementById("gallery-title").value.trim();
-    const avgHits = parseFloat(document.getElementById("gallery-avg-hits").value) || 0;
-    try {
-      await adminApi.addGalleryEntry(title || `${team.toUpperCase()}-${index}`, avgHits, team, index);
-      poll();
-    } catch (err) {
-      alert(err.message);
-    }
+function launchEngine(url, label) {
+  const modal = document.getElementById("game-modal");
+  const canvas = document.getElementById("admin-game-canvas");
+  const overlay = document.getElementById("admin-canvas-overlay");
+  const titleEl = document.getElementById("admin-overlay-title");
+  const subEl = document.getElementById("admin-overlay-subtitle");
+  const actionsEl = document.getElementById("admin-overlay-actions");
+  const patternEl = document.getElementById("admin-hud-pattern");
+  const timeEl = document.getElementById("admin-hud-time");
+  const hitsEl = document.getElementById("admin-hud-hits");
+
+  let engine = null;
+  let running = false;
+
+  function stop() {
+    running = false;
+    if (engine) { engine.stop(); engine = null; }
+  }
+
+  function close() {
+    stop();
+    modal.classList.remove("visible");
+    modal.style.display = "";
+  }
+
+  function startGame() {
+    running = true;
+    engine = new GameEngine(canvas, url, {
+      playerRadius: 8,
+      recordTrajectory: true,
+    });
+
+    engine.addEventListener("hit", (e) => {
+      hitsEl.textContent = `Hits: ${e.detail.hits}`;
+    });
+
+    engine.addEventListener("finish", () => {
+      running = false;
+      overlay.setAttribute("data-visible", "true");
+      titleEl.textContent = "Finished";
+      subEl.textContent = `Pattern: ${label}`;
+      if (engine) {
+        hitsEl.textContent = `Hits: ${engine.hits}`;
+      }
+      actionsEl.innerHTML = `<button class="btn-admin play" id="btn-game-replay">Replay</button>
+        <button class="btn-admin danger" id="btn-game-close">Close</button>`;
+      document.getElementById("btn-game-replay")?.addEventListener("click", () => ready());
+      document.getElementById("btn-game-close")?.addEventListener("click", close);
+    });
+
+    engine.addEventListener("videoerror", () => {
+      running = false;
+      overlay.setAttribute("data-visible", "true");
+      titleEl.textContent = "Video Error";
+      subEl.textContent = "Failed to load video.";
+      actionsEl.innerHTML = `<button class="btn-admin danger" id="btn-game-close">Close</button>`;
+      document.getElementById("btn-game-close")?.addEventListener("click", close);
+    });
+
+    overlay.setAttribute("data-visible", "false");
+    patternEl.textContent = label;
+    timeEl.textContent = "10.0s";
+    hitsEl.textContent = "Hits: 0";
+    engine.start().catch(() => { if (running) close(); });
+  }
+
+  function ready() {
+    stop();
+    overlay.setAttribute("data-visible", "true");
+    titleEl.textContent = "Ready";
+    subEl.textContent = label;
+    actionsEl.innerHTML = `<button class="btn-admin primary" id="btn-game-start">Play</button>
+      <button class="btn-admin danger" id="btn-game-cancel">Cancel</button>`;
+    document.getElementById("btn-game-start")?.addEventListener("click", () => {
+      let count = 3;
+      overlay.setAttribute("data-visible", "true");
+      titleEl.textContent = String(count);
+      subEl.textContent = "Get ready...";
+      actionsEl.innerHTML = "";
+      const interval = setInterval(() => {
+        count--;
+        if (count > 0) {
+          titleEl.textContent = String(count);
+        } else {
+          clearInterval(interval);
+          startGame();
+        }
+      }, 1000);
+    });
+    document.getElementById("btn-game-cancel")?.addEventListener("click", close);
+  }
+
+  // Open modal
+  modal.style.display = "flex";
+  modal.classList.add("visible");
+  document.getElementById("game-modal-close").onclick = close;
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) close();
   });
+
+  ready();
 }
+
+// ── Phase control events ─────────────────────────────────────────────────────
 
 export function setupPhaseControl() {
   document.getElementById("btn-set-phase").addEventListener("click", async () => {
