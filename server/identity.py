@@ -13,6 +13,7 @@ import json
 import secrets
 import shutil
 import threading
+import time
 from typing import Literal
 
 import scores
@@ -23,8 +24,8 @@ _SESSIONS_FILE = DATA_DIR / "sessions.json"
 # ── In-memory state (loaded from disk at import time) ──────────────────────────
 # "red-7" → session_token
 _claimed: dict[str, str] = {}
-# session_token → "red-7"
-_sessions: dict[str, str] = {}
+# session_token → {"slot": "red-7", "last_seen": float | None}
+_sessions: dict[str, dict] = {}
 _lock = threading.Lock()
 
 
@@ -36,7 +37,14 @@ def _load() -> None:
     try:
         data = json.loads(_SESSIONS_FILE.read_text(encoding="utf-8"))
         _claimed = data.get("claimed", {})
-        _sessions = data.get("sessions", {})
+        raw_sessions = data.get("sessions", {})
+        # Migrate old string-format sessions to dict format
+        _sessions = {}
+        for token, val in raw_sessions.items():
+            if isinstance(val, str):
+                _sessions[token] = {"slot": val, "last_seen": None}
+            else:
+                _sessions[token] = val
     except Exception:
         pass  # corrupted file → start fresh
 
@@ -88,15 +96,40 @@ def claim(team_token: str) -> tuple[str, str] | Literal["team_full"] | None:
         key = f"{team}-{index}"
         session_token = secrets.token_hex(24)
         _claimed[key] = session_token
-        _sessions[session_token] = key
+        _sessions[session_token] = {"slot": key, "last_seen": None}
         _save()
         return session_token, key
+
+
+def create_admin_session() -> str:
+    """
+    Create an admin session and return the session token.
+
+    Admin sessions use a sentinel slot key of "admin".
+    """
+    session_token = secrets.token_hex(24)
+    with _lock:
+        _sessions[session_token] = {"slot": "admin", "last_seen": None}
+        _save()
+    return session_token
 
 
 def get_slot(token: str) -> str | None:
     """Return 'team-index' for a session token, or None if unknown."""
     with _lock:
-        return _sessions.get(token)
+        info = _sessions.get(token)
+        if info is None:
+            return None
+        return info["slot"]
+
+
+def update_last_seen(token: str) -> None:
+    """Record that this session was recently active."""
+    with _lock:
+        info = _sessions.get(token)
+        if info is not None:
+            info["last_seen"] = time.time()
+            # Don't save to disk on every poll — in-memory is fine
 
 
 def remove(admin_token: str, team: str, index: int) -> bool | None:
