@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 
 import identity
 import phase
-from config import TEAM_SIZE
+from config import TEAM_SIZE, ADMIN_TOKEN
 
 router = APIRouter()
 
@@ -40,8 +40,24 @@ class AdminTokenBody(BaseModel):
 
 @router.post("/claim")
 def claim_slot(body: ClaimBody, response: Response):
-    """Claim a slot using a team token. Returns assigned team-index."""
-    result = identity.claim(body.token.strip())
+    """Claim a slot using a team token. Returns assigned team-index.
+    If the admin token is entered, creates an admin session instead."""
+    token = body.token.strip()
+
+    # Check for admin token first
+    if token == ADMIN_TOKEN:
+        session_token = identity.create_admin_session()
+        response.set_cookie(
+            key="session",
+            value=session_token,
+            httponly=True,
+            samesite="lax",
+            max_age=60 * 60 * 12,
+        )
+        return {"ok": True, "admin": True, "redirect": "/admin.html"}
+
+    # Fall through to regular team token claim
+    result = identity.claim(token)
     if result is None:
         raise HTTPException(401, "Invalid token.")
     if result == "team_full":
