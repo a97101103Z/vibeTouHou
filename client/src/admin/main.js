@@ -73,8 +73,12 @@ function showDashboard() {
   dashboard.startPolling();
 
   // Logout
-  document.getElementById("btn-admin-logout").addEventListener("click", () => {
-    document.cookie = "session=; Max-Age=0; path=/;";
+  document.getElementById("btn-admin-logout").addEventListener("click", async () => {
+    try {
+      await adminApi.logout();
+    } catch (_) {
+      // Proceed with reload even if the request fails
+    }
     window.location.reload();
   });
 }

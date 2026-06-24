@@ -191,6 +191,18 @@ def admin_overview(body: OverviewBody, session: str | None = Cookie(default=None
     }
 
 
+# ── Admin logout ─────────────────────────────────────────────────────────────────
+
+
+@router.post("/admin/logout")
+def admin_logout(response: Response, session: str | None = Cookie(default=None)):
+    """Clear the admin session cookie."""
+    if not resolve_admin_token(session):
+        raise HTTPException(401, "Invalid admin token.")
+    response.delete_cookie(key="session")
+    return {"ok": True}
+
+
 # ── Admin slot video ────────────────────────────────────────────────────────────
 
 @router.get("/admin/slot-video/{team}/{index}")

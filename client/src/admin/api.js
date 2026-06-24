@@ -24,6 +24,10 @@ export const adminApi = {
     return api("POST", "/api/claim", { token });
   },
 
+  async logout() {
+    return api("POST", "/api/admin/logout");
+  },
+
   async overview() {
     return api("POST", "/api/admin/overview", {});
   },
