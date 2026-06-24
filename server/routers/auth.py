@@ -196,9 +196,10 @@ def admin_overview(body: OverviewBody, session: str | None = Cookie(default=None
 
 @router.post("/admin/logout")
 def admin_logout(response: Response, session: str | None = Cookie(default=None)):
-    """Clear the admin session cookie."""
+    """Clear the admin session cookie and invalidate the session server-side."""
     if not resolve_admin_token(session):
         raise HTTPException(401, "Invalid admin token.")
+    identity.remove_session(session)
     response.delete_cookie(key="session")
     return {"ok": True}
 

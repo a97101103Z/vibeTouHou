@@ -45,7 +45,7 @@ export const adminApi = {
   },
 
   async deleteGalleryEntry(id) {
-    return api("DELETE", "/api/admin/gallery", { id });
+    return api("DELETE", `/api/admin/gallery/${id}`, {});
   },
 
   slotVideoUrl(team, index) {

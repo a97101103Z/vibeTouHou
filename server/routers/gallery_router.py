@@ -44,9 +44,8 @@ class AddEntryBody(BaseModel):
     index: int = Field(..., ge=1)
 
 
-class DeleteEntryBody(BaseModel):
+class AdminActionBody(BaseModel):
     admin_token: str = ""
-    id: str
 
 
 @router.post("/admin/gallery")
@@ -78,15 +77,15 @@ def add_gallery_entry(body: AddEntryBody, session: str | None = Cookie(default=N
     return {"ok": True, "entry": entry}
 
 
-@router.delete("/admin/gallery")
-def delete_gallery_entry(body: DeleteEntryBody, session: str | None = Cookie(default=None)):
+@router.delete("/admin/gallery/{entry_id}")
+def delete_gallery_entry(entry_id: str, body: AdminActionBody, session: str | None = Cookie(default=None)):
     """
     Admin: remove a gallery entry by id.
     """
     effective_token = resolve_admin_token(session, body.admin_token)
     if effective_token is None:
         raise HTTPException(401, "Invalid admin token.")
-    result = gallery_store.delete_entry(effective_token, body.id)
+    result = gallery_store.delete_entry(effective_token, entry_id)
     if result is None:
         raise HTTPException(401, "Invalid admin token.")
     if result is False:

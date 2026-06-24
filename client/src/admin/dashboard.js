@@ -2,7 +2,7 @@ import { adminApi } from "./api.js";
 import { GameEngine } from "../game/engine.js";
 
 function formatTimeAgo(unixTs) {
-  const secs = Math.floor((Date.now() / 1000) - unixTs);
+  const secs = Math.max(0, Math.floor((Date.now() / 1000) - unixTs));
   if (secs < 5) return "now";
   if (secs < 60) return `${secs}s ago`;
   if (secs < 3600) return `${Math.floor(secs / 60)}m ago`;
@@ -346,7 +346,7 @@ export class Dashboard {
     this.#videoModalClose.onclick = closeModal;
     this.#videoModal.addEventListener("click", (e) => {
       if (e.target === this.#videoModal) closeModal();
-    });
+    }, { once: true });
   }
 
   #launchEngine(url, label) {
@@ -455,7 +455,7 @@ export class Dashboard {
     modal.style.display = "flex";
     modal.classList.add("visible");
     modalCloseEl.onclick = close;
-    modal.addEventListener("click", (e) => { if (e.target === modal) close(); });
+    modal.addEventListener("click", (e) => { if (e.target === modal) close(); }, { once: true });
 
     ready();
   }
@@ -463,7 +463,8 @@ export class Dashboard {
   setupPhaseControl() {
     this.#togglePhaseBtn.addEventListener("click", async () => {
       const targetPhase = this.#currentPhase === "gauntlet" ? "code" : "gauntlet";
-      const graceSeconds = targetPhase === "gauntlet" ? parseInt(this.#graceSeconds.value) || 60 : 0;
+      const parsed = parseInt(this.#graceSeconds.value);
+      const graceSeconds = targetPhase === "gauntlet" ? (Number.isNaN(parsed) ? 60 : parsed) : 0;
       try {
         await adminApi.setPhase(targetPhase, graceSeconds);
         this.#poll();

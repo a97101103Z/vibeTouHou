@@ -148,6 +148,14 @@ def is_claimed(slot_key: str) -> bool:
         return slot_key in _claimed
 
 
+def remove_session(session_token: str) -> None:
+    """Remove a session by token (used on logout)."""
+    with _lock:
+        if session_token in _sessions:
+            del _sessions[session_token]
+            _save()
+
+
 def remove(admin_token: str, team: str, index: int) -> bool | None:
     """
     Admin: remove a user from a slot using the admin token.
