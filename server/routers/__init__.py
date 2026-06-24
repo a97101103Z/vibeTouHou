@@ -15,23 +15,6 @@ def require_session(session: Optional[str] = Cookie(None)) -> str:
     return slot
 
 
-def verify_admin(session_token: str | None, body_admin_token: str | None = None) -> bool:
-    """Check whether a request is admin-authenticated.
-
-    Accepts either:
-      - A valid admin session cookie (slot == "admin")
-      - The correct admin_token in the request body
-    Returns True if either method succeeds.
-    """
-    if body_admin_token and body_admin_token == ADMIN_TOKEN:
-        return True
-    if session_token:
-        slot = identity.get_slot(session_token)
-        if slot == "admin":
-            return True
-    return False
-
-
 def resolve_admin_token(session_token: str | None, body_admin_token: str | None = None) -> str | None:
     """Return a valid admin token if either auth method succeeds, else None.
 

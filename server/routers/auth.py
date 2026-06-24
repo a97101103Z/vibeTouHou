@@ -12,7 +12,6 @@ GET  /api/admin/slot-video/{t}/{i} → admin: stream a slot's output.mp4
 """
 
 import time
-from pathlib import Path
 
 from fastapi import APIRouter, Cookie, Request, Response, HTTPException
 from pydantic import BaseModel, Field
@@ -168,6 +167,8 @@ def admin_overview(body: OverviewBody, session: str | None = Cookie(default=None
             has_output = (slot_dir / "output.mp4").is_file()
             has_published = (slot_dir / "published.mp4").is_file()
 
+            slot_scores = scores.get_slot_scores(team, idx) if claimed else None
+
             slots.append({
                 "slot_key": key,
                 "team": team,
@@ -179,6 +180,7 @@ def admin_overview(body: OverviewBody, session: str | None = Cookie(default=None
                 "assets": assets[:20],  # limit to 20 entries
                 "has_output": has_output,
                 "has_published": has_published,
+                "scores": slot_scores,
             })
 
     return {
