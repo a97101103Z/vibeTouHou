@@ -22,6 +22,10 @@ function galleryVideoUrl(entryId) {
 }
 
 export class Dashboard {
+  constructor() {
+    this.#cacheDOM();
+  }
+
   #pollingTimer = null;
   #gameEngine = null;
   #gameRunning = false;
@@ -37,6 +41,7 @@ export class Dashboard {
   #videoModal;
   #videoPlayer;
   #videoModalClose;
+  #leaderboardList;
   #graceSeconds;
 
   #cacheDOM() {
@@ -48,11 +53,11 @@ export class Dashboard {
     this.#videoModal = document.getElementById("video-modal");
     this.#videoPlayer = document.getElementById("admin-video-player");
     this.#videoModalClose = document.getElementById("video-modal-close");
+    this.#leaderboardList = document.getElementById("leaderboard-admin-list");
     this.#graceSeconds = document.getElementById("grace-seconds");
   }
 
   startPolling() {
-    this.#cacheDOM();
     this.#poll();
     this.#pollingTimer = setInterval(() => this.#poll(), 5000);
   }
@@ -68,9 +73,10 @@ export class Dashboard {
     try {
       const data = await adminApi.overview();
       this.#renderPhase(data.phase);
-      this.#renderStats(data.slots, data.leaderboard);
+      this.#renderStats(data.slots);
       this.#renderSlotsTable(data.slots);
       this.#renderGallery(data.gallery);
+      this.#renderLeaderboard(data.leaderboard);
     } catch (err) {
       console.error("Overview poll failed:", err);
     }
@@ -104,7 +110,7 @@ export class Dashboard {
     this.#togglePhaseBtn.textContent = isGauntlet ? "Switch to Code" : "Switch to Gauntlet";
   }
 
-  #renderStats(slots, leaderboard) {
+  #renderStats(slots) {
     const total = slots.length;
     const claimed = slots.filter((s) => s.claimed).length;
     const online = slots.filter((s) => s.online).length;
@@ -270,6 +276,60 @@ export class Dashboard {
         }
       });
     });
+  }
+
+  #renderLeaderboard(data) {
+    const entries = [];
+    for (const [team, slots] of Object.entries(data)) {
+      for (const [index, score] of Object.entries(slots)) {
+        if (score.best_hits !== null) {
+          entries.push({ team, index, ...score });
+        }
+      }
+    }
+
+    if (entries.length === 0) {
+      this.#leaderboardList.innerHTML = '<div style="color: #555;">No scores yet.</div>';
+      return;
+    }
+
+    entries.sort((a, b) => {
+      if (a.best_hits !== b.best_hits) return a.best_hits - b.best_hits;
+      return (b.infinite_time ?? 0) - (a.infinite_time ?? 0);
+    });
+
+    let rank = 0;
+    let prevHits = null;
+    let prevTime = null;
+
+    this.#leaderboardList.innerHTML = `
+      <table class="slots-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Team</th>
+            <th>Hits</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${entries.map((e) => {
+            if (e.best_hits !== prevHits || e.infinite_time !== prevTime) {
+              rank++;
+              prevHits = e.best_hits;
+              prevTime = e.infinite_time;
+            }
+            const timeStr = e.infinite_time !== null ? `${e.infinite_time}s` : "—";
+            return `<tr>
+              <td>${rank}</td>
+              <td>${e.team}-${e.index}</td>
+              <td>${e.best_hits}h</td>
+              <td>${timeStr}</td>
+            </tr>`;
+          }).join("")}
+        </tbody>
+      </table>
+    `;
   }
 
   #openVideoPlayer(url, autoplay = false) {

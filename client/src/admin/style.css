@@ -84,6 +84,13 @@ body.admin-body {
   }
 }
 
+/* Right sidebar in main-panels: stacks gallery + leaderboard vertically */
+.admin-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 /* Phase control */
 .phase-badge {
   display: inline-block;
