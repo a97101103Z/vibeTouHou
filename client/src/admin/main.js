@@ -7,7 +7,7 @@
  */
 
 import { adminApi } from "./api.js";
-import { startPolling, setupPhaseControl, renderLoading } from "./dashboard.js";
+import { Dashboard } from "./dashboard.js";
 
 async function main() {
   // Check existing session
@@ -67,9 +67,10 @@ function showDashboard() {
   const app = document.getElementById("admin-app");
   app.classList.add("visible");
 
-  renderLoading();
-  setupPhaseControl();
-  startPolling();
+  const dashboard = new Dashboard();
+  dashboard.renderLoading();
+  dashboard.setupPhaseControl();
+  dashboard.startPolling();
 
   // Logout
   document.getElementById("btn-admin-logout").addEventListener("click", () => {
