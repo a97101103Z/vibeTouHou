@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vibeTouHou — Admin Panel</title>
+    <meta
+      name="description"
+      content="Administration panel for vibeTouHou."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/style.css" />
+    <link rel="stylesheet" href="/src/admin/style.css" />
+  </head>
+  <body class="admin-body">
+    <!-- Login Overlay -->
+    <div id="login-overlay">
+      <div class="login-card">
+        <div class="login-logo">
+          <span class="logo-vibe">vibe</span><span class="logo-tou">Tou</span
+          ><span class="logo-hou">Hou</span>
+          <div class="logo-sub">Admin Panel</div>
+        </div>
+        <p class="login-tagline">Enter the admin token to access the control panel.</p>
+        <div class="token-input-section">
+          <input
+            id="admin-token-input"
+            type="password"
+            class="token-input"
+            placeholder="Admin token"
+            aria-label="Admin token"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button id="btn-admin-login" class="claim-btn">Access Panel</button>
+        </div>
+        <p id="admin-login-error" style="color: #f44; display: none; margin-top: 12px;"></p>
+      </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="admin-app">
+      <nav class="admin-nav">
+        <div class="admin-title">vibeTouHou / ADMIN</div>
+        <button id="btn-admin-logout" class="admin-logout">Logout</button>
+      </nav>
+
+      <!-- Overview Cards -->
+      <div class="overview-grid">
+        <div class="card" id="phase-card">
+          <h3>Phase Control</h3>
+          <div id="phase-display"></div>
+          <div class="phase-control-row">
+            <button id="btn-toggle-phase" class="btn-admin primary">Switch to Gauntlet</button>
+            <label>
+              Grace (s):
+              <input id="grace-seconds" type="number" value="60" min="0" max="600" class="grace-input" />
+            </label>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Stats</h3>
+          <div id="stats-display">Loading...</div>
+        </div>
+      </div>
+
+      <!-- Main panels: slots + gallery side-by-side -->
+      <div class="main-panels">
+        <div class="card">
+          <h3>Slots</h3>
+          <div class="table-wrap">
+            <table class="slots-table" id="slots-table">
+              <thead>
+                <tr>
+                  <th>Slot</th>
+                  <th>Status</th>
+                  <th>Online</th>
+                  <th>Last Seen</th>
+                  <th>Assets</th>
+                  <th>Output</th>
+                  <th>Published</th>
+                  <th>Score</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="slots-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="admin-sidebar">
+          <div class="card">
+            <h3>Gallery</h3>
+            <div id="gallery-admin-list" class="gallery-list-admin"></div>
+          </div>
+
+          <div class="card">
+            <h3>Leaderboard</h3>
+            <div id="leaderboard-admin-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Video Modal (watch) -->
+    <div id="video-modal">
+      <button class="modal-close" id="video-modal-close">&times;</button>
+      <video id="admin-video-player" controls autoplay></video>
+    </div>
+
+    <!-- Game Modal (play) -->
+    <div id="game-modal">
+      <div class="modal-close" id="game-modal-close">&times;</div>
+      <div class="game-modal-inner">
+        <div class="canvas-wrap">
+          <canvas id="admin-game-canvas" width="800" height="600"></canvas>
+          <div class="canvas-hud">
+            <span id="admin-hud-pattern">—</span>
+            <span id="admin-hud-time">10.0s</span>
+            <span id="admin-hud-hits">Hits: 0</span>
+          </div>
+          <div id="admin-canvas-overlay" class="canvas-overlay" data-visible="true">
+            <h2 id="admin-overlay-title">Ready</h2>
+            <p id="admin-overlay-subtitle">Get ready to play.</p>
+            <div id="admin-overlay-actions"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/admin/main.js"></script>
+  </body>
+</html>

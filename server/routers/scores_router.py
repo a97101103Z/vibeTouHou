@@ -5,11 +5,12 @@ POST /api/score         → submit a gauntlet run result
 GET  /api/leaderboard   → get both teams' best scores
 """
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Cookie
 from pydantic import BaseModel
 from typing import Optional
 
 import scores
+import identity
 from routers import require_session
 
 router = APIRouter()
@@ -28,5 +29,7 @@ def submit_score(body: ScoreBody, slot: str = Depends(require_session)):
 
 
 @router.get("/leaderboard")
-def leaderboard(slot: str = Depends(require_session)):
+def leaderboard(slot: str = Depends(require_session), session: str | None = Cookie(default=None)):
+    if session:
+        identity.update_last_seen(session)
     return scores.get_leaderboard()

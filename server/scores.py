@@ -39,6 +39,12 @@ def get_leaderboard() -> dict:
         return _load()
 
 
+def get_slot_scores(team: str, index: int) -> dict | None:
+    with _lock:
+        data = _load()
+        return data.get(team, {}).get(str(index))
+
+
 def submit(team: str, index: int, hits: int, infinite_time: float | None) -> None:
     """
     Record a run result, keeping only the best score per slot.

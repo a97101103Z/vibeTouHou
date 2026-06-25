@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Cookie, HTTPException
+from fastapi import Cookie, HTTPException
 from typing import Optional
 import identity
+from config import ADMIN_TOKEN
 
 # ── Shared session dependency ──────────────────────────────────────────────────
 
@@ -12,3 +13,19 @@ def require_session(session: Optional[str] = Cookie(None)) -> str:
     if not slot:
         raise HTTPException(status_code=401, detail="Invalid or expired session.")
     return slot
+
+
+def resolve_admin_token(session_token: str | None, body_admin_token: str | None = None) -> str | None:
+    """Return a valid admin token if either auth method succeeds, else None.
+
+    Useful when the downstream library function needs the actual admin token
+    (e.g. identity.remove(admin_token, ...) does an internal comparison).
+    When the session cookie is valid this returns the canonical ADMIN_TOKEN.
+    """
+    if body_admin_token and body_admin_token == ADMIN_TOKEN:
+        return body_admin_token
+    if session_token:
+        slot = identity.get_slot(session_token)
+        if slot == "admin":
+            return ADMIN_TOKEN
+    return None

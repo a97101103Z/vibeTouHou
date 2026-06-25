@@ -7,11 +7,12 @@ GET    /api/gallery              → list all entries (public)
 GET    /api/gallery/{id}/video   → stream the mp4 (public)
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Cookie, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 import gallery as gallery_store
+from routers import resolve_admin_token
 
 router = APIRouter()
 
@@ -36,32 +37,30 @@ def stream_gallery_video(entry_id: str):
 # ── Admin ──────────────────────────────────────────────────────────────────────
 
 class AddEntryBody(BaseModel):
-    admin_token: str
+    admin_token: str = ""
     title: str = ""
     avg_hits: float
     team: str = Field(..., pattern="^(red|blue)$")
     index: int = Field(..., ge=1)
 
 
-class DeleteEntryBody(BaseModel):
-    admin_token: str
-    id: str
+class AdminActionBody(BaseModel):
+    admin_token: str = ""
 
 
 @router.post("/admin/gallery")
-def add_gallery_entry(body: AddEntryBody):
+def add_gallery_entry(body: AddEntryBody, session: str | None = Cookie(default=None)):
     """
     Admin: copy a published pattern into the gallery.
 
     The video must already exist on the server (i.e. the pattern was published
     during the competition). The server copies it to gallery/ — no upload needed.
-
-    curl.exe -X POST http://localhost:8000/api/admin/gallery ^
-      -H "Content-Type: application/json" ^
-      -d "{\\"admin_token\\":\\"ADMIN-TOKEN-DEV-K2M8N3PQ\\",\\"title\\":\\"RED-3\\",\\"avg_hits\\":2.4,\\"team\\":\\"red\\",\\"index\\":3}"
     """
+    effective_token = resolve_admin_token(session, body.admin_token)
+    if effective_token is None:
+        raise HTTPException(401, "Invalid admin token.")
     entry = gallery_store.add_entry_from_slot(
-        body.admin_token,
+        effective_token,
         body.title,
         body.avg_hits,
         body.team,
@@ -78,16 +77,15 @@ def add_gallery_entry(body: AddEntryBody):
     return {"ok": True, "entry": entry}
 
 
-@router.delete("/admin/gallery")
-def delete_gallery_entry(body: DeleteEntryBody):
+@router.delete("/admin/gallery/{entry_id}")
+def delete_gallery_entry(entry_id: str, body: AdminActionBody, session: str | None = Cookie(default=None)):
     """
     Admin: remove a gallery entry by id.
-
-    curl.exe -X DELETE http://localhost:8000/api/admin/gallery ^
-      -H "Content-Type: application/json" ^
-      -d "{\\"admin_token\\":\\"ADMIN-TOKEN-DEV-K2M8N3PQ\\",\\"id\\":\\"abc123\\"}"
     """
-    result = gallery_store.delete_entry(body.admin_token, body.id)
+    effective_token = resolve_admin_token(session, body.admin_token)
+    if effective_token is None:
+        raise HTTPException(401, "Invalid admin token.")
+    result = gallery_store.delete_entry(effective_token, entry_id)
     if result is None:
         raise HTTPException(401, "Invalid admin token.")
     if result is False:
