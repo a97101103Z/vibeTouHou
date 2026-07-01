@@ -36,6 +36,10 @@ export const adminApi = {
     return api("POST", "/api/admin/set-phase", { phase, grace_seconds: graceSeconds });
   },
 
+  async skipGrace() {
+    return api("POST", "/api/admin/skip-grace", {});
+  },
+
   async resetSlot(team, index) {
     return api("POST", "/api/admin/reset-slot", { team, index });
   },

@@ -5,8 +5,9 @@ POST /api/claim                   → claim a slot with team token, receive sess
 POST /api/admin/reset-slot        → admin: free a claimed slot
 GET  /api/me                      → check current session identity
 GET  /api/phase                   → current phase state (public)
-POST /api/admin/set-phase         → admin: switch to 'code' or 'gauntlet' (60s grace)
+POST /api/admin/set-phase         → admin: switch to 'code' or 'gauntlet (grace period in both directions)
 POST /api/admin/reset-phase       → admin: immediately reset to 'code'
+POST /api/admin/skip-grace      → admin: skip the current grace period
 POST /api/admin/overview          → admin: full dashboard snapshot
 GET  /api/admin/slot-video/{t}/{i} → admin: stream a slot's output.mp4
 """
@@ -112,7 +113,7 @@ def get_phase():
 
 @router.post("/admin/set-phase")
 def set_phase(body: SetPhaseBody, session: str | None = Cookie(default=None)):
-    """Admin: switch phase. Switching to 'gauntlet' starts a 60-second grace period."""
+    """Admin: switch phase. Grace period applies in both directions."""
     effective_token = resolve_admin_token(session, body.admin_token)
     if effective_token is None:
         raise HTTPException(401, "Invalid admin token.")
@@ -129,6 +130,18 @@ def reset_phase(body: AdminTokenBody, session: str | None = Cookie(default=None)
     if effective_token is None:
         raise HTTPException(401, "Invalid admin token.")
     result = phase.reset_phase(effective_token)
+    if result is None:
+        raise HTTPException(401, "Invalid admin token.")
+    return {"ok": True, **phase.get_phase()}
+
+
+@router.post("/admin/skip-grace")
+def skip_grace(body: AdminTokenBody, session: str | None = Cookie(default=None)):
+    """Admin: skip the current grace period, making the target phase active immediately."""
+    effective_token = resolve_admin_token(session, body.admin_token)
+    if effective_token is None:
+        raise HTTPException(401, "Invalid admin token.")
+    result = phase.skip_grace(effective_token)
     if result is None:
         raise HTTPException(401, "Invalid admin token.")
     return {"ok": True, **phase.get_phase()}

@@ -36,6 +36,17 @@ class PhaseService extends EventTarget {
     return Date.now() / 1000 >= this.#active_at;
   }
 
+  /**
+   * True when coding/publishing should be blocked (mirrors backend phase.is_locked()).
+   * @returns {boolean}
+   */
+  isLocked() {
+    if (this.#phase === "gauntlet") {
+      return this.#active_at === null || Date.now() / 1000 >= this.#active_at;
+    }
+    return this.#active_at !== null && Date.now() / 1000 < this.#active_at;
+  }
+
   /** Begin polling. Call once after login. */
   start() {
     this.#poll();
@@ -71,7 +82,7 @@ class PhaseService extends EventTarget {
       );
     }
 
-    // Schedule the "phaselocked" event at the exact moment grace expires
+    // Schedule lock/unlock events at the exact moment grace expires
     if (this.#lockTimer) clearTimeout(this.#lockTimer);
 
     if (phase === "gauntlet" && active_at !== null) {
@@ -82,16 +93,30 @@ class PhaseService extends EventTarget {
           this.dispatchEvent(new CustomEvent("phaselocked"));
         }, msUntilLock);
       } else if (!this.#locked) {
-        // Already past the lock time (e.g. page loaded mid-gauntlet)
         this.#locked = true;
-        // Dispatch asynchronously so listeners have time to register
         setTimeout(
           () => this.dispatchEvent(new CustomEvent("phaselocked")),
           0,
         );
+      } else {
+        this.#locked = true;
       }
     } else if (phase === "code") {
-      this.#locked = false;
+      if (active_at !== null) {
+        const msUntilUnlock = active_at * 1000 - Date.now();
+        if (msUntilUnlock > 0) {
+          // Grace period for code transition — keep locked until it expires
+          this.#locked = true;
+          this.#lockTimer = setTimeout(() => {
+            this.#locked = false;
+            this.dispatchEvent(new CustomEvent("phaseunlocked"));
+          }, msUntilUnlock);
+        } else {
+          this.#locked = false;
+        }
+      } else {
+        this.#locked = false;
+      }
     }
   }
 }

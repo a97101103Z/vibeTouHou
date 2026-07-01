@@ -27,11 +27,13 @@ export class Dashboard {
   }
 
   #pollingTimer = null;
+  #countdownTimer = null;
   #gameEngine = null;
   #gameRunning = false;
   #gameCountdownId = null;
   #gameClosed = false;
   #currentPhase = null;
+  #lastPhaseData = null;
 
   #phaseDisplay;
   #togglePhaseBtn;
@@ -43,6 +45,7 @@ export class Dashboard {
   #videoModalClose;
   #leaderboardList;
   #graceSeconds;
+  #skipBtn;
 
   #cacheDOM() {
     this.#phaseDisplay = document.getElementById("phase-display");
@@ -55,17 +58,23 @@ export class Dashboard {
     this.#videoModalClose = document.getElementById("video-modal-close");
     this.#leaderboardList = document.getElementById("leaderboard-admin-list");
     this.#graceSeconds = document.getElementById("grace-seconds");
+    this.#skipBtn = document.getElementById("btn-skip-grace");
   }
 
   startPolling() {
     this.#poll();
     this.#pollingTimer = setInterval(() => this.#poll(), 5000);
+    this.#countdownTimer = setInterval(() => this.#tick(), 1000);
   }
 
   stopPolling() {
     if (this.#pollingTimer) {
       clearInterval(this.#pollingTimer);
       this.#pollingTimer = null;
+    }
+    if (this.#countdownTimer) {
+      clearInterval(this.#countdownTimer);
+      this.#countdownTimer = null;
     }
   }
 
@@ -88,8 +97,10 @@ export class Dashboard {
   }
 
   #renderPhase(phase) {
+    this.#lastPhaseData = phase;
     const isGauntlet = phase.phase === "gauntlet";
     const isActive = phase.active_at && Date.now() / 1000 >= phase.active_at;
+    const graceActive = phase.active_at && !isActive;
 
     this.#currentPhase = phase.phase;
 
@@ -97,9 +108,9 @@ export class Dashboard {
     let cls = isGauntlet ? "phase-gauntlet" : "phase-code";
 
     let extra = "";
-    if (phase.active_at && !isActive) {
+    if (graceActive) {
       const secs = Math.max(0, Math.ceil(phase.active_at - Date.now() / 1000));
-      extra = ` — activates in ${secs}s`;
+      extra = ` — ${isGauntlet ? "activates" : "unlocks"} in ${secs}s`;
     }
 
     this.#phaseDisplay.innerHTML = `
@@ -108,6 +119,21 @@ export class Dashboard {
     `;
 
     this.#togglePhaseBtn.textContent = isGauntlet ? "Switch to Code" : "Switch to Gauntlet";
+    this.#skipBtn.style.display = graceActive ? "inline-block" : "none";
+  }
+
+  #tick() {
+    const phase = this.#lastPhaseData;
+    if (!phase || !phase.active_at) return;
+    if (Date.now() / 1000 >= phase.active_at) {
+      this.#poll();
+      return;
+    }
+    const isGauntlet = phase.phase === "gauntlet";
+    const secs = Math.max(0, Math.ceil(phase.active_at - Date.now() / 1000));
+    const extra = ` — ${isGauntlet ? "activates" : "unlocks"} in ${secs}s`;
+    const span = this.#phaseDisplay.querySelector("span:last-child");
+    if (span) span.textContent = extra;
   }
 
   #renderStats(slots) {
@@ -464,9 +490,18 @@ export class Dashboard {
     this.#togglePhaseBtn.addEventListener("click", async () => {
       const targetPhase = this.#currentPhase === "gauntlet" ? "code" : "gauntlet";
       const parsed = parseInt(this.#graceSeconds.value);
-      const graceSeconds = targetPhase === "gauntlet" ? (Number.isNaN(parsed) ? 60 : parsed) : 0;
+      const graceSeconds = Number.isNaN(parsed) ? 60 : parsed;
       try {
         await adminApi.setPhase(targetPhase, graceSeconds);
+        this.#poll();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
+    this.#skipBtn.addEventListener("click", async () => {
+      try {
+        await adminApi.skipGrace();
         this.#poll();
       } catch (err) {
         alert(err.message);

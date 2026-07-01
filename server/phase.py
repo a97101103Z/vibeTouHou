@@ -3,14 +3,17 @@ Phase management — controls whether players are in coding or gauntlet mode.
 
 Phase: "code" (default) | "gauntlet"
 
-When switching to gauntlet, a grace period (default 60s) is applied before
-locks are enforced. The active_at timestamp tells clients when the lock kicks in.
+Grace periods apply on transitions in both directions:
+  - code → gauntlet:  locks are enforced after the grace window
+  - gauntlet → code:  locks remain enforced until the grace window passes
+The active_at timestamp tells clients when the transition completes.
 
 Public API:
     get_phase()           → {"phase": str, "active_at": float | None}
     set_phase(...)        → True on success, None on bad token
     reset_phase(...)      → True on success, None on bad token
-    is_locked()           → True if gauntlet is active AND grace period has passed
+    skip_grace(...)     → True on success, None on bad token
+    is_locked()           → True when coding/publishing should be blocked
 """
 
 import json
@@ -62,20 +65,16 @@ def set_phase(admin_token: str, phase: str, grace_seconds: int = 60) -> bool | N
     """
     Switch to the given phase.
     Returns None on bad token, True on success.
-    When switching to 'gauntlet', active_at is set to now + grace_seconds.
-    When switching to 'code', active_at is cleared immediately.
+    A grace period is applied in both directions so that clients have time to
+    react before the lock/unlock takes effect.
     """
     if admin_token != ADMIN_TOKEN:
         return None
 
     with _lock:
         state = dict(_load())
-        if phase == "gauntlet":
-            state["phase"] = "gauntlet"
-            state["active_at"] = time.time() + grace_seconds
-        else:
-            state["phase"] = "code"
-            state["active_at"] = None
+        state["phase"] = phase
+        state["active_at"] = time.time() + grace_seconds
         _save(state)
 
     return True
@@ -86,15 +85,35 @@ def reset_phase(admin_token: str) -> bool | None:
     return set_phase(admin_token, "code", grace_seconds=0)
 
 
+def skip_grace(admin_token: str) -> bool | None:
+    """
+    Bypass any active grace period immediately.
+    For code → gauntlet: locks now.
+    For gauntlet → code: unlocks now.
+    Returns None on bad token, True on success.
+    """
+    if admin_token != ADMIN_TOKEN:
+        return None
+
+    with _lock:
+        state = dict(_load())
+        state["active_at"] = None
+        _save(state)
+
+    return True
+
+
 def is_locked() -> bool:
     """
-    True when the gauntlet phase is fully active (grace period has expired).
-    During the grace period this returns False so renders/publishes still work.
+    True when coding/publishing should be blocked.
+
+    code → gauntlet: locked once active_at passes (gauntlet grace expired).
+    gauntlet → code: locked while active_at is still in the future (code
+    grace has not yet finished).  Once the grace passes, locks release.
     """
     state = _load()
-    if state["phase"] != "gauntlet":
-        return False
     active_at = state.get("active_at")
-    if active_at is None:
-        return True  # no grace period set, locked immediately
-    return time.time() >= active_at
+    if state["phase"] == "gauntlet":
+        return active_at is None or time.time() >= active_at
+    else:  # code
+        return active_at is not None and time.time() < active_at

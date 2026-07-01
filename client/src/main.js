@@ -39,19 +39,26 @@ function applyPhase(phase, activeAt, immediate = false) {
     const isAlreadyActive = msUntilLock <= 0;
 
     if (isAlreadyActive || immediate) {
-      // Grace period already expired — lock coding immediately
       sidebar.setLocked(true);
       gauntlet.setLocked(false);
       gauntlet.hideCountdown();
     } else {
-      // Still in grace window — show countdown, don't lock yet
       gauntlet.showCountdown(activeAt);
     }
   } else {
-    // Back to code phase
-    sidebar.setLocked(false);
-    gauntlet.setLocked(true);
-    gauntlet.hideCountdown();
+    // code phase
+    const msUntilUnlock = activeAt ? activeAt * 1000 - Date.now() : 0;
+    const isAlreadyActive = msUntilUnlock <= 0;
+
+    if (isAlreadyActive || immediate) {
+      sidebar.setLocked(false);
+      gauntlet.setLocked(true);
+      gauntlet.hideCountdown();
+    } else {
+      // Grace period for code transition — keep gauntlet active, coding locked
+      sidebar.setLocked(true);
+      gauntlet.setLocked(false);
+    }
   }
 }
 
@@ -81,7 +88,14 @@ async function main() {
   // Grace period expired — lock coding, start gauntlet unlock sequence
   phaseService.addEventListener("phaselocked", () => {
     sidebar.setLocked(true);
-    gauntlet.setLocked(false); // triggers the 1–3s loading delay internally
+    gauntlet.setLocked(false);
+    gauntlet.hideCountdown();
+  });
+
+  // Code transition grace expired — unlock coding, go back to code mode
+  phaseService.addEventListener("phaseunlocked", () => {
+    sidebar.setLocked(false);
+    gauntlet.setLocked(true);
     gauntlet.hideCountdown();
   });
 }
