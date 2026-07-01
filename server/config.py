@@ -11,6 +11,7 @@ DURATION = 10.0        # pattern duration in seconds
 # ── Game rules ─────────────────────────────────────────────────────────────────
 PLAYER_RADIUS_TEST = 14   # larger hitbox used in playtest / verify-to-publish
 PLAYER_RADIUS_REAL = 8    # real hitbox used in the competition gauntlet
+PLAYER_SPEED = 350        # max player movement px/s (used for trajectory validation)
 BRIGHTNESS_THRESHOLD = 128  # Y > this = hit zone  (Y = 0.299R + 0.587G + 0.114B)
 
 # ── Sandbox ────────────────────────────────────────────────────────────────────

@@ -51,6 +51,9 @@ def submit_score(body: ScoreBody, slot: str = Depends(require_session)):
         if not video_path.exists():
             raise HTTPException(400, f"Pattern {opp}-{traj.index} has not been published.")
         pts = [{"x": p.x, "y": p.y, "t": p.t} for p in traj.points]
+        err = validator.verify_trajectory(pts)
+        if err:
+            raise HTTPException(422, f"Invalid trajectory for {opp}-{traj.index}: {err}")
         pattern_hits = validator.count_hits(video_path, pts)
         verified_hits += pattern_hits
 

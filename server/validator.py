@@ -12,7 +12,46 @@ from pathlib import Path
 import imageio
 import numpy as np
 
-from config import PLAYER_RADIUS_REAL, BRIGHTNESS_THRESHOLD, FPS
+from config import PLAYER_RADIUS_REAL, PLAYER_SPEED, BRIGHTNESS_THRESHOLD, FPS, WIDTH, HEIGHT, DURATION
+
+
+import math
+
+
+def verify_trajectory(points: list[dict]) -> str | None:
+    """
+    Validate that a trajectory is physically plausible.
+    Returns an error message or None if valid.
+    """
+    if len(points) < 2:
+        return "Trajectory must contain at least 2 points."
+
+    for i, pt in enumerate(points):
+        if not (0 <= pt["x"] < WIDTH and 0 <= pt["y"] < HEIGHT):
+            return f"Point {i}: position ({pt['x']:.1f}, {pt['y']:.1f}) is outside canvas bounds."
+        if i == 0:
+            continue
+        prev = points[i - 1]
+        dt = pt["t"] - prev["t"]
+        if dt <= 0:
+            return f"Point {i}: timestamp {pt['t']:.3f} is not after previous {prev['t']:.3f}."
+        dx = pt["x"] - prev["x"]
+        dy = pt["y"] - prev["y"]
+        dist = math.hypot(dx, dy)
+        speed = dist / dt
+        if speed > PLAYER_SPEED + 1:  # 1 px/s tolerance for floating-point
+            return (
+                f"Point {i}: impossible speed {speed:.1f} px/s "
+                f"(max {PLAYER_SPEED})."
+            )
+
+    last_t = points[-1]["t"]
+    if last_t < DURATION - 1.0:
+        return (
+            f"Trajectory ends at t={last_t:.2f}s, "
+            f"expected ~{DURATION:.0f}s (pattern duration)."
+        )
+    return None
 
 
 def validate(video_path: Path, trajectory: list[dict]) -> tuple[bool, str]:
