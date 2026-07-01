@@ -151,7 +151,7 @@ export function createHudControl(canvasId) {
     createRealEngine(url, initialPlayer) {
       return new GameEngine(this.canvas, url, {
         playerRadius: REAL_RADIUS,
-        recordTrajectory: false,
+        recordTrajectory: true,
         initialPlayer,
       });
     },

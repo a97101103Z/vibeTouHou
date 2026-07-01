@@ -78,7 +78,7 @@ def claim_slot(body: ClaimBody, response: Response):
         key="session",
         value=session_token,
         httponly=True,
-        samesite="lax",
+        samesite="strict",
         max_age=60 * 60 * 12,  # 12-hour cookie
     )
     return {"ok": True, "slot": slot_key}

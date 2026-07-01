@@ -26,6 +26,7 @@ Build the Docker image once:
 
 import ast
 import json
+import logging
 import os
 import shutil
 import sys
@@ -165,6 +166,7 @@ def _run_job(key: str, team: str, index: int, script: str) -> None:
     if _docker_available():
         _run_docker(key, d, sandbox)
     else:
+        logging.warning("Docker unavailable — running render for %s without full sandboxing", key)
         _run_subprocess(key, d, sandbox)
 
 

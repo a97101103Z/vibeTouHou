@@ -68,3 +68,65 @@ def validate(video_path: Path, trajectory: list[dict]) -> tuple[bool, str]:
         reader.close()
 
     return True, "OK"
+
+
+def count_hits(video_path: Path, trajectory: list[dict]) -> int:
+    """
+    Replay trajectory against video and count collisions, using the same
+    invincibility logic as the client (1.0 s cooldown after each hit).
+    Returns total hit count.
+    """
+    if not video_path.exists():
+        return 999
+
+    try:
+        reader = imageio.get_reader(str(video_path), format="ffmpeg")
+        meta = reader.get_meta_data()
+        fps = float(meta.get("fps", FPS))
+    except Exception:
+        return 999
+
+    INVINCIBLE_TIME = 1.0
+    r = PLAYER_RADIUS_REAL
+
+    # Pre-index trajectory points by frame number
+    frame_pts: dict[int, list[tuple[float, float, float]]] = {}
+    for pt in trajectory:
+        fidx = int(pt["t"] * fps)
+        frame_pts.setdefault(fidx, []).append((float(pt["x"]), float(pt["y"]), float(pt["t"])))
+
+    sorted_frames = sorted(frame_pts.keys())
+    hits = 0
+    invincible_until = -1.0
+
+    try:
+        for fidx in sorted_frames:
+            # Most frames have exactly one trajectory point
+            px, py, t = frame_pts[fidx][0]
+            if t < invincible_until:
+                continue
+
+            frame = reader.get_data(fidx)
+            h, w = frame.shape[:2]
+            collided = False
+            for dy in range(-r, r + 1):
+                for dx in range(-r, r + 1):
+                    if dx * dx + dy * dy > r * r:
+                        continue
+                    fx, fy = int(px + dx), int(py + dy)
+                    if not (0 <= fx < w and 0 <= fy < h):
+                        continue
+                    R, G, B = int(frame[fy, fx, 0]), int(frame[fy, fx, 1]), int(frame[fy, fx, 2])
+                    Y = 0.299 * R + 0.587 * G + 0.114 * B
+                    if Y > BRIGHTNESS_THRESHOLD:
+                        collided = True
+                        break
+                if collided:
+                    break
+            if collided:
+                hits += 1
+                invincible_until = t + INVINCIBLE_TIME
+    finally:
+        reader.close()
+
+    return hits

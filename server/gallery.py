@@ -67,7 +67,7 @@ def add_entry_from_slot(
         return None
 
     # Locate the published video
-    source = DATA_DIR / team / str(index) / "output.mp4"
+    source = DATA_DIR / team / str(index) / "published.mp4"
     if not source.exists():
         return False
 

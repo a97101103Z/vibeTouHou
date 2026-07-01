@@ -18,6 +18,7 @@ def app_context(tmp_path, monkeypatch):
     import renderer
     import scores
     import routers.patterns as patterns
+    import routers.scores_router as scores_router
 
     data_dir = tmp_path / "data"
     monkeypatch.setattr(config, "DATA_DIR", data_dir)
@@ -26,6 +27,7 @@ def app_context(tmp_path, monkeypatch):
     monkeypatch.setattr(identity, "DATA_DIR", data_dir)
     monkeypatch.setattr(identity, "_SESSIONS_FILE", data_dir / "sessions.json")
     monkeypatch.setattr(scores, "_SCORES_FILE", data_dir / "scores.json")
+    monkeypatch.setattr(scores_router, "DATA_DIR", data_dir)
     # Clear new data structures
     identity._claimed.clear()
     identity._sessions.clear()
@@ -96,6 +98,9 @@ def test_stress_24_users_claim_upload_render_video_score(app_context, monkeypatc
     _seed_published(renderer, "red", 1)
     _seed_published(renderer, "blue", 1)
 
+    import validator
+    monkeypatch.setattr(validator, "count_hits", lambda _video, _traj: 0)
+
     async def user_flow(team: str, index: int):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             token = RED_TEAM_TOKEN if team == "red" else BLUE_TEAM_TOKEN
@@ -128,8 +133,12 @@ def test_stress_24_users_claim_upload_render_video_score(app_context, monkeypatc
             opp_video = await client.get(f"/api/video/{opp_team}/1")
             assert opp_video.status_code == 200
 
-            score = await client.post("/api/score", json={"hits": index % 3, "infinite_time": None})
-            assert score.status_code == 200
+            score = await client.post("/api/score", json={
+                "hits": 0,
+                "infinite_time": None,
+                "trajectories": [{"index": 1, "points": [{"x": 400, "y": 500, "t": 0.0}]}],
+            })
+            assert score.status_code == 200, score.text
 
             lb = await client.get("/api/leaderboard")
             assert lb.status_code == 200

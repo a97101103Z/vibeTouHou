@@ -17,6 +17,7 @@ export function initInfinite(hud, gauntletWidget, onDone) {
   let totalTime = 0;
   let queue = [];
   let queueIdx = 0;
+  let trajectories = [];
 
   function stopEngine() {
     if (engine) {
@@ -37,6 +38,7 @@ export function initInfinite(hud, gauntletWidget, onDone) {
     hits = 0;
     totalTime = 0;
     queueIdx = 0;
+    trajectories = [];
     queue = [...gauntletWidget.patterns].sort(() => Math.random() - 0.5);
 
     hud.setModeIndicator("infinite");
@@ -68,8 +70,12 @@ export function initInfinite(hud, gauntletWidget, onDone) {
       }
     });
 
-    engine.addEventListener("finish", async () => {
+    engine.addEventListener("finish", async (e) => {
       totalTime += 10;
+      trajectories.push({
+        index: p.index,
+        points: e.detail.trajectory,
+      });
       const savedPlayer = { x: engine.player.x, y: engine.player.y };
       await engine.runGrace(750);
       stopEngine();
@@ -125,7 +131,11 @@ export function initInfinite(hud, gauntletWidget, onDone) {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ hits: 0, infinite_time: totalTime }),
+        body: JSON.stringify({
+          hits: 0,
+          infinite_time: totalTime,
+          trajectories: trajectories,
+        }),
       });
     } catch (_) {}
   }

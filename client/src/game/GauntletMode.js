@@ -17,6 +17,7 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
   let currentIdx = 0;
   let totalHits = 0;
   let hitsPerPattern = [];
+  let trajectories = [];
 
   function stopEngine() {
     if (engine) {
@@ -46,6 +47,7 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
     currentIdx = idx ?? 0;
     totalHits = 0;
     hitsPerPattern = new Array(gauntletWidget.patterns.length).fill(null);
+    trajectories = [];
 
     hud.setModeIndicator("gauntlet");
     gauntletWidget.resetAllPatternItems();
@@ -74,12 +76,12 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
     engine.addEventListener("hit", (e) => {
       hud.setHits(HITS_DISPLAY(e.detail.hits));
     });
-    engine.addEventListener("finish", () => onPatternFinish(idx));
+    engine.addEventListener("finish", (e) => onPatternFinish(idx, e.detail.trajectory));
     engine.addEventListener("restart", () => startGame());
     engine.addEventListener("videoerror", () => {
       hitsPerPattern[idx] = 99;
       gauntletWidget.setPatternItemHits(idx, 99);
-      onPatternFinish(idx);
+      onPatternFinish(idx, null);
     });
 
     hud.syncTimer(engine.video);
@@ -92,10 +94,16 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
     engine.start().catch(() => onPatternFinish(idx));
   }
 
-  async function onPatternFinish(idx) {
+  async function onPatternFinish(idx, trajectory) {
     const hits = engine ? engine.hits : 0;
     if (hitsPerPattern[idx] === null || hitsPerPattern[idx] === undefined) {
       hitsPerPattern[idx] = hits;
+    }
+    if (trajectory) {
+      trajectories[idx] = {
+        index: gauntletWidget.patterns[idx].index,
+        points: trajectory,
+      };
     }
     const finalHits = hitsPerPattern[idx];
     if (finalHits !== 99) totalHits += finalHits;
@@ -161,12 +169,17 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
   }
 
   async function submitScore() {
+    const trajList = trajectories.filter(t => t !== undefined);
     try {
       await fetch("/api/score", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ hits: totalHits, infinite_time: null }),
+        body: JSON.stringify({
+          hits: totalHits,
+          infinite_time: null,
+          trajectories: trajList.length ? trajList : undefined,
+        }),
       });
     } catch (_) { }
   }
