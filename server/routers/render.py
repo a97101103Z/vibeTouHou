@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 import renderer
 import phase
+from config import API_PREFIX
 from responses import media_file_response, version_for
 from routers import require_session
 
@@ -38,7 +39,7 @@ def render_status(slot: str = Depends(require_session)):
     status = renderer.get_status(team, int(idx))
     path = renderer.slot_dir(team, int(idx)) / "output.mp4"
     if path.exists():
-        status = {**status, "video_url": f"/api/video/my?v={version_for(path)}"}
+        status = {**status, "video_url": f"{API_PREFIX}/video/my?v={version_for(path)}"}
     return status
 
 
