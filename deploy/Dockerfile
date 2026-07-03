@@ -18,7 +18,6 @@ COPY server/requirements.txt /tmp/requirements.txt
 RUN python -m pip install --upgrade pip && pip install -r /tmp/requirements.txt
 
 COPY --from=client-build /src/server /app/server
-COPY deploy /app/deploy
 
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
