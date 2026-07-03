@@ -26,6 +26,13 @@ ALLOWED_IMPORTS = {
     "os", "sys", "time", "gizeh",
 }
 
+# ── Path prefix ────────────────────────────────────────────────────────────────
+# Set ROOT_PATH to a prefix like "/pref" to serve the app under a sub-path.
+# This is useful when the app is behind a reverse proxy that doesn't strip
+# the prefix, or when you want to co-locate with other services.
+ROOT_PATH = os.getenv("ROOT_PATH", "")
+API_PREFIX = ROOT_PATH + "/api"
+
 # ── Storage ────────────────────────────────────────────────────────────────────
 # DATA_DIR lives at the project root (one level above server/) so that
 # uvicorn's --reload watcher (which watches server/) never sees data/ writes

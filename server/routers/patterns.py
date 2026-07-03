@@ -8,7 +8,7 @@ GET /api/video/{team}/{index} → stream a published video (only opponent's)
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 import renderer
-from config import DATA_DIR, TEAM_SIZE
+from config import DATA_DIR, TEAM_SIZE, API_PREFIX
 from responses import media_file_response, version_for
 from routers import require_session
 
@@ -32,7 +32,7 @@ def get_opponent_patterns(slot: str = Depends(require_session)):
                 "slot": f"{opp}-{idx}",
                 "index": idx,
                 "team": opp,
-                "video_url": f"/api/video/{opp}/{idx}?v={version_for(pub)}",
+                "video_url": f"{API_PREFIX}/video/{opp}/{idx}?v={version_for(pub)}",
             })
     return {"patterns": results}
 
