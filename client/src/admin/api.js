@@ -1,3 +1,5 @@
+import { API_BASE } from "../constants.js";
+
 async function api(method, path, body) {
   const opts = {
     method,
@@ -53,6 +55,6 @@ export const adminApi = {
   },
 
   slotVideoUrl(team, index) {
-    return `/api/admin/slot-video/${team}/${index}`;
+    return `${API_BASE}/admin/slot-video/${team}/${index}`;
   },
 };

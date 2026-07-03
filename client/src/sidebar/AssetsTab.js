@@ -1,4 +1,5 @@
 import { loadAssetList, uploadFile, deleteAsset } from "../helpers/assets.js";
+import { API_BASE } from "../constants.js";
 import {
   LOADING, NO_ASSETS, ERR_LOAD_ASSETS,
   ASSETS_COUNT, DEL_BTN_TITLE, CONFIRM_DELETE,
@@ -103,7 +104,7 @@ export class AssetsTab extends EventTarget {
     });
 
     const img = document.createElement("img");
-    img.src = `/api/assets/${encodeURIComponent(name)}`;
+    img.src = `${API_BASE}/assets/${encodeURIComponent(name)}`;
     img.alt = name;
     wrap.appendChild(img);
 

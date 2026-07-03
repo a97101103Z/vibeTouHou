@@ -2,6 +2,8 @@
  * galleryApi.js — thin wrappers for the gallery REST endpoints.
  */
 
+import { API_BASE } from "../constants.js";
+
 /**
  * Fetch all gallery entries.
  * @returns {Promise<Array<{id: string, title: string, avg_hits: number, filename: string}>>}
@@ -19,5 +21,5 @@ export async function fetchGallery() {
  * @returns {string}
  */
 export function getGalleryVideoUrl(entryId) {
-  return `/api/gallery/${entryId}/video`;
+  return `${API_BASE}/gallery/${entryId}/video`;
 }

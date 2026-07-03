@@ -14,6 +14,7 @@
  * @param {import("../ToastService.js").ToastService} toastService
  */
 import { TOAST_ENTER_TOKEN, TOAST_ASSIGNED, TOAST_CLAIM_FAIL } from "../strings.js";
+import { BASE_PATH } from "../constants.js";
 
 export async function login(toastService) {
   // First, check for existing session
@@ -38,7 +39,7 @@ export async function login(toastService) {
         const result = await claimSlot(token);
         if (result.admin) {
           // Admin token detected — redirect to admin panel
-          window.location.href = "/admin.html";
+          window.location.href = BASE_PATH + "admin.html";
           return;
         }
         toastService.toast(TOAST_ASSIGNED(result.slot.toUpperCase()), "success");
@@ -69,7 +70,7 @@ async function checkSession() {
     if (data.slot) {
       // Admin sessions redirect to admin page
       if (data.slot === "admin") {
-        window.location.href = "/admin.html";
+        window.location.href = BASE_PATH + "admin.html";
         return null;
       }
       const [team, idx] = data.slot.split("-");

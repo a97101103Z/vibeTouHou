@@ -15,6 +15,18 @@ import { GalleryWidget } from "./GalleryWidget.js";
 import { login } from "./helpers/login.js";
 import { phaseService } from "./helpers/phase.js";
 import { applyStrings } from "./i18n.js";
+import { API_BASE } from "./constants.js";
+
+// Patch fetch to use the configured API base path
+if (API_BASE !== "/api") {
+  const origFetch = window.fetch;
+  window.fetch = (input, init) => {
+    if (typeof input === "string" && input.startsWith("/api/")) {
+      return origFetch(API_BASE + input.slice(4), init);
+    }
+    return origFetch(input, init);
+  };
+}
 
 // Apply translations immediately before anything else renders
 applyStrings();

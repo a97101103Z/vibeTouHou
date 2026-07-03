@@ -1,5 +1,6 @@
 import { adminApi } from "./api.js";
 import { GameEngine } from "../game/engine.js";
+import { API_BASE } from "../constants.js";
 
 function formatTimeAgo(unixTs) {
   const secs = Math.max(0, Math.floor((Date.now() / 1000) - unixTs));
@@ -18,7 +19,7 @@ function formatScore(scores) {
 }
 
 function galleryVideoUrl(entryId) {
-  return `/api/gallery/${entryId}/video`;
+  return `${API_BASE}/gallery/${entryId}/video`;
 }
 
 export class Dashboard {

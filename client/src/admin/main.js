@@ -8,6 +8,18 @@
 
 import { adminApi } from "./api.js";
 import { Dashboard } from "./dashboard.js";
+import { API_BASE } from "../constants.js";
+
+// Patch fetch to use the configured API base path
+if (API_BASE !== "/api") {
+  const origFetch = window.fetch;
+  window.fetch = (input, init) => {
+    if (typeof input === "string" && input.startsWith("/api/")) {
+      return origFetch(API_BASE + input.slice(4), init);
+    }
+    return origFetch(input, init);
+  };
+}
 
 async function main() {
   // Check existing session

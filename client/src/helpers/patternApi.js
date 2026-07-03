@@ -1,4 +1,5 @@
 import { ERR_EDITOR_EMPTY, ERR_SUBMISSION_FAIL, ERR_RENDER_TIMEOUT, ERR_RENDER_FAIL, TOAST_PUBLISH_OK, TOAST_VALIDATION_FAIL } from "../strings.js";
+import { API_BASE } from "../constants.js";
 
 /**
  * @param {string} script The pattern script to render
@@ -41,7 +42,7 @@ async function pollRenderStatus() {
     const data = await res.json();
 
     if (data.status === "done") {
-      return data.video_url || "/api/video/my";
+      return data.video_url || `${API_BASE}/video/my`;
     } else if (data.status === "error") {
       throw new Error(data.stderr || ERR_RENDER_FAIL);
     }
