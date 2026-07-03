@@ -28,16 +28,16 @@ app = FastAPI(
 )
 
 # ── API Routers ────────────────────────────────────────────────────────────────
-app.include_router(auth.router,          prefix=API_PREFIX, tags=["auth"])
-app.include_router(render.router,        prefix=API_PREFIX, tags=["render"])
-app.include_router(assets.router,        prefix=API_PREFIX, tags=["assets"])
-app.include_router(patterns.router,      prefix=API_PREFIX, tags=["patterns"])
-app.include_router(scores_router.router, prefix=API_PREFIX, tags=["scores"])
-app.include_router(publish.router,       prefix=API_PREFIX, tags=["publish"])
-app.include_router(gallery_router.router, prefix=API_PREFIX, tags=["gallery"])
+app.include_router(auth.router,          prefix="/api", tags=["auth"])
+app.include_router(render.router,        prefix="/api", tags=["render"])
+app.include_router(assets.router,        prefix="/api", tags=["assets"])
+app.include_router(patterns.router,      prefix="/api", tags=["patterns"])
+app.include_router(scores_router.router, prefix="/api", tags=["scores"])
+app.include_router(publish.router,       prefix="/api", tags=["publish"])
+app.include_router(gallery_router.router, prefix="/api", tags=["gallery"])
 
 
-@app.get(API_PREFIX + "/health")
+@app.get("/api/health")
 def health():
     return {"ok": True}
 
@@ -55,8 +55,7 @@ async def spa_fallback(request, exc):
 
 # ── Static client (production build) ──────────────────────────────────────────
 if STATIC_DIR.exists():
-    mount_path = ROOT_PATH if ROOT_PATH else "/"
-    app.mount(mount_path, StaticFiles(directory=str(STATIC_DIR), html=True), name="static")
+    app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")
 
 # ── Ensure data directory exists ───────────────────────────────────────────────
 DATA_DIR.mkdir(parents=True, exist_ok=True)
