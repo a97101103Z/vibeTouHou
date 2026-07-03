@@ -4,8 +4,6 @@ services:
       context: .
       dockerfile: ./deploy/Dockerfile
       args:
-        VITE_BASE_PATH: "${VITE_BASE_PATH:-/}"
-        VITE_API_BASE: "${VITE_API_BASE:-/api}"
         ROOT_PATH: "${ROOT_PATH:-}"
     environment:
       MAX_RENDER_WORKERS: "3"

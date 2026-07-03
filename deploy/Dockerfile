@@ -1,9 +1,8 @@
 FROM node:20-alpine AS client-build
 WORKDIR /src
-ARG VITE_BASE_PATH=/
-ARG VITE_API_BASE=/api
-ENV VITE_BASE_PATH=$VITE_BASE_PATH
-ENV VITE_API_BASE=$VITE_API_BASE
+ARG ROOT_PATH=
+ENV VITE_BASE_PATH=${ROOT_PATH:-}/
+ENV VITE_API_BASE=${ROOT_PATH:-}/api
 COPY client/package*.json ./client/
 RUN cd client && npm ci
 COPY client ./client
