@@ -5,6 +5,7 @@ Steps:
 1. [Ensure rootless Docker is installed](#ensure-rootless-docker-is-installed)
 2. [Build renderer sandbox environment](#build-renderer-sandbox-environment)
 3. [Build & start server with Docker Compose](#build--start-server-with-docker-compose)
+4. [Configuration in `docker-compose.yml`](#configuration-in-docker-composeyml)
 
 ## Ensure rootless Docker is installed
 
@@ -87,4 +88,37 @@ And, to stop the stack:
 
 ```bash
 docker compose down
+```
+
+## Configuration in `docker-compose.yml`
+
+### Team / admin tokens
+
+The Python backend reads tokens from the environment, which is set up by Docker using, in our case, the `docker-compose.yml` file.
+By default, no value is set and the server will error because of it.
+
+Docker Compose reads the values from the host environment, so you can set the variables in a `.env` file locally along side the compose configuration.
+
+```bash
+# .env file - keep secret!
+RED_TEAM_TOKEN=red_token_123
+BLUE_TEAM_TOKEN=blue_token_456
+ADMIN_TOKEN=admin_token_789
+```
+
+### Build-time base path
+
+During build time, we can set the `ROOT_PATH` environment variable to make sure Vite has the asset base paths direct to the correct endpoints.
+Additionally, the server will also be configured to listen on the path prefix it specifies.
+
+```bash
+# beside your TEAM_TOKEN's
+ROOT_PATH=/touhou
+```
+
+Note that you do need to re-build the Docker image to apply the change:
+
+```sh
+docker compose build
+docker compose up -d
 ```
