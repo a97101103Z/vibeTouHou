@@ -22,6 +22,7 @@ class TrajectoryPoint(BaseModel):
     x: float
     y: float
     t: float
+    vt: float | None = None
 
 
 class PublishBody(BaseModel):
@@ -40,6 +41,10 @@ def publish(body: PublishBody, slot: str = Depends(require_session)):
         raise HTTPException(400, "No rendered video found. Render your script first.")
 
     trajectory = [pt.model_dump() for pt in body.trajectory]
+
+    err = validator.verify_trajectory(trajectory)
+    if err:
+        raise HTTPException(422, f"Trajectory validation failed: {err}")
 
     ok, reason = validator.validate(draft, trajectory)
     if not ok:

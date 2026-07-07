@@ -1,6 +1,7 @@
 import { adminApi } from "./api.js";
 import { GameEngine } from "../game/engine.js";
 import { API_BASE } from "../constants.js";
+import { LB_TEAM_AVG, LB_MEMBER } from "../strings.js";
 
 function formatTimeAgo(unixTs) {
   const secs = Math.max(0, Math.floor((Date.now() / 1000) - unixTs));
@@ -10,9 +11,19 @@ function formatTimeAgo(unixTs) {
   return `${Math.floor(secs / 3600)}h ago`;
 }
 
-function formatScore(scores) {
-  if (scores.best_hits === null) return "—";
-  return `${scores.best_hits}h`;
+const HITS_TO_POINTS = {0: 3, 1: 2, 2: 1};
+const pointsForHits = (h) => HITS_TO_POINTS[h] ?? 0;
+
+function formatScore(slotScores) {
+  if (!slotScores) return "—";
+  const scores = slotScores.scores;
+  if (!scores) return "—";
+  let total = 0;
+  for (const s of Object.values(scores)) {
+    const bh = s.best_hits;
+    if (bh != null) total += pointsForHits(bh);
+  }
+  return `${total} pts`;
 }
 
 function galleryVideoUrl(entryId) {
@@ -45,6 +56,9 @@ export class Dashboard {
   #btnSetTimer;
   #btnClearTimer;
   #timerSeconds;
+  #graceSeconds;
+  #skipBtn;
+  #openSlots = new Set();
 
   #cacheDOM() {
     this.#phaseDisplay = document.getElementById("phase-display");
@@ -315,59 +329,98 @@ export class Dashboard {
   }
 
   #renderLeaderboard(data) {
-    const entries = [];
-    for (const [team, slots] of Object.entries(data)) {
-      for (const [index, score] of Object.entries(slots)) {
-        if (score.best_hits !== null) {
-          entries.push({ team, index, ...score });
+    const fragment = document.createDocumentFragment();
+
+    this.#openSlots.clear();
+    this.#leaderboardList.querySelectorAll(".lb-details[open]").forEach((el) => {
+      if (el.dataset.slot) this.#openSlots.add(el.dataset.slot);
+    });
+    let hasAny = false;
+
+    for (const team of ["red", "blue"]) {
+      const teamData = data[team] ?? {};
+
+      const members = [];
+      let teamTotal = 0;
+
+      for (const [idx, slotData] of Object.entries(teamData)) {
+        const scores = slotData.scores ?? {};
+        const patternList = [];
+        let total = 0;
+        for (const [pidx, s] of Object.entries(scores)) {
+          const bh = s.best_hits;
+          if (bh != null) {
+            total += pointsForHits(bh);
+            patternList.push({ pattern: pidx, hits: bh });
+          }
         }
+        members.push({ slot: `${team}-${idx}`, total_points: total, patterns: patternList });
+        teamTotal += total;
+      }
+
+      const avg = members.length ? Math.round(teamTotal / members.length * 10) / 10 : 0;
+
+      const header = document.createElement("div");
+      header.className = `lb-team-header lb-${team}`;
+      header.textContent = LB_TEAM_AVG(team, avg);
+      fragment.appendChild(header);
+
+      if (members.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "lb-row";
+        empty.innerHTML = `<span class="lb-slot" style="color:#888">—</span>`;
+        fragment.appendChild(empty);
+      }
+
+      for (const m of members) {
+        const detail = document.createElement("details");
+        detail.className = `lb-details lb-${team}`;
+        detail.dataset.slot = m.slot;
+
+        const summary = document.createElement("summary");
+        summary.className = "lb-summary";
+        summary.innerHTML = `${m.slot}  ${m.total_points} pts <button class="btn-admin danger btn-small" data-reset-entry="${m.slot}">Reset</button>`;
+        detail.appendChild(summary);
+
+        if (m.patterns.length > 0) {
+          const list = document.createElement("div");
+          list.className = "lb-pattern-list";
+          for (const p of m.patterns) {
+            const item = document.createElement("div");
+            item.className = "lb-pattern-item";
+            item.textContent = `opponent ${p.pattern}: ${p.hits}h`;
+            list.appendChild(item);
+          }
+          detail.appendChild(list);
+        }
+
+        fragment.appendChild(detail);
+        hasAny = true;
       }
     }
 
-    if (entries.length === 0) {
-      this.#leaderboardList.innerHTML = '<div style="color: #555;">No scores yet.</div>';
+    if (!hasAny) {
+      this.#leaderboardList.innerHTML = `<div style="color:#555">No scores yet.</div>`;
       return;
     }
 
-    entries.sort((a, b) => a.best_hits - b.best_hits);
-
-    let rank = 0;
-    let prevHits = null;
-
-    this.#leaderboardList.innerHTML = `
-      <table class="slots-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Team</th>
-            <th>Hits</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          ${entries.map((e) => {
-            if (e.best_hits !== prevHits) {
-              rank++;
-              prevHits = e.best_hits;
-            }
-            return `<tr>
-              <td>${rank}</td>
-              <td>${e.team}-${e.index}</td>
-              <td>${e.best_hits}h</td>
-              <td><button class="btn-admin danger btn-small" data-reset-entry="${e.team}:${e.index}">Reset</button></td>
-            </tr>`;
-          }).join("")}
-        </tbody>
-      </table>
-    `;
+    this.#leaderboardList.innerHTML = "";
+    this.#leaderboardList.appendChild(fragment);
 
     this.#leaderboardList.querySelectorAll("[data-reset-entry]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const [team, index] = btn.dataset.resetEntry.split(":");
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const [team, index] = btn.dataset.resetEntry.split("-");
         if (confirm(`Reset leaderboard entry for ${team}-${index}?`)) {
           adminApi.resetLeaderboardEntry(team, parseInt(index)).then(() => this.#poll()).catch((err) => alert(err.message));
         }
       });
+    });
+
+    this.#leaderboardList.querySelectorAll(".lb-details").forEach((el) => {
+      if (el.dataset.slot && this.#openSlots.has(el.dataset.slot)) {
+        el.setAttribute("open", "");
+      }
     });
   }
 

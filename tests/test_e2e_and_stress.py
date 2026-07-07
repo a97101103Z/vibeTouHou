@@ -134,8 +134,9 @@ def test_stress_24_users_claim_upload_render_video_score(app_context, monkeypatc
             assert opp_video.status_code == 200
 
             score = await client.post("/api/score", json={
+                "pattern_index": 1,
                 "hits": 0,
-                "trajectories": [{"index": 1, "points": [{"x": 400, "y": 500, "t": 0.0}, {"x": 400, "y": 500, "t": 10.0}]}],
+                "trajectory": [{"x": 400, "y": 500, "t": 0.0, "vt": 0.0}, {"x": 400, "y": 500, "t": 10.0, "vt": 10.0}],
             })
             assert score.status_code == 200, score.text
 

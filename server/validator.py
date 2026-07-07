@@ -33,13 +33,17 @@ def verify_trajectory(points: list[dict]) -> str | None:
             continue
         prev = points[i - 1]
         dt = pt["t"] - prev["t"]
-        if dt <= 0:
-            return f"Point {i}: timestamp {pt['t']:.3f} is not after previous {prev['t']:.3f}."
         dx = pt["x"] - prev["x"]
         dy = pt["y"] - prev["y"]
         dist = math.hypot(dx, dy)
+        if dt < 0:
+            return f"Point {i}: timestamp {pt['t']:.3f} is before previous {prev['t']:.3f}."
+        if dt == 0:
+            if dist > 1:
+                return f"Point {i}: moved {dist:.1f} px in 0 seconds."
+            continue
         speed = dist / dt
-        if speed > PLAYER_SPEED + 1:  # 1 px/s tolerance for floating-point
+        if speed > PLAYER_SPEED + 2:  # 2 px/s tolerance for floating-point fudge
             return (
                 f"Point {i}: impossible speed {speed:.1f} px/s "
                 f"(max {PLAYER_SPEED})."
@@ -75,7 +79,7 @@ def validate(video_path: Path, trajectory: list[dict]) -> tuple[bool, str]:
     # Pre-index trajectory by frame number so we only check frames we need
     frame_hits: dict[int, list[tuple[float, float, float]]] = {}
     for pt in trajectory:
-        fidx = int(pt["t"] * fps)
+        fidx = int((pt["vt"] if pt.get("vt") is not None else pt["t"]) * fps)
         frame_hits.setdefault(fidx, []).append((float(pt["x"]), float(pt["y"]), float(pt["t"])))
 
     r = PLAYER_RADIUS_REAL
@@ -131,7 +135,7 @@ def count_hits(video_path: Path, trajectory: list[dict]) -> int:
     # Pre-index trajectory points by frame number
     frame_pts: dict[int, list[tuple[float, float, float]]] = {}
     for pt in trajectory:
-        fidx = int(pt["t"] * fps)
+        fidx = int((pt["vt"] if pt.get("vt") is not None else pt["t"]) * fps)
         frame_pts.setdefault(fidx, []).append((float(pt["x"]), float(pt["y"]), float(pt["t"])))
 
     sorted_frames = sorted(frame_pts.keys())

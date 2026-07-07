@@ -1038,10 +1038,6 @@ canvas#game-canvas {
   box-shadow: 0 0 10px var(--accent-glow);
 }
 
-.pattern-item[data-done="true"] {
-  opacity: 0.6;
-}
-
 .pattern-item .pi-idx {
   font-family: var(--font-ui);
   font-size: 0.8rem;
@@ -1050,11 +1046,19 @@ canvas#game-canvas {
   min-width: 28px;
 }
 
-.pattern-item .pi-hits {
+.pi-hits-display {
   margin-left: auto;
   font-family: var(--font-ui);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--text-dim);
+}
+
+.pi-hits-display.perfect {
+  color: #44ee88;
+}
+
+.pi-hits-display.has-hits {
+  color: var(--text);
 }
 
 /* Leaderboard */
@@ -1062,6 +1066,30 @@ canvas#game-canvas {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.lb-team-header {
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  margin-top: 4px;
+}
+
+.lb-team-header:first-child {
+  margin-top: 0;
+}
+
+.lb-team-header.lb-red {
+  color: var(--red);
+}
+
+.lb-team-header.lb-blue {
+  color: var(--blue);
 }
 
 .lb-row {

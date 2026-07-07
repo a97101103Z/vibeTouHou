@@ -1,23 +1,24 @@
 /**
- * GauntletMode — Face every pattern published by the opposing team.
+ * GauntletMode — Play a single opponent pattern individually.
  */
+
 import {
   NO_PATTERNS_TITLE, NO_PATTERNS_SUB,
   GAUNTLET_MODE_TITLE, GAUNTLET_MODE_SUB,
-  PERFECT_GAUNTLET_TITLE, PERFECT_GAUNTLET_SUB,
-  TOTAL_HITS_TITLE, IMPROVE_SCORE_SUB,
-  BTN_RUN_AGAIN,
-  SUMMARY_HITS, SUMMARY_TOTAL,
+  BTN_PLAY_AGAIN, BTN_BACK_TO_LIST,
   HITS_DISPLAY, HUD_HITS_INIT,
+  PATTERN_HITS_DISPLAY,
+  SCORE_POINTS,
+  PERFECT_GAUNTLET_TITLE,
+  PERFECT_RESULT_SUB, HITS_RESULT_SUB, ZERO_POINTS_SUB,
+  TOAST_VIDEO_ERROR,
 } from "../strings.js";
 
-export function initGauntlet(hud, gauntletWidget, onDone) {
+export function initGauntlet(hud, gauntletWidget, toast, onDone) {
   let engine = null;
   let running = false;
   let currentIdx = 0;
-  let totalHits = 0;
-  let hitsPerPattern = [];
-  let trajectories = [];
+  let trajectory = [];
 
   function stopEngine() {
     if (engine) {
@@ -29,46 +30,34 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
 
   async function run(idx) {
     if (running) return;
-    if (!gauntletWidget.patterns.length) {
+    if (idx == null || !gauntletWidget.patterns[idx]) {
       hud.showOverlay(NO_PATTERNS_TITLE, NO_PATTERNS_SUB, []);
       onDone?.("blocked");
       return;
     }
 
     running = true;
+    currentIdx = idx;
+    trajectory = [];
 
     hud.showOverlay(GAUNTLET_MODE_TITLE, GAUNTLET_MODE_SUB, []);
     await hud.startCountdown();
-    startGame(idx);
+    startGame();
   }
 
-  function startGame(idx) {
-    stopEngine(); // Ensure current engine/transitions are halted immediately on restart
-    currentIdx = idx ?? 0;
-    totalHits = 0;
-    hitsPerPattern = new Array(gauntletWidget.patterns.length).fill(null);
-    trajectories = [];
-
+  async function startGame() {
+    stopEngine();
+    hud.setHits(HUD_HITS_INIT);
     hud.setModeIndicator("gauntlet");
-    gauntletWidget.resetAllPatternItems();
-
-    playPattern(currentIdx, null, true);
-  }
-
-  async function playPattern(idx, initialPlayer, isFirst = false) {
-    const p = gauntletWidget.patterns[idx];
-    if (!p) {
-      endGauntlet();
-      return;
-    }
-
-    gauntletWidget.activatePatternItem(idx, hitsPerPattern);
-    hud.setPattern(`${idx + 1} / ${gauntletWidget.patterns.length}`);
+    hud.setPattern(`${currentIdx + 1} / ${gauntletWidget.patterns.length}`);
     hud.setPatternVisible(true);
     hud.hideOverlay();
 
-    const nextEngine = hud.createRealEngine(p.video_url, initialPlayer);
-    try { await nextEngine.loadVideo(); } catch (_) { }
+    const p = gauntletWidget.patterns[currentIdx];
+    gauntletWidget.activatePatternItem(currentIdx);
+
+    const nextEngine = hud.createRealEngine(p.video_url);
+    try { await nextEngine.loadVideo(); } catch (_) {}
 
     stopEngine();
     engine = nextEngine;
@@ -76,111 +65,89 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
     engine.addEventListener("hit", (e) => {
       hud.setHits(HITS_DISPLAY(e.detail.hits));
     });
-    engine.addEventListener("finish", (e) => onPatternFinish(idx, e.detail.trajectory));
-    engine.addEventListener("restart", () => startGame());
+
+    engine.addEventListener("finish", (e) => {
+      trajectory = e.detail.trajectory || [];
+      onPatternFinish();
+    });
+
+    engine.addEventListener("restart", () => {
+      startGame();
+    });
+
     engine.addEventListener("videoerror", () => {
-      hitsPerPattern[idx] = 99;
-      gauntletWidget.setPatternItemHits(idx, 99);
-      onPatternFinish(idx, null);
+      stopEngine();
+      toast?.toast(TOAST_VIDEO_ERROR, "error");
+      backToList();
     });
 
     hud.syncTimer(engine.video);
 
-    if (!isFirst) {
-      await engine.runTransition(750, 'black');
-    }
     await engine.runTransition(1000, 'fade-in');
-
-    engine.start().catch(() => onPatternFinish(idx));
+    engine.start().catch(() => onPatternFinish());
   }
 
-  async function onPatternFinish(idx, trajectory) {
+  async function onPatternFinish() {
     const hits = engine ? engine.hits : 0;
-    if (hitsPerPattern[idx] === null || hitsPerPattern[idx] === undefined) {
-      hitsPerPattern[idx] = hits;
-    }
-    if (trajectory) {
-      trajectories[idx] = {
-        index: gauntletWidget.patterns[idx].index,
-        points: trajectory,
-      };
-    }
-    const finalHits = hitsPerPattern[idx];
-    if (finalHits !== 99) totalHits += finalHits;
+    stopEngine();
 
-    gauntletWidget.deactivatePatternItem(idx);
-    gauntletWidget.setPatternItemHits(idx, finalHits);
+    await submitScore(hits);
+    await gauntletWidget.refreshScores();
 
-    if (idx + 1 < gauntletWidget.patterns.length) {
-      if (engine) {
-        await engine.runTransition(1000, 'fade-out');
-        engine.runTransition(999999, 'black');
-      }
-      playPattern(idx + 1, engine ? engine.player : null, false);
-    } else {
-      if (engine) await engine.runTransition(1000, 'fade-out');
-      stopEngine();
-      endGauntlet();
-    }
-  }
+    const points = hits <= 2 ? [3, 2, 1][hits] : 0;
+    const summary = `
+      <div class="summary-list">
+        <span>#${currentIdx + 1} ${gauntletWidget.patterns[currentIdx]?.slot || ""}</span>
+        <span class="summary-item ${hits === 0 ? "success" : hits <= 2 ? "" : "error"}">
+          ${PATTERN_HITS_DISPLAY(hits)} · ${SCORE_POINTS(points)}
+        </span>
+      </div>
+    `;
 
-  function endGauntlet() {
+    const resultTitle = hits === 0
+      ? PERFECT_GAUNTLET_TITLE
+      : HITS_RESULT_SUB(hits, points);
+
+    const resultSub = hits === 0
+      ? PERFECT_RESULT_SUB(points)
+      : points > 0 ? "" : ZERO_POINTS_SUB;
+
+    hud.showOverlay(
+      resultTitle,
+      resultSub,
+      [
+        { text: BTN_PLAY_AGAIN, action: () => run(currentIdx) },
+        { text: BTN_BACK_TO_LIST, action: () => backToList() },
+      ],
+      summary,
+    );
+
     running = false;
-    hud.setPatternVisible(false);  // hide pattern counter on result screen
-
-    submitScore();
-
-    const patternsSummary = gauntletWidget.patterns
-      .map((p, i) => {
-        const h = hitsPerPattern[i];
-        return `<div class="summary-list">
-                  <span>#${i + 1} ${p.slot}</span>
-                  <span class="summary-item ${h === 0 ? "success" : "error"}">${SUMMARY_HITS(h)}</span>
-                </div>`;
-      })
-      .join("");
-    const summaryContainer = `
-      <div>
-        ${patternsSummary}
-        <div class="summary-item" style="margin-top: 10px">
-          ${SUMMARY_TOTAL(totalHits)}
-        </div>
-      </div>`;
-
-    if (totalHits === 0) {
-      hud.showOverlay(
-        PERFECT_GAUNTLET_TITLE,
-        PERFECT_GAUNTLET_SUB(gauntletWidget.patterns.length),
-        [
-          { text: BTN_RUN_AGAIN, action: () => run() },
-        ],
-        summaryContainer,
-      );
-    } else {
-      hud.showOverlay(
-        TOTAL_HITS_TITLE(totalHits),
-        IMPROVE_SCORE_SUB,
-        [{ text: BTN_RUN_AGAIN, action: () => run() }],
-        summaryContainer,
-      );
-    }
-
     onDone?.("finished");
   }
 
-  async function submitScore() {
-    const trajList = trajectories.filter(t => t !== undefined);
+  function backToList() {
+    stopEngine();
+    hud.hideOverlay();
+    hud.setPatternVisible(false);
+    hud.setModeIndicator("");
+    running = false;
+    onDone?.("cancelled");
+  }
+
+  async function submitScore(hits) {
     try {
       await fetch("/api/score", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          hits: totalHits,
-          trajectories: trajList.length ? trajList : undefined,
+          pattern_index: gauntletWidget.patterns[currentIdx]?.index,
+          hits: hits,
+          trajectory: trajectory.length ? trajectory : [],
         }),
       });
-    } catch (_) { }
+    } catch (_) {}
   }
 
   return { run };
