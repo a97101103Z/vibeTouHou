@@ -108,8 +108,12 @@ export class GauntletWidget extends EventTarget {
       const timerEl = document.getElementById("phase-countdown-timer");
       if (timerEl) timerEl.textContent = `${mins}:${secs}`;
       const subEl = banner.querySelector(".phase-countdown-sub");
-      if (secsLeft === 0 && subEl) {
-          subEl.textContent = "Time's up!";
+      if (secsLeft === 0) {
+        if (subEl) subEl.textContent = "Time's up!";
+        if (this.#countdownInterval) {
+          clearInterval(this.#countdownInterval);
+          this.#countdownInterval = null;
+        }
       }
     };
 

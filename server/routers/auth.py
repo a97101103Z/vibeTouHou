@@ -149,7 +149,7 @@ def skip_grace(body: AdminTokenBody, session: str | None = Cookie(default=None))
 
 class SetTimerBody(BaseModel):
     admin_token: str = ""
-    duration_seconds: int = Field(..., ge=0)
+    duration_seconds: int = Field(..., ge=0, le=3600)
 
 
 @router.post("/admin/set-timer")
