@@ -6,7 +6,7 @@
  *  - Move player dot with WASD / Arrow keys (+ Shift for focus mode)
  *  - Sample video pixels around the player each frame → brightness collision check
  *  - Invincibility frames + screen flash on hit
- *  - Record trajectory [{x, y, t}] (only used by Playtest for publish)
+ *  - Record trajectory [{x, y, t, vt}] (only used by Playtest for publish)
  *  - Emit events: 'hit', 'finish'
  */
 
@@ -267,7 +267,7 @@ export class GameEngine extends EventTarget {
     // Record trajectory (use accumulated dt so physics speed matches exactly)
     this._trajectoryTime += dt;
     if (this.recordTrajectory) {
-      this.trajectory.push({ x: this.player.x, y: this.player.y, t: this._trajectoryTime });
+      this.trajectory.push({ x: this.player.x, y: this.player.y, t: this._trajectoryTime, vt });
     }
 
     // Collision check (only when not invincible)

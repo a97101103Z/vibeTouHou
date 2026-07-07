@@ -79,7 +79,7 @@ def validate(video_path: Path, trajectory: list[dict]) -> tuple[bool, str]:
     # Pre-index trajectory by frame number so we only check frames we need
     frame_hits: dict[int, list[tuple[float, float, float]]] = {}
     for pt in trajectory:
-        fidx = int(pt["t"] * fps)
+        fidx = int((pt["vt"] if pt.get("vt") is not None else pt["t"]) * fps)
         frame_hits.setdefault(fidx, []).append((float(pt["x"]), float(pt["y"]), float(pt["t"])))
 
     r = PLAYER_RADIUS_REAL
@@ -135,7 +135,7 @@ def count_hits(video_path: Path, trajectory: list[dict]) -> int:
     # Pre-index trajectory points by frame number
     frame_pts: dict[int, list[tuple[float, float, float]]] = {}
     for pt in trajectory:
-        fidx = int(pt["t"] * fps)
+        fidx = int((pt["vt"] if pt.get("vt") is not None else pt["t"]) * fps)
         frame_pts.setdefault(fidx, []).append((float(pt["x"]), float(pt["y"]), float(pt["t"])))
 
     sorted_frames = sorted(frame_pts.keys())

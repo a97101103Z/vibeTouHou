@@ -23,6 +23,7 @@ class TrajectoryPoint(BaseModel):
     x: float
     y: float
     t: float
+    vt: float | None = None
 
 
 class ScoreBody(BaseModel):
@@ -44,7 +45,7 @@ def submit_score(body: ScoreBody, slot: str = Depends(require_session)):
     if not video_path.exists():
         raise HTTPException(400, f"Pattern {opp}-{body.pattern_index} has not been published.")
 
-    pts = [{"x": p.x, "y": p.y, "t": p.t} for p in body.trajectory]
+    pts = [{"x": p.x, "y": p.y, "t": p.t, "vt": p.vt} for p in body.trajectory]
     err = validator.verify_trajectory(pts)
     if err:
         raise HTTPException(422, f"Invalid trajectory for {opp}-{body.pattern_index}: {err}")

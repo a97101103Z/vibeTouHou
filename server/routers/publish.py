@@ -22,6 +22,7 @@ class TrajectoryPoint(BaseModel):
     x: float
     y: float
     t: float
+    vt: float | None = None
 
 
 class PublishBody(BaseModel):
