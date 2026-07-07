@@ -3,12 +3,11 @@ Score persistence.
 
 Stored as data/scores.json.  Structure:
 {
-    "red":  { "1": {"best_hits": 3,    "infinite_time": null}, ... },
-    "blue": { "1": {"best_hits": 0,    "infinite_time": 45.3}, ... }
+    "red":  { "1": {"best_hits": 3}, ... },
+    "blue": { "1": {"best_hits": 0}, ... }
 }
 
 best_hits=null  → slot has not completed the gauntlet yet
-infinite_time   → only set when best_hits==0 (survived all patterns flawlessly)
 """
 
 import json
@@ -45,28 +44,17 @@ def get_slot_scores(team: str, index: int) -> dict | None:
         return data.get(team, {}).get(str(index))
 
 
-def submit(team: str, index: int, hits: int, infinite_time: float | None) -> None:
+def submit(team: str, index: int, hits: int) -> None:
     """
-    Record a run result, keeping only the best score per slot.
-    Fewer hits wins; same hits → more infinite_time wins.
+    Record a run result, keeping only the best score per slot (fewer hits wins).
     """
     with _lock:
         data = _load()
         slot_id = str(index)
-        current = data.setdefault(team, {}).get(slot_id, {"best_hits": None, "infinite_time": None})
+        current = data.setdefault(team, {}).get(slot_id, {"best_hits": None})
 
-        improved = False
-        if current["best_hits"] is None:
-            improved = True
-        elif hits < current["best_hits"]:
-            improved = True
-        elif hits == current["best_hits"] and infinite_time is not None:
-            if current["infinite_time"] is None or infinite_time > current["infinite_time"]:
-                improved = True
-
-        if improved:
-            current = {"best_hits": hits, "infinite_time": infinite_time}
-            data[team][slot_id] = current
+        if current["best_hits"] is None or hits < current["best_hits"]:
+            data[team][slot_id] = {"best_hits": hits}
 
         _save(data)
 

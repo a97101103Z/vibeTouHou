@@ -1,9 +1,9 @@
 """
 Gallery endpoints.
 
-POST   /api/admin/gallery        → add entry (JSON: admin_token, title, avg_hits, team, index)
-DELETE /api/admin/gallery        → remove entry (JSON: admin_token, id)
-GET    /api/gallery              → list all entries (public)
+POST   /api/admin/gallery                 → add entry (JSON: admin_token, title, team, index)
+DELETE /api/admin/gallery/{entry_id}      → remove entry (JSON: admin_token)
+GET    /api/gallery                       → list all entries (public)
 GET    /api/gallery/{id}/video   → stream the mp4 (public)
 """
 
@@ -39,7 +39,6 @@ def stream_gallery_video(entry_id: str):
 class AddEntryBody(BaseModel):
     admin_token: str = ""
     title: str = ""
-    avg_hits: float
     team: str = Field(..., pattern="^(red|blue)$")
     index: int = Field(..., ge=1)
 
@@ -62,7 +61,6 @@ def add_gallery_entry(body: AddEntryBody, session: str | None = Cookie(default=N
     entry = gallery_store.add_entry_from_slot(
         effective_token,
         body.title,
-        body.avg_hits,
         body.team,
         body.index,
     )

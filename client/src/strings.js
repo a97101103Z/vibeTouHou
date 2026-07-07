@@ -91,13 +91,11 @@ export const COUNTDOWN_SUB         = t("Finish what you're doing!",             
 export const LOADING_OPP_VIDEOS    = t("⏳ Loading opponent videos…",                         "⏳ 載入對手影片中…");
 export const NO_PATTERNS_YET       = t("No published patterns yet.",                          "對手尚未發布任何彈幕。");
 export const ERR_LOAD_PATTERNS     = t("Could not load patterns.",                            "無法載入彈幕。");
-export const LB_SCORE_PERFECT      = tf((s) => `Perfect + ${s}s∞`,                           (s) => `完美 + ${s}s∞`);
 export const LB_SCORE_HITS         = tf((h) => `${h} hit${h !== 1 ? "s" : ""}`,              (h) => `${h} 次`);
 
 // ── Gallery widget ─────────────────────────────────────────────────────────────
 export const NO_GALLERY_ENTRIES    = t("No entries yet.",                                     "尚無入選作品。");
 export const GALLERY_VIDEO_LABEL   = tf((i) => `Video ${i}`,                                  (i) => `影片 ${i}`);
-export const GALLERY_HITS_DISPLAY  = tf((h) => `${h}h`,                                       (h) => `${h} 次`);
 
 // ── Play area / HUD ────────────────────────────────────────────────────────────
 export const SECTION_PLAY          = t("Play",                                                 "試玩");
@@ -107,7 +105,7 @@ export const HUD_HITS_INIT         = t("Hits: 0",                               
 export const HITS_DISPLAY          = tf((n) => `Hits: ${n}`,                                   (n) => `受傷次數：${n}`);
 export const MODE_PLAYTEST         = t("PLAYTEST",                                            "試玩模式");
 export const MODE_GAUNTLET         = t("GAUNTLET",                                            "實戰模式");
-export const MODE_INFINITE         = t("INFINITE",                                            "無盡模式");
+
 export const MODE_VIEW             = t("VIEW",                                                "畫廊模式");
 
 // ── Playtest mode ──────────────────────────────────────────────────────────────
@@ -135,7 +133,7 @@ export const NO_PATTERNS_SUB       = t("The opposing team has not published any 
 export const GAUNTLET_MODE_TITLE   = t("Gauntlet Mode",                                       "實戰模式");
 export const GAUNTLET_MODE_SUB     = t("Face every pattern published by the opposing team. Real hitbox. No mercy.", "挑戰對手隊伍發布的全部彈幕。盡可能無傷通關吧！");
 export const PERFECT_GAUNTLET_TITLE= t("🎉 Perfect Gauntlet!",                               "🎉 完美通關！");
-export const BTN_INFINITE          = t("♾ Infinite Mode",                                     "♾ 無盡模式");
+
 export const BTN_RUN_AGAIN         = t("↩ Run Again",                                         "↩ 再挑戰一次");
 export const IMPROVE_SCORE_SUB     = t("Run the gauntlet again to improve your score.<br><br>", "再挑戰一次以提升成績。<br><br>");
 export const PERFECT_GAUNTLET_SUB  = tf((n) => `You took 0 hits across all ${n} patterns.<br><br>`, (n) => `全部 ${n} 個彈幕均零次受傷。<br><br>`);
@@ -143,10 +141,6 @@ export const TOTAL_HITS_TITLE      = tf((n) => `${n} Hit${n !== 1 ? "s" : ""} To
 export const SUMMARY_HITS          = tf((h) => `${h}h`,                                        (h) => `${h} 次`);
 export const SUMMARY_TOTAL         = tf((n) => `Total: ${n} hit${n !== 1 ? "s" : ""}`,        (n) => `共受傷 ${n} 次`);
 
-// ── Infinite mode ──────────────────────────────────────────────────────────────
-export const HP_DISPLAY            = tf((rem, max) => `HP: ${rem} / ${max}`,                  (rem, max) => `HP：${rem} / ${max}`);
-export const INFINITE_SURVIVED     = tf((s) => `♾ ${s}s Survived`,                            (s) => `♾ 存活了 ${s} 秒`);
-export const INFINITE_COMPLETE_SUB = t("Infinite Mode complete. Your score has been recorded.", "無盡模式結束，成績已記錄。");
 
 // ── View (Gallery) mode ────────────────────────────────────────────────────────
 export const NO_VIDEO_TITLE        = t("No Video",                                            "畫廊內尚無彈幕");

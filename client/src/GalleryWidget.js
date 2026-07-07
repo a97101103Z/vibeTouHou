@@ -8,7 +8,7 @@
  */
 
 import { fetchGallery, getGalleryVideoUrl } from "./helpers/galleryApi.js";
-import { NO_GALLERY_ENTRIES, GALLERY_VIDEO_LABEL, GALLERY_HITS_DISPLAY } from "./strings.js";
+import { NO_GALLERY_ENTRIES, GALLERY_VIDEO_LABEL } from "./strings.js";
 
 const REFRESH_INTERVAL = 30_000;
 
@@ -56,12 +56,7 @@ export class GalleryWidget extends EventTarget {
       label.className = "ge-label";
       label.textContent = entry.title || GALLERY_VIDEO_LABEL(i + 1);
 
-      const hits = document.createElement("span");
-      hits.className = "ge-hits";
-      hits.textContent = GALLERY_HITS_DISPLAY(entry.avg_hits);
-
       row.appendChild(label);
-      row.appendChild(hits);
 
       const play = () => {
         this.dispatchEvent(
