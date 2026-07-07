@@ -57,4 +57,8 @@ export const adminApi = {
   slotVideoUrl(team, index) {
     return `${API_BASE}/admin/slot-video/${team}/${index}`;
   },
+
+  slotPublishedVideoUrl(team, index) {
+    return `${API_BASE}/admin/slot-published-video/${team}/${index}`;
+  },
 };

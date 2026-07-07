@@ -235,3 +235,21 @@ def admin_slot_video(team: str, index: int, request: Request, session: str | Non
         raise HTTPException(404, "No output video for this slot.")
 
     return media_file_response(request, path, "video/mp4", cache_public=False)
+
+
+@router.get("/admin/slot-published-video/{team}/{index}")
+def admin_slot_published_video(team: str, index: int, request: Request, session: str | None = Cookie(default=None)):
+    """
+    Stream a slot's published.mp4 for admin review.
+    Authenticated via admin session cookie (GET has no body for token).
+    """
+    if not resolve_admin_token(session):
+        raise HTTPException(401, "Admin authentication required.")
+    if team not in TEAMS or index < 1 or index > TEAM_SIZE:
+        raise HTTPException(400, "Invalid team or index.")
+
+    path = DATA_DIR / team / str(index) / "published.mp4"
+    if not path.exists():
+        raise HTTPException(404, "No published video for this slot.")
+
+    return media_file_response(request, path, "video/mp4", cache_public=False)
