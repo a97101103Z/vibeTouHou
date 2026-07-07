@@ -169,7 +169,7 @@ export class Dashboard {
           : '<span class="status-no">○</span>';
 
         const outputPreview = s.has_output
-          ? `<button class="btn-admin" data-action="preview" data-team="${s.team}" data-index="${s.index}">Preview</button>`
+          ? `<button class="btn-admin btn-small" data-action="preview" data-team="${s.team}" data-index="${s.index}">View</button>`
           : "";
 
         const publishedIcon = s.has_published
@@ -190,7 +190,7 @@ export class Dashboard {
           ? `<button class="btn-admin play" data-action="play" data-team="${s.team}" data-index="${s.index}" data-slot="${s.slot_key.toUpperCase()}">Play</button>`
           : "";
 
-        const addGalleryBtn = s.has_output
+        const addGalleryBtn = s.has_published
           ? `<button class="btn-admin primary" data-action="add-gallery" data-team="${s.team}" data-index="${s.index}" data-slot="${s.slot_key.toUpperCase()}">+Gallery</button>`
           : "";
 
