@@ -116,7 +116,10 @@
     <!-- Video Modal (watch) -->
     <div id="video-modal">
       <button class="modal-close" id="video-modal-close">&times;</button>
-      <video id="admin-video-player" controls autoplay></video>
+      <div class="video-modal-inner">
+        <video id="admin-video-player" controls autoplay></video>
+        <canvas id="admin-trajectory-overlay" width="800" height="600"></canvas>
+      </div>
     </div>
 
     <!-- Game Modal (play) -->
