@@ -2,7 +2,7 @@
 Score submission, progress, and leaderboard.
 
 POST /api/score          → submit a single pattern result
-GET  /api/score/progress → current slot's per-pattern scores
+GET  /api/scores          → current slot's per-pattern scores
 GET  /api/leaderboard    → per-team points averages
 """
 
@@ -61,8 +61,8 @@ def submit_score(body: ScoreBody, slot: str = Depends(require_session)):
     return {"ok": True}
 
 
-@router.get("/score/progress")
-def get_progress(slot: str = Depends(require_session)):
+@router.get("/scores")
+def get_scores(slot: str = Depends(require_session)):
     team, idx = slot.rsplit("-", 1)
     data = scores.get_slot_scores(team, int(idx))
     if data is None:

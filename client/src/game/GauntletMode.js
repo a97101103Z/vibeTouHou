@@ -29,7 +29,7 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
 
   async function run(idx) {
     if (running) return;
-    if (!gauntletWidget.patterns.length) {
+    if (idx == null || !gauntletWidget.patterns[idx]) {
       hud.showOverlay(NO_PATTERNS_TITLE, NO_PATTERNS_SUB, []);
       onDone?.("blocked");
       return;
@@ -53,11 +53,6 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
     hud.hideOverlay();
 
     const p = gauntletWidget.patterns[currentIdx];
-    if (!p) {
-      endPlay();
-      return;
-    }
-
     gauntletWidget.activatePatternItem(currentIdx);
 
     const nextEngine = hud.createRealEngine(p.video_url);
@@ -95,7 +90,7 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
     stopEngine();
 
     await submitScore(hits);
-    await gauntletWidget.refreshProgress();
+    await gauntletWidget.refreshScores();
 
     const points = hits <= 2 ? [3, 2, 1][hits] : 0;
     const summary = `

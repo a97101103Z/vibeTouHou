@@ -5,8 +5,7 @@
 
 import {
   COUNTDOWN_LABEL, COUNTDOWN_SUB,
-  LOADING_OPP_VIDEOS, LOADING,
-  NO_PATTERNS_YET, ERR_LOAD_PATTERNS,
+  LOADING_OPP_VIDEOS, LOADING, NO_PATTERNS_YET, ERR_LOAD_PATTERNS,
   NO_SCORES,
   PATTERN_HITS_DISPLAY,
   LB_TEAM_AVG, LB_MEMBER,
@@ -19,7 +18,7 @@ export class GauntletWidget extends EventTarget {
   #countdownInterval = null;
   #locked = true;
 
-  // Per-pattern scores from the server: {"0": {"best_hits": 1}, ...}
+  // Per-pattern scores from the server: {"1": {"best_hits": 1}, ...}
   #slotScores = {};
 
   // DOM references
@@ -156,16 +155,16 @@ export class GauntletWidget extends EventTarget {
       }
 
       this.#renderPatternList();
-      await this.refreshProgress();
+      await this.refreshScores();
     } catch (_) {
       this.#patternList.innerHTML =
         `<div class="loading-message error">${ERR_LOAD_PATTERNS}</div>`;
     }
   }
 
-  async refreshProgress() {
+  async refreshScores() {
     try {
-      const res = await fetch("/api/score/progress", { credentials: "include" });
+      const res = await fetch("/api/scores", { credentials: "include" });
       const data = await res.json();
       this.#slotScores = data.scores ?? {};
       this.#updatePatternItems();
@@ -206,7 +205,8 @@ export class GauntletWidget extends EventTarget {
 
   #updatePatternItems() {
     this.#patternItems.forEach((item, i) => {
-      const scoreInfo = this.#slotScores[String(i)];
+      const p = this.#patterns[i];
+      const scoreInfo = p ? this.#slotScores[String(p.index)] : null;
       const bestHits = scoreInfo?.best_hits;
 
       item.el.setAttribute("data-active", "false");

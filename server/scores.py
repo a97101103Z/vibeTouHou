@@ -6,8 +6,8 @@ Stored as data/scores.json.  Structure:
     "red": {
         "1": {
             "scores": {
-                "0": {"best_hits": 1},
-                "1": {"best_hits": 0}
+                "1": {"best_hits": 1},
+                "2": {"best_hits": 0}
             }
         }
     },
