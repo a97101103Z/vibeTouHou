@@ -341,6 +341,7 @@ export class Dashboard {
             <th>#</th>
             <th>Team</th>
             <th>Hits</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -353,11 +354,21 @@ export class Dashboard {
               <td>${rank}</td>
               <td>${e.team}-${e.index}</td>
               <td>${e.best_hits}h</td>
+              <td><button class="btn-admin danger btn-small" data-reset-entry="${e.team}:${e.index}">Reset</button></td>
             </tr>`;
           }).join("")}
         </tbody>
       </table>
     `;
+
+    this.#leaderboardList.querySelectorAll("[data-reset-entry]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const [team, index] = btn.dataset.resetEntry.split(":");
+        if (confirm(`Reset leaderboard entry for ${team}-${index}?`)) {
+          adminApi.resetLeaderboardEntry(team, parseInt(index)).then(() => this.#poll()).catch((err) => alert(err.message));
+        }
+      });
+    });
   }
 
   #openVideoPlayer(url, autoplay = false) {
