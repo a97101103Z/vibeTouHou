@@ -6,7 +6,7 @@ import { API_BASE } from "../constants.js";
 
 /**
  * Fetch all gallery entries.
- * @returns {Promise<Array<{id: string, title: string, avg_hits: number, filename: string}>>}
+ * @returns {Promise<Array<{id: string, title: string, filename: string}>>}
  */
 export async function fetchGallery() {
   const res = await fetch("/api/gallery");
