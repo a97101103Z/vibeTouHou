@@ -1,9 +1,9 @@
 """
 Gallery endpoints.
 
-POST   /api/admin/gallery        → add entry (JSON: admin_token, title, team, index)
-DELETE /api/admin/gallery        → remove entry (JSON: admin_token, id)
-GET    /api/gallery              → list all entries (public)
+POST   /api/admin/gallery                 → add entry (JSON: admin_token, title, team, index)
+DELETE /api/admin/gallery/{entry_id}      → remove entry (JSON: admin_token)
+GET    /api/gallery                       → list all entries (public)
 GET    /api/gallery/{id}/video   → stream the mp4 (public)
 """
 
