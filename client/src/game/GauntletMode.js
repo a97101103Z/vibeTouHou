@@ -117,22 +117,12 @@ export function initGauntlet(hud, gauntletWidget, toast, onDone) {
       resultSub,
       [
         { text: BTN_PLAY_AGAIN, action: () => run(currentIdx) },
-        { text: BTN_BACK_TO_LIST, action: () => backToList() },
       ],
       summary,
     );
 
     running = false;
     onDone?.("finished");
-  }
-
-  function backToList() {
-    stopEngine();
-    hud.hideOverlay();
-    hud.setPatternVisible(false);
-    hud.setModeIndicator("");
-    running = false;
-    onDone?.("cancelled");
   }
 
   async function submitScore(hits) {
