@@ -138,6 +138,8 @@ body.admin-body {
 .btn-admin.play:hover { background: #0a2a1a; border-color: #4f8; }
 .btn-admin.skip { border-color: #a80; }
 .btn-admin.skip:hover { background: #3a2a00; border-color: #fa0; }
+.btn-admin.btn-small { padding: 1px 6px; font-size: 0.65rem; }
+.output-cell { text-align: center; }
 
 /* Table wrapper for horizontal scroll */
 .table-wrap {

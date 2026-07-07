@@ -169,6 +169,10 @@ export class Dashboard {
           ? '<span class="status-yes">●</span>'
           : '<span class="status-no">○</span>';
 
+        const outputPreview = s.has_output
+          ? `<button class="btn-admin btn-small" data-action="preview" data-team="${s.team}" data-index="${s.index}">View</button>`
+          : "";
+
         const publishedIcon = s.has_published
           ? '<span class="status-yes">●</span>'
           : '<span class="status-no">○</span>';
@@ -179,15 +183,15 @@ export class Dashboard {
           ? `<button class="btn-admin danger" data-action="reset" data-team="${s.team}" data-index="${s.index}">Reset</button>`
           : "";
 
-        const watchBtn = s.has_output
+        const watchBtn = s.has_published
           ? `<button class="btn-admin" data-action="watch" data-team="${s.team}" data-index="${s.index}">Watch</button>`
           : "";
 
-        const playBtn = s.has_output
+        const playBtn = s.has_published
           ? `<button class="btn-admin play" data-action="play" data-team="${s.team}" data-index="${s.index}" data-slot="${s.slot_key.toUpperCase()}">Play</button>`
           : "";
 
-        const addGalleryBtn = s.has_output
+        const addGalleryBtn = s.has_published
           ? `<button class="btn-admin primary" data-action="add-gallery" data-team="${s.team}" data-index="${s.index}" data-slot="${s.slot_key.toUpperCase()}">+Gallery</button>`
           : "";
 
@@ -198,7 +202,7 @@ export class Dashboard {
             <td>${onlineDot}</td>
             <td>${lastSeen}</td>
             <td>${s.asset_count}</td>
-            <td>${outputIcon}</td>
+            <td><div class="output-cell">${outputIcon} ${outputPreview}</div></td>
             <td>${publishedIcon}</td>
             <td>${scoreText}</td>
             <td style="white-space: nowrap;">
@@ -226,7 +230,7 @@ export class Dashboard {
       btn.addEventListener("click", () => {
         const team = btn.dataset.team;
         const index = parseInt(btn.dataset.index);
-        this.#openVideoPlayer(adminApi.slotVideoUrl(team, index), true);
+        this.#openVideoPlayer(adminApi.slotPublishedVideoUrl(team, index), true);
       });
     });
 
@@ -235,7 +239,15 @@ export class Dashboard {
         const team = btn.dataset.team;
         const index = parseInt(btn.dataset.index);
         const slotLabel = btn.dataset.slot;
-        this.#launchEngine(adminApi.slotVideoUrl(team, index), slotLabel);
+        this.#launchEngine(adminApi.slotPublishedVideoUrl(team, index), slotLabel);
+      });
+    });
+
+    this.#slotsTbody.querySelectorAll("[data-action='preview']").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const team = btn.dataset.team;
+        const index = parseInt(btn.dataset.index);
+        this.#openVideoPlayer(adminApi.slotVideoUrl(team, index), true);
       });
     });
 
