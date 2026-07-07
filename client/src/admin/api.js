@@ -42,6 +42,10 @@ export const adminApi = {
     return api("POST", "/api/admin/skip-grace", {});
   },
 
+  async setTimer(durationSeconds) {
+    return api("POST", "/api/admin/set-timer", { duration_seconds: durationSeconds });
+  },
+
   async resetSlot(team, index) {
     return api("POST", "/api/admin/reset-slot", { team, index });
   },

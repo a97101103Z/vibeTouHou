@@ -147,6 +147,28 @@ def skip_grace(body: AdminTokenBody, session: str | None = Cookie(default=None))
     return {"ok": True, **phase.get_phase()}
 
 
+class SetTimerBody(BaseModel):
+    admin_token: str = ""
+    duration_seconds: int = Field(..., ge=0)
+
+
+@router.post("/admin/set-timer")
+def set_timer_api(body: SetTimerBody, session: str | None = Cookie(default=None)):
+    """Admin: set the reference timer (or clear if 0)."""
+    effective_token = resolve_admin_token(session, body.admin_token)
+    if effective_token is None:
+        raise HTTPException(401, "Invalid admin token.")
+    
+    if body.duration_seconds > 0:
+        result = phase.set_timer(effective_token, body.duration_seconds)
+    else:
+        result = phase.clear_timer(effective_token)
+        
+    if result is None:
+        raise HTTPException(401, "Invalid admin token.")
+    return {"ok": True, **phase.get_phase()}
+
+
 # ── Admin overview ──────────────────────────────────────────────────────────────
 
 class OverviewBody(BaseModel):

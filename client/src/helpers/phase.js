@@ -12,6 +12,7 @@ const POLL_INTERVAL = 5000;
 class PhaseService extends EventTarget {
   #phase = "code";
   #active_at = null;
+  #timer_at = null;
   #locked = false;
   #pollTimer = null;
   #lockTimer = null;
@@ -24,6 +25,11 @@ class PhaseService extends EventTarget {
   /** @returns {number|null} unix timestamp when lock activates */
   get activeAt() {
     return this.#active_at;
+  }
+
+  /** @returns {number|null} unix timestamp for reference timer */
+  get timerAt() {
+    return this.#timer_at;
   }
 
   /**
@@ -69,16 +75,24 @@ class PhaseService extends EventTarget {
     }
   }
 
-  #handleUpdate({ phase, active_at }) {
+  #handleUpdate({ phase, active_at, timer_at }) {
     const phaseChanged =
       phase !== this.#phase || active_at !== this.#active_at;
+    const timerChanged = timer_at !== this.#timer_at;
 
     this.#phase = phase;
     this.#active_at = active_at ?? null;
+    this.#timer_at = timer_at ?? null;
 
     if (phaseChanged) {
       this.dispatchEvent(
         new CustomEvent("phasechange", { detail: { phase, active_at } }),
+      );
+    }
+    
+    if (timerChanged) {
+      this.dispatchEvent(
+        new CustomEvent("timerchange", { detail: { timer_at } }),
       );
     }
 
