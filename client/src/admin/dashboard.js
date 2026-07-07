@@ -201,7 +201,7 @@ export class Dashboard {
             <td>${onlineDot}</td>
             <td>${lastSeen}</td>
             <td>${s.asset_count}</td>
-            <td>${outputIcon} ${outputPreview}</td>
+            <td><div class="output-cell">${outputIcon} ${outputPreview}</div></td>
             <td>${publishedIcon}</td>
             <td>${scoreText}</td>
             <td style="white-space: nowrap;">
