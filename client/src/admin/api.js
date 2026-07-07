@@ -50,6 +50,10 @@ export const adminApi = {
     return api("POST", "/api/admin/reset-slot", { team, index });
   },
 
+  async resetLeaderboardEntry(team, index) {
+    return api("POST", "/api/admin/reset-leaderboard-entry", { team, index });
+  },
+
   async addGalleryEntry(title, team, index) {
     return api("POST", "/api/admin/gallery", { title, team, index });
   },

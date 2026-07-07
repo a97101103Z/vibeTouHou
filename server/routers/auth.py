@@ -97,6 +97,16 @@ def reset_slot(body: ResetBody, session: str | None = Cookie(default=None)):
     return {"ok": True}
 
 
+@router.post("/admin/reset-leaderboard-entry")
+def reset_leaderboard_entry(body: ResetBody, session: str | None = Cookie(default=None)):
+    """Admin: remove a single slot's score from the leaderboard."""
+    effective_token = resolve_admin_token(session, body.admin_token)
+    if effective_token is None:
+        raise HTTPException(401, "Invalid admin token.")
+    scores.clear(body.team, body.index)
+    return {"ok": True}
+
+
 @router.get("/me")
 def whoami(session: str | None = Cookie(default=None)):
     """Let the client check their current identity on page load."""
