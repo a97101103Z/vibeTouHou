@@ -9,10 +9,12 @@ Grace periods apply on transitions in both directions:
 The active_at timestamp tells clients when the transition completes.
 
 Public API:
-    get_phase()           → {"phase": str, "active_at": float | None}
+    get_phase()           → {"phase": str, "active_at": float | None, "timer_at": float | None}
     set_phase(...)        → True on success, None on bad token
     reset_phase(...)      → True on success, None on bad token
-    skip_grace(...)     → True on success, None on bad token
+    skip_grace(...)       → True on success, None on bad token
+    set_timer(...)        → True on success, None on bad token
+    clear_timer(...)      → True on success, None on bad token
     is_locked()           → True when coding/publishing should be blocked
 """
 
