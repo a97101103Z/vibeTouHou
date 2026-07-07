@@ -179,10 +179,7 @@ def test_gallery_admin_session_auth(client, tmp_path):
     import config
     import identity
 
-    identity.create_admin_session()
-    sessions = identity._sessions
-    admin_session = next(k for k, v in sessions.items() if v.get("slot") == "admin")
-
+    admin_session = identity.create_admin_session()
     _seed_published(config.DATA_DIR, "red", 2)
 
     resp = client.post("/api/admin/gallery", json={
