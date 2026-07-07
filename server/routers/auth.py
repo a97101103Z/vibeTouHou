@@ -12,6 +12,7 @@ POST /api/admin/overview          → admin: full dashboard snapshot
 GET  /api/admin/slot-video/{t}/{i} → admin: stream a slot's output.mp4
 """
 
+import json
 import time
 
 from fastapi import APIRouter, Cookie, Request, Response, HTTPException
@@ -285,3 +286,26 @@ def admin_slot_published_video(team: str, index: int, request: Request, session:
         raise HTTPException(404, "No published video for this slot.")
 
     return media_file_response(request, path, "video/mp4", cache_public=False)
+
+
+@router.get("/admin/slot-trajectory/{team}/{index}")
+def admin_slot_trajectory(team: str, index: int, session: str | None = Cookie(default=None)):
+    """
+    Return the saved trajectory JSON for a published slot.
+    Authenticated via admin session cookie (GET has no body for token).
+    """
+    if not resolve_admin_token(session):
+        raise HTTPException(401, "Admin authentication required.")
+    if team not in TEAMS or index < 1 or index > TEAM_SIZE:
+        raise HTTPException(400, "Invalid team or index.")
+
+    path = DATA_DIR / team / str(index) / "published_trajectory.json"
+    if not path.exists():
+        raise HTTPException(404, "No published trajectory for this slot.")
+
+    try:
+        traj = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        raise HTTPException(500, f"Failed to read trajectory: {exc}")
+
+    return {"trajectory": traj}
