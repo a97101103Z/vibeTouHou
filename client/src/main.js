@@ -53,9 +53,9 @@ function applyPhase(phase, activeAt, immediate = false) {
     if (isAlreadyActive || immediate) {
       sidebar.setLocked(true);
       gauntlet.setLocked(false);
-      gauntlet.hideCountdown();
     } else {
-      gauntlet.showCountdown(activeAt);
+      sidebar.setLocked(false);
+      gauntlet.setLocked(true);
     }
   } else {
     // code phase
@@ -65,7 +65,6 @@ function applyPhase(phase, activeAt, immediate = false) {
     if (isAlreadyActive || immediate) {
       sidebar.setLocked(false);
       gauntlet.setLocked(true);
-      gauntlet.hideCountdown();
     } else {
       // Grace period for code transition — keep gauntlet active, coding locked
       sidebar.setLocked(true);
@@ -90,6 +89,18 @@ async function main() {
   const initial = phaseService.phase;
   const initialActiveAt = phaseService.activeAt;
   applyPhase(initial, initialActiveAt, /* immediate */ true);
+  
+  const initialTimerAt = phaseService.timerAt;
+  if (initialTimerAt) gauntlet.showCountdown(initialTimerAt);
+
+  phaseService.addEventListener("timerchange", (e) => {
+    const { timer_at } = e.detail;
+    if (timer_at) {
+      gauntlet.showCountdown(timer_at);
+    } else {
+      gauntlet.hideCountdown();
+    }
+  });
 
   // Phase polling detected a change (e.g. admin just switched)
   phaseService.addEventListener("phasechange", (e) => {
@@ -101,14 +112,12 @@ async function main() {
   phaseService.addEventListener("phaselocked", () => {
     sidebar.setLocked(true);
     gauntlet.setLocked(false);
-    gauntlet.hideCountdown();
   });
 
   // Code transition grace expired — unlock coding, go back to code mode
   phaseService.addEventListener("phaseunlocked", () => {
     sidebar.setLocked(false);
     gauntlet.setLocked(true);
-    gauntlet.hideCountdown();
   });
 }
 

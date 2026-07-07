@@ -53,15 +53,19 @@
       <!-- Overview Cards -->
       <div class="overview-grid">
         <div class="card" id="phase-card">
-          <h3>Phase Control</h3>
+          <h3>Phase & Timer Control</h3>
           <div id="phase-display"></div>
           <div class="phase-control-row">
             <button id="btn-toggle-phase" class="btn-admin primary">Switch to Gauntlet</button>
+          </div>
+          <hr style="margin: 10px 0; border: 0; border-top: 1px solid #333;" />
+          <div class="phase-control-row">
             <label>
-              Grace (s):
-              <input id="grace-seconds" type="number" value="60" min="0" max="600" class="grace-input" />
+              Reference Timer (s):
+              <input id="timer-seconds" type="number" value="60" min="0" max="3600" class="grace-input" />
             </label>
-            <button id="btn-skip-grace" class="btn-admin skip" style="display:none;">⚡ Bypass Grace</button>
+            <button id="btn-set-timer" class="btn-admin primary">Start Timer</button>
+            <button id="btn-clear-timer" class="btn-admin danger">Clear</button>
           </div>
         </div>
 

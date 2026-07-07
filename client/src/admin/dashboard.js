@@ -42,8 +42,9 @@ export class Dashboard {
   #videoPlayer;
   #videoModalClose;
   #leaderboardList;
-  #graceSeconds;
-  #skipBtn;
+  #btnSetTimer;
+  #btnClearTimer;
+  #timerSeconds;
 
   #cacheDOM() {
     this.#phaseDisplay = document.getElementById("phase-display");
@@ -55,8 +56,9 @@ export class Dashboard {
     this.#videoPlayer = document.getElementById("admin-video-player");
     this.#videoModalClose = document.getElementById("video-modal-close");
     this.#leaderboardList = document.getElementById("leaderboard-admin-list");
-    this.#graceSeconds = document.getElementById("grace-seconds");
-    this.#skipBtn = document.getElementById("btn-skip-grace");
+    this.#btnSetTimer = document.getElementById("btn-set-timer");
+    this.#btnClearTimer = document.getElementById("btn-clear-timer");
+    this.#timerSeconds = document.getElementById("timer-seconds");
   }
 
   startPolling() {
@@ -97,41 +99,40 @@ export class Dashboard {
   #renderPhase(phase) {
     this.#lastPhaseData = phase;
     const isGauntlet = phase.phase === "gauntlet";
-    const isActive = phase.active_at && Date.now() / 1000 >= phase.active_at;
-    const graceActive = phase.active_at && !isActive;
 
     this.#currentPhase = phase.phase;
 
     let label = isGauntlet ? "GAUNTLET" : "CODE";
     let cls = isGauntlet ? "phase-gauntlet" : "phase-code";
 
-    let extra = "";
-    if (graceActive) {
-      const secs = Math.max(0, Math.ceil(phase.active_at - Date.now() / 1000));
-      extra = ` — ${isGauntlet ? "activates" : "unlocks"} in ${secs}s`;
+    let timerText = "";
+    if (phase.timer_at) {
+      const secs = Math.max(0, Math.ceil(phase.timer_at - Date.now() / 1000));
+      timerText = `<div style="margin-top: 8px; font-weight: bold; color: #ffeb3b;">Prep Timer: <span id="admin-ref-timer">${Math.floor(secs/60)}:${String(secs%60).padStart(2, "0")}</span></div>`;
     }
 
     this.#phaseDisplay.innerHTML = `
       <span class="phase-badge ${cls}">${label}</span>
-      <span style="margin-left: 8px; color: #888;">${extra}</span>
+      ${timerText}
     `;
 
     this.#togglePhaseBtn.textContent = isGauntlet ? "Switch to Code" : "Switch to Gauntlet";
-    this.#skipBtn.style.display = graceActive ? "inline-block" : "none";
+    
+    // Disable timer controls in Gauntlet mode
+    if (this.#btnSetTimer) this.#btnSetTimer.disabled = isGauntlet;
+    if (this.#btnClearTimer) this.#btnClearTimer.disabled = isGauntlet;
+    if (this.#timerSeconds) this.#timerSeconds.disabled = isGauntlet;
   }
 
   #tick() {
     const phase = this.#lastPhaseData;
-    if (!phase || !phase.active_at) return;
-    if (Date.now() / 1000 >= phase.active_at) {
-      this.#poll();
-      return;
+    if (!phase) return;
+    
+    if (phase.timer_at) {
+      const secs = Math.max(0, Math.ceil(phase.timer_at - Date.now() / 1000));
+      const timerSpan = document.getElementById("admin-ref-timer");
+      if (timerSpan) timerSpan.textContent = `${Math.floor(secs/60)}:${String(secs%60).padStart(2, "0")}`;
     }
-    const isGauntlet = phase.phase === "gauntlet";
-    const secs = Math.max(0, Math.ceil(phase.active_at - Date.now() / 1000));
-    const extra = ` — ${isGauntlet ? "activates" : "unlocks"} in ${secs}s`;
-    const span = this.#phaseDisplay.querySelector("span:last-child");
-    if (span) span.textContent = extra;
   }
 
   #renderStats(slots) {
@@ -478,19 +479,28 @@ export class Dashboard {
   setupPhaseControl() {
     this.#togglePhaseBtn.addEventListener("click", async () => {
       const targetPhase = this.#currentPhase === "gauntlet" ? "code" : "gauntlet";
-      const parsed = parseInt(this.#graceSeconds.value);
-      const graceSeconds = Number.isNaN(parsed) ? 60 : parsed;
       try {
-        await adminApi.setPhase(targetPhase, graceSeconds);
+        await adminApi.setPhase(targetPhase, 0);
         this.#poll();
       } catch (err) {
         alert(err.message);
       }
     });
 
-    this.#skipBtn.addEventListener("click", async () => {
+    this.#btnSetTimer.addEventListener("click", async () => {
+      const parsed = parseInt(this.#timerSeconds.value);
+      const duration = Number.isNaN(parsed) ? 60 : parsed;
       try {
-        await adminApi.skipGrace();
+        await adminApi.setTimer(duration);
+        this.#poll();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
+    this.#btnClearTimer.addEventListener("click", async () => {
+      try {
+        await adminApi.setTimer(0);
         this.#poll();
       } catch (err) {
         alert(err.message);
