@@ -248,7 +248,7 @@ export class Dashboard {
         const slotLabel = btn.dataset.slot;
         const title = prompt(`Name for gallery entry from ${slotLabel}:`, slotLabel);
         if (title === null) return;
-        adminApi.addGalleryEntry(title || slotLabel, 0, team, index)
+        adminApi.addGalleryEntry(title || slotLabel, team, index)
           .then(() => this.#poll())
           .catch((err) => alert(err.message));
       });
@@ -267,7 +267,6 @@ export class Dashboard {
         <div class="gallery-entry-row">
           <div class="gallery-entry-info">
             <span class="title">${e.title}</span>
-            <span class="hits">${e.avg_hits}h</span>
             <span style="color: #555; font-size: 0.75rem;">(${e.id})</span>
           </div>
           <div class="gallery-entry-actions">

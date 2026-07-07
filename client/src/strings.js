@@ -97,7 +97,6 @@ export const LB_SCORE_HITS         = tf((h) => `${h} hit${h !== 1 ? "s" : ""}`, 
 // ── Gallery widget ─────────────────────────────────────────────────────────────
 export const NO_GALLERY_ENTRIES    = t("No entries yet.",                                     "尚無入選作品。");
 export const GALLERY_VIDEO_LABEL   = tf((i) => `Video ${i}`,                                  (i) => `影片 ${i}`);
-export const GALLERY_HITS_DISPLAY  = tf((h) => `${h}h`,                                       (h) => `${h} 次`);
 
 // ── Play area / HUD ────────────────────────────────────────────────────────────
 export const SECTION_PLAY          = t("Play",                                                 "試玩");

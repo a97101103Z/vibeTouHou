@@ -7,7 +7,7 @@ Storage layout (at project root /gallery/):
 
 Public API:
     list_entries()                          → list[dict]
-    add_entry(admin_token, title, avg_hits, video_bytes, suffix) → dict | None
+    add_entry(admin_token, title, video_bytes, suffix) → dict | None
     delete_entry(admin_token, entry_id)     → True | None | False
     entry_video_path(entry_id)              → Path | None
 """
@@ -51,7 +51,6 @@ def list_entries() -> list:
 def add_entry_from_slot(
     admin_token: str,
     title: str,
-    avg_hits: float,
     team: str,
     index: int,
 ) -> dict | None | bool:
@@ -80,7 +79,6 @@ def add_entry_from_slot(
     entry = {
         "id": entry_id,
         "title": title.strip() or f"{team.upper()}-{index}",
-        "avg_hits": round(float(avg_hits), 1),
         "filename": filename,
     }
 

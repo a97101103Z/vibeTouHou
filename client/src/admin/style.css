@@ -206,7 +206,6 @@ body.admin-body {
   flex-wrap: wrap;
 }
 .gallery-entry-row .title { font-weight: bold; }
-.gallery-entry-row .hits { color: #888; }
 .gallery-entry-actions {
   display: flex;
   gap: 4px;
