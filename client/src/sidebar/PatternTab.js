@@ -20,6 +20,24 @@ import gizeh
 # This script generates a 10-second bullet-hell pattern video.
 # Edit the PATTERN SETTINGS section below to create your own!
 # The script should produce a file called "output.mp4".
+#
+# Guides FOR LLM CODE GENERATION:
+# 1. Goal: 
+#     Generate a 10-second bullet-hell pattern video
+# 2. Performance: 
+#     This script runs in a Docker container. 
+#     If the execution takes more than 10 seconds, it will Time Limit Exceed (TLE). 
+#     Keep mathematical operations and loops optimized.
+# 3. Canvas & Coordinate System:
+#     Canvas Size: WIDTH = 800, HEIGHT = 600.
+#     Center Coordinate: (400, 300).
+#     Player Starting Coordinate: (400, 520).
+# 4. Hitbox Criteria:
+#     Hit detection is based on the pixel's brightness (Luma).
+#     A pixel is considered a hit zone ONLY IF its Brightness (Y) > 128.
+#     Standard Brightness Formula (assuming RGB values on a 0-255 scale): 
+#     Y = 0.299*R + 0.587*G + 0.114*B
+#     Ensure your bullet colors are bright enough to register!
 # ─────────────────────────────────────────────────────────────
 
 # Canvas settings (keep these as-is)
