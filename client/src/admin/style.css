@@ -271,3 +271,42 @@ body.admin-body {
   background: none;
   border: none;
 }
+
+/* Leaderboard */
+.lb-team-header {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 8px 4px 4px;
+  margin-top: 8px;
+  border-bottom: 1px solid #333;
+}
+.lb-team-header:first-child { margin-top: 0; }
+.lb-red { color: #f66; }
+.lb-blue { color: #66f; }
+
+.lb-details {
+  margin: 2px 0;
+  cursor: pointer;
+}
+.lb-details[open] { padding-bottom: 4px; }
+
+.lb-summary {
+  padding: 4px 8px;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  border-radius: 4px;
+}
+.lb-summary::-webkit-details-marker { display: none; }
+.lb-details:hover .lb-summary { background: #16162a; }
+.lb-red .lb-summary { border-left: 2px solid #f44; }
+.lb-blue .lb-summary { border-left: 2px solid #44f; }
+
+.lb-pattern-list {
+  padding: 2px 0 4px 16px;
+  font-size: 0.75rem;
+  color: #999;
+}
+.lb-pattern-item { padding: 1px 0; }
