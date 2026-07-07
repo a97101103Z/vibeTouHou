@@ -11,10 +11,7 @@ function formatTimeAgo(unixTs) {
 }
 
 function formatScore(scores) {
-  if (scores.best_hits === null && scores.infinite_time === null) return "—";
-  if (scores.best_hits === 0 && scores.infinite_time !== null) {
-    return `0h / ${scores.infinite_time}s∞`;
-  }
+  if (scores.best_hits === null) return "—";
   return `${scores.best_hits}h`;
 }
 
@@ -320,14 +317,10 @@ export class Dashboard {
       return;
     }
 
-    entries.sort((a, b) => {
-      if (a.best_hits !== b.best_hits) return a.best_hits - b.best_hits;
-      return (b.infinite_time ?? 0) - (a.infinite_time ?? 0);
-    });
+    entries.sort((a, b) => a.best_hits - b.best_hits);
 
     let rank = 0;
     let prevHits = null;
-    let prevTime = null;
 
     this.#leaderboardList.innerHTML = `
       <table class="slots-table">
@@ -336,22 +329,18 @@ export class Dashboard {
             <th>#</th>
             <th>Team</th>
             <th>Hits</th>
-            <th>Time</th>
           </tr>
         </thead>
         <tbody>
           ${entries.map((e) => {
-            if (e.best_hits !== prevHits || e.infinite_time !== prevTime) {
+            if (e.best_hits !== prevHits) {
               rank++;
               prevHits = e.best_hits;
-              prevTime = e.infinite_time;
             }
-            const timeStr = e.infinite_time !== null ? `${e.infinite_time}s` : "—";
             return `<tr>
               <td>${rank}</td>
               <td>${e.team}-${e.index}</td>
               <td>${e.best_hits}h</td>
-              <td>${timeStr}</td>
             </tr>`;
           }).join("")}
         </tbody>

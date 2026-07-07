@@ -1,7 +1,6 @@
 import { createHudControl } from "./game/HudControl.js";
 import { initPlaytest } from "./game/PlaytestMode.js";
 import { initGauntlet } from "./game/GauntletMode.js";
-import { initInfinite } from "./game/InfiniteMode.js";
 import { initView } from "./game/ViewMode.js";
 import { phaseService } from "./helpers/phase.js";
 import { OVERLAY_TITLE_DEFAULT, OVERLAY_SUB_DEFAULT, TOAST_ALREADY_RUNNING } from "./strings.js";
@@ -17,7 +16,6 @@ export class GameWidget {
   #galleryWidget;
   #playtestMode;
   #gauntletMode;
-  #infiniteMode;
   #viewMode;
   #toast;
   #running;
@@ -51,11 +49,6 @@ export class GameWidget {
       this.#gauntletWidget,
       (reason) => this.#onModeDone(reason),
     );
-    this.#infiniteMode = initInfinite(
-      this.#hud,
-      this.#gauntletWidget,
-      (reason) => this.#onModeDone(reason),
-    );
     this.#viewMode = initView(this.#hud, (reason) => this.#onModeDone(reason));
     this.#hud.showOverlay(OVERLAY_TITLE_DEFAULT, OVERLAY_SUB_DEFAULT, []);
     this.#setupEvents();
@@ -71,12 +64,6 @@ export class GameWidget {
     this.#gauntletWidget.addEventListener("startGauntlet", (e) => {
       this.#startMode(() => {
         this.#gauntletMode.run(e?.detail?.startIdx);
-      });
-    });
-
-    this.#gauntletWidget.addEventListener("beginInfinite", () => {
-      this.#startMode(() => {
-        this.#infiniteMode.begin();
       });
     });
 

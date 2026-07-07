@@ -7,7 +7,7 @@ import {
   COUNTDOWN_LABEL, COUNTDOWN_SUB,
   LOADING_OPP_VIDEOS, LOADING,
   NO_PATTERNS_YET, ERR_LOAD_PATTERNS,
-  NO_SCORES, LB_SCORE_PERFECT, LB_SCORE_HITS,
+  NO_SCORES, LB_SCORE_HITS,
   SUMMARY_HITS,
 } from "./strings.js";
 
@@ -291,8 +291,7 @@ export class GauntletWidget extends EventTarget {
     rows.sort((a, b) => {
       const ah = a.score.best_hits ?? Infinity;
       const bh = b.score.best_hits ?? Infinity;
-      if (ah !== bh) return ah - bh;
-      return (b.score.infinite_time ?? -1) - (a.score.infinite_time ?? -1);
+      return ah - bh;
     });
 
     this.#leaderboard = rows;
@@ -306,13 +305,7 @@ export class GauntletWidget extends EventTarget {
     const fragment = document.createDocumentFragment();
     rows.forEach((r) => {
       const h = r.score.best_hits;
-      const it = r.score.infinite_time;
-      const scoreStr =
-        h == null
-          ? "—"
-          : h === 0 && it != null
-            ? LB_SCORE_PERFECT(it.toFixed(0))
-            : LB_SCORE_HITS(h);
+      const scoreStr = h == null ? "—" : LB_SCORE_HITS(h);
 
       const row = document.createElement("div");
       row.className = `lb-row lb-${r.team}`;

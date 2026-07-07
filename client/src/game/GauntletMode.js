@@ -6,7 +6,7 @@ import {
   GAUNTLET_MODE_TITLE, GAUNTLET_MODE_SUB,
   PERFECT_GAUNTLET_TITLE, PERFECT_GAUNTLET_SUB,
   TOTAL_HITS_TITLE, IMPROVE_SCORE_SUB,
-  BTN_INFINITE, BTN_RUN_AGAIN,
+  BTN_RUN_AGAIN,
   SUMMARY_HITS, SUMMARY_TOTAL,
   HITS_DISPLAY, HUD_HITS_INIT,
 } from "../strings.js";
@@ -177,7 +177,6 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           hits: totalHits,
-          infinite_time: null,
           trajectories: trajList.length ? trajList : undefined,
         }),
       });
