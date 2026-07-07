@@ -70,21 +70,18 @@ def get_progress(slot: str = Depends(require_session)):
     return {"scores": data.get("scores", {})}
 
 
-def _claimed_by_team() -> dict:
-    """Return {"red": ["1","3",...], "blue": [...]} for claimed slots."""
-    result = {"red": [], "blue": []}
-    for i in range(1, 13):
-        for team in ("red", "blue"):
-            if identity.is_claimed(f"{team}-{i}"):
-                result[team].append(str(i))
-    return result
-
-
 @router.get("/leaderboard")
 def leaderboard(slot: str = Depends(require_session), session: str | None = Cookie(default=None)):
     if session:
         identity.update_last_seen(session)
-    return {
-        "scores": scores.get_leaderboard(),
-        "claimed": _claimed_by_team(),
-    }
+
+    raw = scores.get_leaderboard()
+
+    # Merge claimed slots into scores: every claimed slot appears as a key.
+    # Empty value = claimed but no scores yet.
+    for team in ("red", "blue"):
+        for i in range(1, 13):
+            if identity.is_claimed(f"{team}-{i}"):
+                raw.setdefault(team, {}).setdefault(str(i), {})
+
+    return {"scores": raw}

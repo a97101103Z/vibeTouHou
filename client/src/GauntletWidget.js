@@ -268,25 +268,19 @@ export class GauntletWidget extends EventTarget {
     let hasAny = false;
 
     for (const team of ["red", "blue"]) {
-      const claimed = data.claimed?.[team] ?? [];
-      const teamScores = data.scores?.[team] ?? {};
+      const teamData = data.scores?.[team] ?? {};
 
       const members = [];
       let teamTotal = 0;
 
-      for (const idx of claimed) {
-        const slotData = teamScores[idx] ?? {};
+      for (const [idx, slotData] of Object.entries(teamData)) {
         const scores = slotData.scores ?? {};
         let total = 0;
-        let done = 0;
         for (const s of Object.values(scores)) {
           const bh = s.best_hits;
-          if (bh != null) {
-            total += pointsForHits(bh);
-            done++;
-          }
+          if (bh != null) total += pointsForHits(bh);
         }
-        members.push({ slot: `${team}-${idx}`, total_points: total, patterns_done: done });
+        members.push({ slot: `${team}-${idx}`, total_points: total });
         teamTotal += total;
       }
 
