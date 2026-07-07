@@ -31,7 +31,6 @@ class PatternTrajectory(BaseModel):
 
 class ScoreBody(BaseModel):
     hits: int
-    infinite_time: Optional[float] = None
     trajectories: list[PatternTrajectory]
 
 
@@ -57,31 +56,14 @@ def submit_score(body: ScoreBody, slot: str = Depends(require_session)):
         pattern_hits = validator.count_hits(video_path, pts)
         verified_hits += pattern_hits
 
-    if body.infinite_time is not None:
-        # Infinite mode — score is survival time with 0 hits
-        if body.hits != 0 or verified_hits != 0:
-            raise HTTPException(
-                422,
-                f"Infinite mode score rejected: server found {verified_hits} hit(s), "
-                "infinite mode requires 0.",
-            )
-        expected_time = len(body.trajectories) * 10.0
-        if body.infinite_time != expected_time:
-            raise HTTPException(
-                422,
-                f"Infinite mode score rejected: submitted {body.infinite_time}s, "
-                f"expected {expected_time:.0f}s ({len(body.trajectories)} patterns × 10s).",
-            )
-    else:
-        # Gauntlet mode — hits must match verified count
-        if verified_hits != body.hits:
-            raise HTTPException(
-                422,
-                f"Score verification failed: submitted {body.hits} hit(s), "
-                f"server counted {verified_hits}.",
-            )
+    if verified_hits != body.hits:
+        raise HTTPException(
+            422,
+            f"Score verification failed: submitted {body.hits} hit(s), "
+            f"server counted {verified_hits}.",
+        )
 
-    scores.submit(team, int(idx), body.hits, body.infinite_time)
+    scores.submit(team, int(idx), body.hits)
     return {"ok": True}
 
 
