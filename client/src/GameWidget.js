@@ -61,9 +61,9 @@ export class GameWidget {
       });
     });
 
-    this.#gauntletWidget.addEventListener("startGauntlet", (e) => {
+    this.#gauntletWidget.addEventListener("playPattern", (e) => {
       this.#startMode(() => {
-        this.#gauntletMode.run(e?.detail?.startIdx);
+        this.#gauntletMode.run(e?.detail?.patternIdx);
       });
     });
 

@@ -41,6 +41,10 @@ def publish(body: PublishBody, slot: str = Depends(require_session)):
 
     trajectory = [pt.model_dump() for pt in body.trajectory]
 
+    err = validator.verify_trajectory(trajectory)
+    if err:
+        raise HTTPException(422, f"Trajectory validation failed: {err}")
+
     ok, reason = validator.validate(draft, trajectory)
     if not ok:
         raise HTTPException(422, f"Trajectory validation failed: {reason}")

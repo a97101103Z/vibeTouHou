@@ -3,11 +3,19 @@ Score persistence.
 
 Stored as data/scores.json.  Structure:
 {
-    "red":  { "1": {"best_hits": 3}, ... },
-    "blue": { "1": {"best_hits": 0}, ... }
+    "red": {
+        "1": {
+            "scores": {
+                "0": {"best_hits": 1},
+                "1": {"best_hits": 0}
+            }
+        }
+    },
+    "blue": { ... }
 }
 
-best_hits=null  → slot has not completed the gauntlet yet
+- scores: opponent pattern index -> {"best_hits": int | None}
+  null means not yet attempted.  best_hits is the fewest hits achieved.
 """
 
 import json
@@ -34,29 +42,40 @@ def _save(data: dict) -> None:
 
 
 def get_leaderboard() -> dict:
+    """Return raw per-team scores dict."""
     with _lock:
         return _load()
 
 
 def get_slot_scores(team: str, index: int) -> dict | None:
+    """Return the slot's full scores dict, or None if not found."""
     with _lock:
         data = _load()
         return data.get(team, {}).get(str(index))
 
 
-def submit(team: str, index: int, hits: int) -> None:
-    """
-    Record a run result, keeping only the best score per slot (fewer hits wins).
+def submit_pattern(team: str, index: int, pattern_index: int, hits: int) -> dict:
+    """Record a single pattern result.  Updates best_hits for the pattern.
+
+    Returns the updated slot dict.
     """
     with _lock:
         data = _load()
         slot_id = str(index)
-        current = data.setdefault(team, {}).get(slot_id, {"best_hits": None})
+        slot = data.setdefault(team, {}).get(slot_id)
+        if slot is None:
+            slot = {"scores": {}}
+            data[team][slot_id] = slot
+        slot.setdefault("scores", {})
 
-        if current["best_hits"] is None or hits < current["best_hits"]:
-            data[team][slot_id] = {"best_hits": hits}
+        scores = slot["scores"]
+        pidx = str(pattern_index)
+        current_best = scores.get(pidx, {}).get("best_hits")
+        if current_best is None or hits < current_best:
+            scores[pidx] = {"best_hits": hits}
 
         _save(data)
+        return dict(slot)
 
 
 def clear(team: str, index: int) -> None:

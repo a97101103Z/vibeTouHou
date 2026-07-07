@@ -77,7 +77,6 @@ export const CONTROLS_HINT         = t("SHIFT = focus · WASD / ↕↔ = move", 
 
 // ── Gauntlet section ───────────────────────────────────────────────────────────
 export const SECTION_GAUNTLET      = t("Gauntlet",                                            "實戰");
-export const BTN_BEGIN             = t("▶ Begin",                                             "▶ 開始");
 export const OPPONENT_PATTERNS     = t("Opponent Patterns",                                    "對手彈幕");
 export const LEADERBOARD           = t("Leaderboard",                                          "排行榜");
 export const NO_SCORES             = t("No scores yet.",                                       "尚無成績。");
@@ -131,15 +130,19 @@ export const HITS_TAKEN_TITLE      = tf((n) => `${n} Hit${n > 1 ? "s" : ""} Take
 export const NO_PATTERNS_TITLE     = t("No Patterns",                                         "尚無彈幕");
 export const NO_PATTERNS_SUB       = t("The opposing team has not published any patterns yet.", "對手隊伍尚未發布任何彈幕。");
 export const GAUNTLET_MODE_TITLE   = t("Gauntlet Mode",                                       "實戰模式");
-export const GAUNTLET_MODE_SUB     = t("Face every pattern published by the opposing team. Real hitbox. No mercy.", "挑戰對手隊伍發布的全部彈幕。盡可能無傷通關吧！");
-export const PERFECT_GAUNTLET_TITLE= t("🎉 Perfect Gauntlet!",                               "🎉 完美通關！");
+export const GAUNTLET_MODE_SUB     = t("Select a pattern to challenge. Real hitbox. No mercy.", "選擇彈幕進行挑戰。");
+export const PERFECT_GAUNTLET_TITLE= t("🎉 Perfect!",                                         "🎉 完美！");
 
-export const BTN_RUN_AGAIN         = t("↩ Run Again",                                         "↩ 再挑戰一次");
-export const IMPROVE_SCORE_SUB     = t("Run the gauntlet again to improve your score.<br><br>", "再挑戰一次以提升成績。<br><br>");
-export const PERFECT_GAUNTLET_SUB  = tf((n) => `You took 0 hits across all ${n} patterns.<br><br>`, (n) => `全部 ${n} 個彈幕均零次受傷。<br><br>`);
-export const TOTAL_HITS_TITLE      = tf((n) => `${n} Hit${n !== 1 ? "s" : ""} Total`,         (n) => `共被打中 ${n} 次`);
-export const SUMMARY_HITS          = tf((h) => `${h}h`,                                        (h) => `${h} 次`);
-export const SUMMARY_TOTAL         = tf((n) => `Total: ${n} hit${n !== 1 ? "s" : ""}`,        (n) => `共受傷 ${n} 次`);
+export const BTN_PLAY_AGAIN        = t("↩ Play Again",                                        "↩ 再玩一次");
+export const BTN_BACK_TO_LIST      = t("← Back to List",                                      "← 返回列表");
+export const SCORE_POINTS          = tf((p) => `${p} pt${p !== 1 ? "s" : ""}`,                (p) => `${p} 分`);
+export const LB_TEAM_AVG           = tf((team, avg) => `${team.toUpperCase()} avg: ${avg} pts`, (team, avg) => `${team === "red" ? "紅" : "藍"}隊平均：${avg} 分`);
+export const LB_MEMBER             = tf((slot, pts) => `${slot}: ${pts} pts`,                  (slot, pts) => `${slot}：${pts} 分`);
+export const PATTERN_HITS_DISPLAY  = tf((h) => h === 0 ? "0 ★" : `${h}h`,                      (h) => h === 0 ? "0 ★" : `${h}次`);
+export const PERFECT_RESULT_SUB    = tf((pts) => `Earned ${pts} pts!`,                          (pts) => `獲得 ${pts} 分！`);
+export const HITS_RESULT_SUB       = tf((h, pts) => `${h} hit${h !== 1 ? "s" : ""}, ${pts} pts`, (h, pts) => `受傷 ${h} 次，獲得 ${pts} 分`);
+export const ZERO_POINTS_SUB       = t("Too many hits — try again!",                           "被打中太多次了，再試一次！");
+export const BTN_SELECT_PATTERN    = t("Play",                                                 "挑戰");
 
 
 // ── View (Gallery) mode ────────────────────────────────────────────────────────

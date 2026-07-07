@@ -73,7 +73,7 @@ export function initPlaytest(hud, sidebarWidget, gauntletWidget, onDone, phaseSe
       // Block restart if gauntlet became active while playtest was running
       if (phaseService?.isGauntletActive()) {
         running = false;
-        gauntletWidget.dispatchEvent(new CustomEvent("startGauntlet"));
+        hud.hideOverlay();
         onDone?.("finished");
         return;
       }
@@ -106,7 +106,7 @@ export function initPlaytest(hud, sidebarWidget, gauntletWidget, onDone, phaseSe
 
     // If gauntlet phase is now active, skip the replay/publish screen entirely
     if (phaseService?.isGauntletActive()) {
-      gauntletWidget.dispatchEvent(new CustomEvent("startGauntlet"));
+      hud.hideOverlay();
       onDone?.("finished");
       return;
     }
