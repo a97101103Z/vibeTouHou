@@ -11,9 +11,10 @@ import {
   SCORE_POINTS,
   PERFECT_GAUNTLET_TITLE,
   PERFECT_RESULT_SUB, HITS_RESULT_SUB, ZERO_POINTS_SUB,
+  TOAST_VIDEO_ERROR,
 } from "../strings.js";
 
-export function initGauntlet(hud, gauntletWidget, onDone) {
+export function initGauntlet(hud, gauntletWidget, toast, onDone) {
   let engine = null;
   let running = false;
   let currentIdx = 0;
@@ -75,8 +76,9 @@ export function initGauntlet(hud, gauntletWidget, onDone) {
     });
 
     engine.addEventListener("videoerror", () => {
-      trajectory = [];
-      onPatternFinish();
+      stopEngine();
+      toast?.toast(TOAST_VIDEO_ERROR, "error");
+      backToList();
     });
 
     hud.syncTimer(engine.video);

@@ -47,6 +47,7 @@ export class GameWidget {
     this.#gauntletMode = initGauntlet(
       this.#hud,
       this.#gauntletWidget,
+      this.#toast,
       (reason) => this.#onModeDone(reason),
     );
     this.#viewMode = initView(this.#hud, (reason) => this.#onModeDone(reason));

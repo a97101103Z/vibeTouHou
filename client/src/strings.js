@@ -159,5 +159,6 @@ export const BTN_VIEW_REPLAY       = t("Replay",                                
 
 // ── Game widget ────────────────────────────────────────────────────────────────
 export const TOAST_ALREADY_RUNNING = t("A game mode is already running.",                     "目前有其他正在執行中的彈幕。");
+export const TOAST_VIDEO_ERROR     = t("Failed to load video. Returning to list.",          "讀取影片失敗。返回列表。");
 
 
