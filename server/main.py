@@ -31,11 +31,11 @@ app = FastAPI(
 app.include_router(auth.router,          prefix="/api", tags=["auth"])
 app.include_router(render.router,        prefix="/api", tags=["render"])
 app.include_router(assets.router,        prefix="/api", tags=["assets"])
+app.include_router(history_router.router, prefix="/api", tags=["history"])
 app.include_router(patterns.router,      prefix="/api", tags=["patterns"])
 app.include_router(scores_router.router, prefix="/api", tags=["scores"])
 app.include_router(publish.router,       prefix="/api", tags=["publish"])
 app.include_router(gallery_router.router, prefix="/api", tags=["gallery"])
-app.include_router(history_router.router, prefix="/api", tags=["history"])
 
 
 @app.get("/api/health")
