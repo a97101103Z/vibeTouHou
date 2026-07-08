@@ -15,14 +15,14 @@ PLAYER_SPEED = 350        # max player movement px/s (used for trajectory valida
 BRIGHTNESS_THRESHOLD = 128  # Y > this = hit zone  (Y = 0.299R + 0.587G + 0.114B)
 
 # ── Sandbox ────────────────────────────────────────────────────────────────────
-MAX_RENDER_SECONDS = 60   # kill runaway student scripts after this many seconds
+MAX_RENDER_SECONDS = 20   # kill runaway student scripts after this many seconds
 MAX_RENDER_WORKERS = int(os.getenv("MAX_RENDER_WORKERS", "3"))
 MAX_RENDER_QUEUE = int(os.getenv("MAX_RENDER_QUEUE", "48"))
 
 # Imports that student scripts are allowed to use
 ALLOWED_IMPORTS = {
     "math", "random", "colorsys", "itertools", "functools",
-    "imageio", "numpy", "np", "pygame", "PIL", "Pillow",
+    "imageio", "numpy", "np", "PIL", "Pillow",
     "os", "sys", "time", "gizeh",
 }
 
@@ -98,3 +98,14 @@ if len(set(_token_values)) != len(_token_values):
     raise ValueError(
         "RED_TEAM_TOKEN, BLUE_TEAM_TOKEN, and ADMIN_TOKEN must all be unique."
     )
+
+# ── History ───────────────────────────────────────────────────────────────────
+MAX_HISTORY_ENTRIES = int(os.getenv("MAX_HISTORY_ENTRIES", "100"))
+# Store history in /tmp2 if available (saves project disk space)
+_tmp2 = Path("/tmp2")
+if _tmp2.exists():
+    _tmp2_base = _tmp2 / "b14902002"
+    _tmp2_base.mkdir(parents=True, exist_ok=True)
+    HISTORY_DIR = _tmp2_base / "vibeTouHou_history"
+else:
+    HISTORY_DIR = DATA_DIR / "history"

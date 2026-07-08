@@ -13,6 +13,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+import history
 import renderer
 import validator
 import phase
@@ -63,4 +64,20 @@ def publish(body: PublishBody, slot: str = Depends(require_session)):
     # to see the exact no-damage route the player submitted
     traj_path.write_text(json.dumps(trajectory, indent=2), encoding="utf-8")
 
+    # Tag the latest history entry as published
+    history.mark_latest_as_published(team, int(idx), trajectory)
+
+    return {"ok": True, "message": "Pattern published successfully!"}
+
+
+@router.post("/publish/history/{entry_id}")
+def publish_from_history(entry_id: str, slot: str = Depends(require_session)):
+    """Re-publish a previously approved history entry without requiring a new playtest."""
+    if phase.is_locked():
+        raise HTTPException(423, "Publishing is locked — gauntlet is now active.")
+    team, idx = slot.rsplit("-", 1)
+    d = renderer.slot_dir(team, int(idx))
+    ok, err = history.publish_from_history(team, int(idx), entry_id, d)
+    if not ok:
+        raise HTTPException(400, err)
     return {"ok": True, "message": "Pattern published successfully!"}

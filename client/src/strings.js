@@ -47,7 +47,7 @@ export const TOAST_RENDER_ERROR    = t("Error occured on render. Check the Patte
 export const TOAST_NETWORK_ERROR   = t("Network error.",                                      "網路錯誤。");
 export const ERR_EDITOR_EMPTY      = t("Editor is empty",                                     "編輯器內沒有程式。");
 export const ERR_SUBMISSION_FAIL   = t("Submission failed.",                                  "提交失敗。");
-export const ERR_RENDER_TIMEOUT    = t("Render timed out. Try again later.",                  "產生彈幕用的程式執行逾時，請稍後再試。");
+export const ERR_RENDER_TIMEOUT    = t("Render timed out. Code may have infinite loops or heavy computation.", "執行逾時。可能是程式中有無窮迴圈或運算量過大，請檢查您的程式碼。");
 export const ERR_RENDER_FAIL       = t("Render failed",                                       "產生彈幕用的程式執行失敗。");
 export const TOAST_PUBLISH_OK      = t("Published!",                                          "已成功提交彈幕！");
 export const TOAST_VALIDATION_FAIL = t("Validation failed.",                                  "驗證失敗。");
@@ -68,8 +68,26 @@ export const TOAST_DELETED         = tf((name) => `Deleted ${name}.`,           
 export const TOAST_UPLOADED        = tf((file) => `Uploaded ${file}`,                         (file) => `已上傳 ${file}`);
 export const TOAST_UPLOAD_FAIL     = tf((name) => `Upload failed for ${name}.`,               (name) => `${name} 上傳失敗。`);
 export const COPIED_LABEL          = t("Copied!",                                              "已複製！");
-export const ASSETS_USAGE_HINT    = t("Use assets in your pattern code:",                   "在代碼中使用素材：");
+export const ASSETS_USAGE_HINT    = t("Use assets in your pattern code:",                   "在程式中使用素材：");
 export const ASSETS_CLICK_HINT    = t("Click an asset to copy its filename",                "點擊素材即可複製檔名");
+
+// ── History tab ────────────────────────────────────────────────────────────────
+export const TAB_HISTORY          = t("History",                                           "紀錄");
+export const HIST_COPY_CODE       = t("Copy Code",                                         "複製程式");
+export const HIST_PLAYTEST        = t("▶ Test",                                            "▶ 測試彈幕");
+export const HIST_PUBLISH         = t("⬆ Publish",                                         "⬆ 提交彈幕");
+export const HIST_ERROR_LINE      = tf((n) => `Error at line ${n}`,                         (n) => `錯誤位置：第 ${n} 行`);
+export const HIST_EMPTY           = t("No render history yet.",                            "尚無渲染紀錄。");
+export const HIST_LOADING         = t("Loading history…",                                  "載入歷史中…");
+export const HIST_ERR_LOAD        = t("Could not load history.",                           "無法載入歷史。");
+export const HIST_COPIED          = t("Copied!",                                           "已複製！");
+export const HIST_STATUS_OK       = t("✓ Success",                                         "✓ 成功");
+export const HIST_STATUS_ERR      = t("✗ Error",                                           "✗ 錯誤");
+export const HIST_PUBLISH_OK      = t("Pattern published from history!",                   "已從歷史紀錄提交彈幕！");
+export const HIST_PUBLISH_FAIL    = t("Could not publish from history.",                   "從歷史紀錄提交失敗。");
+export const BTN_VIEW_RECORD      = t("View Records",                                      "查看紀錄");
+export const BTN_COPY_ERROR       = t("Copy Error Message",                                "複製錯誤訊息");
+export const ERR_RENDER_PREFIX    = t("Render Error from last submission:",                "上次提交渲染發生錯誤：");
 
 // ── Collapsed sidebar ──────────────────────────────────────────────────────────
 export const GALLERY_LABEL         = t("Gallery",                                             "彈幕畫廊");

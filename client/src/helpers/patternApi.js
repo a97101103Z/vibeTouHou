@@ -29,7 +29,7 @@ export async function render(script) {
  * @returns {Promise<string>} - Resolves with the video URL
  */
 async function pollRenderStatus() {
-  const timeoutMs = 30000;
+  const timeoutMs = 65000;
   const start = Date.now();
   while (true) {
     if (Date.now() - start >= timeoutMs) {
@@ -44,7 +44,11 @@ async function pollRenderStatus() {
     if (data.status === "done") {
       return data.video_url || `${API_BASE}/video/my`;
     } else if (data.status === "error") {
-      throw new Error(data.stderr || ERR_RENDER_FAIL);
+      const err = new Error(data.stderr || ERR_RENDER_FAIL);
+      if (data.parsed_error) {
+        err.parsed_error = data.parsed_error;
+      }
+      throw err;
     }
 
     await new Promise((resolve) => setTimeout(resolve, 500));

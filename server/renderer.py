@@ -37,6 +37,8 @@ from queue import Empty, Full, Queue
 from pathlib import Path
 from typing import Any, Optional
 
+import history
+
 from config import (
     DATA_DIR,
     HOST_DATA_DIR,
@@ -82,7 +84,8 @@ def check_imports(script: str) -> Optional[str]:
     try:
         tree = ast.parse(script)
     except SyntaxError as exc:
-        return f"Syntax error: {exc}"
+        msg = getattr(exc, "msg", str(exc))
+        return f"Line {exc.lineno} : SyntaxError: {msg}"
 
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
@@ -117,8 +120,21 @@ def get_status(team: str, index: int) -> dict:
 
 
 def _set_status(key: str, status: str, stderr: str = "") -> None:
+    parsed_error = None
+    if "__VIBE_ERROR__" in stderr:
+        parts = stderr.split("__VIBE_ERROR__", 1)
+        stderr = parts[0].strip()
+        try:
+            import json
+            parsed_error = json.loads(parts[1])
+        except Exception:
+            pass
+
     with _jobs_lock:
-        _jobs[key] = {"status": status, "stderr": stderr}
+        job = {"status": status, "stderr": stderr}
+        if parsed_error:
+            job["parsed_error"] = parsed_error
+        _jobs[key] = job
 
 
 def _start_workers() -> None:
@@ -159,8 +175,46 @@ def _run_job(key: str, team: str, index: int, script: str) -> None:
     sandbox.mkdir(exist_ok=True)
     sandbox.chmod(0o777)
 
+    target_path = sandbox / "target_script.py"
+    target_path.write_text(script, encoding="utf-8")
+
     script_path = sandbox / "script.py"
-    script_path.write_text(script, encoding="utf-8")
+    wrapper_script = """
+import sys, traceback, json, runpy, linecache
+
+try:
+    runpy.run_path("target_script.py", run_name="__main__")
+except BaseException as e:
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    frames = traceback.extract_tb(exc_traceback)
+    error_data = {
+        "error_type": exc_type.__name__,
+        "error_message": getattr(exc_value, "msg", str(exc_value)),
+        "raw_traceback": traceback.format_exc(),
+        "stack_trace": []
+    }
+    for frame in frames:
+        if frame.filename == "target_script.py":
+            error_data["stack_trace"].append({
+                "filename": "script.py", # Hide target_script from user
+                "line_number": frame.lineno,
+                "function_name": frame.name,
+                "code_line": frame.line or ""
+            })
+    
+    if isinstance(exc_value, SyntaxError) and exc_value.lineno is not None:
+        code_line = linecache.getline("target_script.py", exc_value.lineno).strip()
+        error_data["stack_trace"].append({
+            "filename": "script.py",
+            "line_number": exc_value.lineno,
+            "function_name": "<module>",
+            "code_line": code_line
+        })
+        
+    print("__VIBE_ERROR__" + json.dumps(error_data), file=sys.stderr)
+    sys.exit(1)
+"""
+    script_path.write_text(wrapper_script, encoding="utf-8")
     _stage_assets_for_runtime(d, sandbox)
 
     if _docker_available():
@@ -168,6 +222,19 @@ def _run_job(key: str, team: str, index: int, script: str) -> None:
     else:
         logging.warning("Docker unavailable — running render for %s without full sandboxing", key)
         _run_subprocess(key, d, sandbox)
+
+    # ── Persist to render history ──────────────────────────────────────────
+    try:
+        final = get_status(team, index)
+        video_src = d / "output.mp4"
+        history.save_entry(
+            team, index, script,
+            final["status"], final.get("stderr", ""),
+            video_src if video_src.exists() else None,
+            final.get("parsed_error"),
+        )
+    except Exception as exc:
+        logging.error("Failed to save render history for %s: %s", key, exc)
 
 
 def _read_staged_asset_names(meta_path: Path) -> set[str]:
@@ -409,24 +476,40 @@ def _run_subprocess(key: str, d: Path, sandbox: Path):
     WARNING = "[WARNING] Docker unavailable — running without full sandboxing.\n"
 
     try:
-        result = subprocess.run(
+        creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == "win32" else 0
+        proc = subprocess.Popen(
             [sys.executable, str(script_path)],
             cwd=str(sandbox),
             env=env,
-            capture_output=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
             text=True,
-            timeout=MAX_RENDER_SECONDS,
+            creationflags=creation_flags
         )
+        _, stderr_text = proc.communicate(timeout=MAX_RENDER_SECONDS)
+        
         out_path = sandbox / "output.mp4"
-        if result.returncode != 0:
-            _set_status(key, "error", WARNING + (result.stderr or "Script exited with non-zero status."))
+        if proc.returncode != 0:
+            _set_status(key, "error", WARNING + (stderr_text or "Script exited with non-zero status."))
         elif not out_path.exists():
-            _set_status(key, "error", WARNING + (result.stderr or "No output.mp4 was created."))
+            _set_status(key, "error", WARNING + (stderr_text or "No output.mp4 was created."))
         else:
             shutil.move(str(out_path), str(d / "output.mp4"))
-            _set_status(key, "done", WARNING + result.stderr)
+            _set_status(key, "done", WARNING + stderr_text)
 
     except subprocess.TimeoutExpired:
-        _set_status(key, "error", WARNING + f"Script timed out after {MAX_RENDER_SECONDS} seconds.")
+        import signal
+        if sys.platform == "win32":
+            proc.send_signal(signal.CTRL_BREAK_EVENT)
+        else:
+            proc.send_signal(signal.SIGINT)
+        
+        try:
+            _, stderr_text = proc.communicate(timeout=2)
+            _set_status(key, "error", WARNING + stderr_text)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.communicate()
+            _set_status(key, "error", WARNING + f"Script timed out after {MAX_RENDER_SECONDS} seconds and failed to exit.")
     except Exception as exc:
         _set_status(key, "error", WARNING + str(exc))

@@ -66,6 +66,23 @@
             </button>
           </div>
 
+          <div id="sidebar-tab-container">
+            <button
+              id="tab-pattern"
+              class="sidebar-tab"
+              data-tab="pattern"
+              data-i18n="TAB_PATTERN"
+            >
+              Pattern
+            </button>
+            <button id="tab-assets" class="sidebar-tab" data-tab="assets" data-i18n="TAB_ASSETS">
+              Assets
+            </button>
+            <button id="tab-history" class="sidebar-tab" data-tab="history" data-i18n="TAB_HISTORY">
+              History
+            </button>
+          </div>
+
           <div id="sidebar-content">
             <!-- Collapsed Content -->
             <div id="sidebar-collapsed">
@@ -110,32 +127,11 @@
 
             <!-- Expanded Content -->
             <div id="sidebar-expanded">
-              <div id="sidebar-tab-container">
-                  <button
-                  id="tab-pattern"
-                  class="sidebar-tab"
-                  data-tab="pattern"
-                  data-i18n="TAB_PATTERN"
-                >
-                  Pattern
-                </button>
-                <button id="tab-assets" class="sidebar-tab" data-tab="assets" data-i18n="TAB_ASSETS">
-                  Assets
-                </button>
-              </div>
-
               <div id="tab-content">
                 <div id="pattern-tab" class="tab-pane active">
-                  <div id="editor-wrap" style="height: 400px"></div>
-                  <div class="tab-actions">
-                    <button id="btn-render-pattern" class="btn btn-primary" data-i18n="BTN_RENDER">
-                      ⬆ Render
-                    </button>
-                    <button id="btn-playtest" class="btn btn-secondary" data-i18n="BTN_PLAYTEST" disabled>
-                      ▶ Playtest
-                    </button>
-                  </div>
-                  <div id="render-error" class="stderr-box" data-visible="false"></div>
+                  <div id="render-error" class="compact-error-banner" data-visible="false"></div>
+                  
+                  <div id="editor-wrap" style="flex: 1; min-height: 0;"></div>
                 </div>
 
                 <div id="assets-tab" class="tab-pane">
@@ -186,18 +182,30 @@ pattern = gz.ImagePattern(img, ...)</code></pre>
                     <div class="usage-hint-note">💡 <span data-i18n="ASSETS_CLICK_HINT">Click an asset to copy its filename</span></div>
                   </div>
                 </div>
+
+                <div id="history-tab" class="tab-pane">
+                  <div id="history-list" class="history-list"></div>
+                </div>
               </div>
             </div>
           </div>
 
           <div
-            id="render-status-container"
-            class="status-row"
+            id="sidebar-bottom-actions"
+            class="sidebar-bottom-actions"
             style="margin-top: auto"
           >
-            <div id="render-status" class="status-badge status-idle" data-i18n="RENDER_STATUS_IDLE">
-              ● IDLE
+            <button id="btn-render-pattern" class="btn btn-primary" data-i18n="BTN_RENDER">
+              ⬆ Render
+            </button>
+            <div id="render-status-container" class="status-row">
+              <div id="render-status" class="status-badge status-idle" data-i18n="RENDER_STATUS_IDLE">
+                ● IDLE
+              </div>
             </div>
+            <button id="btn-playtest" class="btn btn-secondary" data-i18n="BTN_PLAYTEST" disabled>
+              ▶ Playtest
+            </button>
           </div>
         </aside>
 
