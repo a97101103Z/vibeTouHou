@@ -126,6 +126,8 @@ export const FLAWLESS_TITLE        = t("🎉 Flawless Clear!",                  
 export const FLAWLESS_SUB          = t("Pattern confirmed survivable!",                       "彈幕已確認可以存活！");
 export const BTN_REPLAY            = t("Replay",                                              "再玩一次");
 export const BTN_PUBLISH           = t("Publish",                                             "提交彈幕");
+export const BTN_OVERWRITE_PUBLISH = t("Overwrite Published",                                 "覆蓋已發布彈幕");
+export const BTN_AUTO_PUBLISHED    = t("Auto-Published",                                      "已自動發布");
 export const TRY_AGAIN_SUB         = t("Try again to unlock Publish.",                        "再試一次，無傷通關以解鎖彈幕提交功能。");
 export const HITS_TAKEN_TITLE      = tf((n) => `${n} Hit${n > 1 ? "s" : ""} Taken`,          (n) => `被打中 ${n} 次`);
 

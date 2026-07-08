@@ -122,8 +122,10 @@ export class PatternTab extends EventTarget {
       } else {
         this.#toastService.toast(result.message, "error");
       }
+      return result;
     } catch (_) {
       this.#toastService.toast(TOAST_NETWORK_ERROR, "error");
+      return { ok: false, message: TOAST_NETWORK_ERROR };
     }
   }
 

@@ -100,7 +100,13 @@ def reset_slot(body: ResetBody, session: str | None = Cookie(default=None)):
 @router.get("/me")
 def whoami(session: str | None = Cookie(default=None)):
     """Let the client check their current identity on page load."""
-    return {"slot": identity.get_slot(session) if session else None}
+    slot = identity.get_slot(session) if session else None
+    has_published = False
+    if slot and slot != "admin":
+        team, idx = slot.rsplit("-", 1)
+        published_path = DATA_DIR / team / idx / "published.mp4"
+        has_published = published_path.exists()
+    return {"slot": slot, "has_published": has_published}
 
 
 # ── Phase endpoints ────────────────────────────────────────────────────────────

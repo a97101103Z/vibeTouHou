@@ -12,10 +12,11 @@ import {
   ERR_TITLE, ERR_START_PLAYTEST,
   BTN_RETRY,
   FLAWLESS_TITLE, FLAWLESS_SUB,
-  BTN_REPLAY, BTN_PUBLISH, TRY_AGAIN_SUB,
+  BTN_REPLAY, BTN_PUBLISH, BTN_OVERWRITE_PUBLISH, BTN_AUTO_PUBLISHED, TRY_AGAIN_SUB,
   HITS_TAKEN_TITLE,
   HITS_DISPLAY, HUD_HITS_INIT,
 } from "../strings.js";
+import { checkPublished } from "../helpers/patternApi.js";
 
 export function initPlaytest(hud, sidebarWidget, gauntletWidget, onDone, phaseService) {
   let engine = null;
@@ -100,7 +101,7 @@ export function initPlaytest(hud, sidebarWidget, gauntletWidget, onDone, phaseSe
     hud.syncTimer(engine.video);
   }
 
-  function onFinish(hits, trajectory) {
+  async function onFinish(hits, trajectory) {
     running = false;
     stopEngine();
 
@@ -112,14 +113,28 @@ export function initPlaytest(hud, sidebarWidget, gauntletWidget, onDone, phaseSe
     }
 
     if (hits === 0) {
-      hud.showOverlay(
-        FLAWLESS_TITLE,
-        FLAWLESS_SUB,
-        [
-          { text: BTN_REPLAY, action: () => run() },
-          { text: BTN_PUBLISH, action: () => sidebarWidget.publishPattern(trajectory) },
-        ],
-      );
+      const hasPublished = await checkPublished();
+      if (hasPublished) {
+        hud.showOverlay(
+          FLAWLESS_TITLE, FLAWLESS_SUB,
+          [
+            { text: BTN_REPLAY, action: () => run() },
+            { text: BTN_OVERWRITE_PUBLISH, action: () => sidebarWidget.publishPattern(trajectory) },
+          ],
+        );
+      } else {
+        const result = await sidebarWidget.publishPattern(trajectory);
+        const actions = result.ok
+          ? [
+              { text: BTN_REPLAY, action: () => run() },
+              { text: BTN_AUTO_PUBLISHED, action: () => {} },
+            ]
+          : [
+              { text: BTN_REPLAY, action: () => run() },
+              { text: BTN_PUBLISH, action: () => sidebarWidget.publishPattern(trajectory) },
+            ];
+        hud.showOverlay(FLAWLESS_TITLE, FLAWLESS_SUB, actions);
+      }
     } else {
       hud.showOverlay(
         HITS_TAKEN_TITLE(hits),

@@ -56,6 +56,12 @@ async function pollRenderStatus() {
  * @param {object} trajectory The trajectory data to publish
  * @returns {Promise<{ok: boolean, message: string}>}
  */
+export async function checkPublished() {
+  const res = await fetch("/api/me", { credentials: "include" });
+  const data = await res.json();
+  return data.has_published || false;
+}
+
 export async function publishPattern(trajectory) {
   const res = await fetch("/api/publish", {
     method: "POST",
