@@ -559,7 +559,8 @@ body::before {
 
 /* Tab switcher buttons */
 #sidebar[data-active-tab="pattern"] #tab-pattern,
-#sidebar[data-active-tab="assets"] #tab-assets {
+#sidebar[data-active-tab="assets"] #tab-assets,
+#sidebar[data-active-tab="history"] #tab-history {
   color: var(--accent);
   border-color: var(--accent);
   background: var(--accent-dim);
@@ -571,7 +572,8 @@ body::before {
 }
 
 #sidebar[data-active-tab="pattern"] #pattern-tab,
-#sidebar[data-active-tab="assets"] #assets-tab {
+#sidebar[data-active-tab="assets"] #assets-tab,
+#sidebar[data-active-tab="history"] #history-tab {
   display: block;
 }
 
@@ -1404,6 +1406,201 @@ canvas#game-canvas {
   font-size: 3rem;
   font-weight: 900;
   color: var(--accent);
+}
+
+/* ── History Tab ───────────────────────────────────────────────────────────── */
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  padding: 4px 2px 16px;
+}
+
+.history-entry {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-glass);
+  overflow: hidden;
+  transition: border-color var(--transition);
+}
+
+.history-entry:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.history-entry-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.history-entry-index {
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  min-width: 28px;
+}
+
+.history-entry-time {
+  font-family: var(--font-code);
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-status-badge {
+  font-family: var(--font-ui);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  border-radius: 99px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.history-status-badge.is-ok {
+  color: #50ff8c;
+  border-color: rgba(80, 255, 140, 0.35);
+  background: rgba(80, 255, 140, 0.08);
+}
+
+.history-status-badge.is-error {
+  color: #ff3c50;
+  border-color: rgba(255, 60, 80, 0.35);
+  background: rgba(255, 60, 80, 0.08);
+}
+
+.history-error-line-badge {
+  font-family: var(--font-ui);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #ff9966;
+  background: rgba(255, 100, 50, 0.1);
+  border: 1px solid rgba(255, 100, 50, 0.25);
+  border-radius: 99px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.history-entry-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.history-btn {
+  font-family: var(--font-ui);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.history-btn:hover {
+  color: var(--text);
+  background: var(--bg-glass);
+  border-color: rgba(255,255,255,0.2);
+}
+
+.history-btn.is-primary {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.history-btn.is-primary:hover {
+  background: rgba(var(--accent-rgb, 120, 80, 255), 0.25);
+}
+
+.history-entry-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+.history-code-wrap {
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.history-code-block {
+  margin: 0;
+  padding: 12px;
+  font-family: var(--font-code);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: #abb2bf;
+  background: #1a1b26;
+  overflow: auto;
+  max-height: 220px;
+  white-space: pre;
+  tab-size: 4;
+}
+
+.history-media-wrap {
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+}
+
+.history-video {
+  width: 100%;
+  display: block;
+  background: #000;
+}
+
+.history-stderr {
+  margin: 0;
+  padding: 12px;
+  font-family: var(--font-code);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: #ff9966;
+  background: rgba(255, 80, 40, 0.05);
+  overflow: auto;
+  max-height: 220px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  width: 100%;
+}
+
+.history-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+/* Narrow sidebar or small screens: stack code + media vertically */
+@media (max-width: 600px) {
+  .history-entry-body {
+    grid-template-columns: 1fr;
+  }
+  .history-code-wrap {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
 }
 
 /* Responsive */

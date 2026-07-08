@@ -145,6 +145,25 @@ export class PatternTab extends EventTarget {
     }
   }
 
+  /**
+   * Load a script from history into the editor and mark the video as ready.
+   * Called by SidebarWidget when the user clicks "Test" on a history entry.
+   * @param {string} script
+   * @param {string} videoUrl
+   */
+  loadScript(script, videoUrl) {
+    if (this.#editor) {
+      const { from, to } = { from: 0, to: this.#editor.state.doc.length };
+      this.#editor.dispatch(
+        this.#editor.state.update({ changes: { from, to, insert: script } })
+      );
+    }
+    this.#patternUrl = videoUrl;
+    this.#setRendered(true);
+    this.#setVerified(false);
+    this.#setRenderStatus("done");
+  }
+
   // ── DOM side effects ───────────────────────────────────
 
   #setRendered(value) {
@@ -243,7 +262,7 @@ export class PatternTab extends EventTarget {
           python(),
           oneDark,
           EditorView.theme({
-            "&": { height: "400px" },
+            "&": { height: "100%" },
             ".cm-scroller": { overflow: "auto" },
           }),
         ],

@@ -37,6 +37,8 @@ from queue import Empty, Full, Queue
 from pathlib import Path
 from typing import Any, Optional
 
+import history
+
 from config import (
     DATA_DIR,
     HOST_DATA_DIR,
@@ -168,6 +170,18 @@ def _run_job(key: str, team: str, index: int, script: str) -> None:
     else:
         logging.warning("Docker unavailable — running render for %s without full sandboxing", key)
         _run_subprocess(key, d, sandbox)
+
+    # ── Persist to render history ──────────────────────────────────────────
+    try:
+        final = get_status(team, index)
+        video_src = d / "output.mp4"
+        history.save_entry(
+            team, index, script,
+            final["status"], final.get("stderr", ""),
+            video_src if video_src.exists() else None,
+        )
+    except Exception as exc:
+        logging.error("Failed to save render history for %s: %s", key, exc)
 
 
 def _read_staged_asset_names(meta_path: Path) -> set[str]:

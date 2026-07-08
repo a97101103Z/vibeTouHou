@@ -71,6 +71,21 @@ export const COPIED_LABEL          = t("Copied!",                               
 export const ASSETS_USAGE_HINT    = t("Use assets in your pattern code:",                   "在代碼中使用素材：");
 export const ASSETS_CLICK_HINT    = t("Click an asset to copy its filename",                "點擊素材即可複製檔名");
 
+// ── History tab ────────────────────────────────────────────────────────────────
+export const TAB_HISTORY          = t("History",                                           "歷史");
+export const HIST_COPY_CODE       = t("Copy Code",                                         "複製程式");
+export const HIST_PLAYTEST        = t("▶ Test",                                            "▶ 測試彈幕");
+export const HIST_PUBLISH         = t("⬆ Publish",                                         "⬆ 提交彈幕");
+export const HIST_ERROR_LINE      = tf((n) => `Error at line ${n}`,                         (n) => `錯誤位置：第 ${n} 行`);
+export const HIST_EMPTY           = t("No render history yet.",                            "尚無渲染紀錄。");
+export const HIST_LOADING         = t("Loading history…",                                  "載入歷史中…");
+export const HIST_ERR_LOAD        = t("Could not load history.",                           "無法載入歷史。");
+export const HIST_COPIED          = t("Copied!",                                           "已複製！");
+export const HIST_STATUS_OK       = t("✓ Success",                                         "✓ 成功");
+export const HIST_STATUS_ERR      = t("✗ Error",                                           "✗ 錯誤");
+export const HIST_PUBLISH_OK      = t("Pattern published from history!",                   "已從歷史紀錄提交彈幕！");
+export const HIST_PUBLISH_FAIL    = t("Could not publish from history.",                   "從歷史紀錄提交失敗。");
+
 // ── Collapsed sidebar ──────────────────────────────────────────────────────────
 export const GALLERY_LABEL         = t("Gallery",                                             "彈幕畫廊");
 export const CONTROLS_HINT         = t("SHIFT = focus · WASD / ↕↔ = move",                   "SHIFT = 集中 · WASD / ↕↔ = 移動");

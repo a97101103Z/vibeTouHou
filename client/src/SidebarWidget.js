@@ -1,5 +1,6 @@
 import { PatternTab } from "./sidebar/PatternTab.js";
 import { AssetsTab } from "./sidebar/AssetsTab.js";
+import { HistoryTab } from "./sidebar/HistoryTab.js";
 
 /**
  * SidebarWidget - Coordinates sidebar layout and tabs.
@@ -16,6 +17,8 @@ export class SidebarWidget extends EventTarget {
   #patternTab;
   /** @type {AssetsTab} */
   #assetsTab;
+  /** @type {HistoryTab} */
+  #historyTab;
 
   /**
    * @param {import("./ToastService.js").ToastService} toastService
@@ -24,6 +27,7 @@ export class SidebarWidget extends EventTarget {
     super();
     this.#patternTab = new PatternTab(toastService);
     this.#assetsTab = new AssetsTab(toastService);
+    this.#historyTab = new HistoryTab(toastService);
   }
 
   // ── Passthrough ─────────────────────────────────────────
@@ -40,6 +44,19 @@ export class SidebarWidget extends EventTarget {
     await this.#patternTab.init();
     this.#assetsTab.init();
     await this.#assetsTab.loadGallery();
+
+    this.#historyTab.init();
+
+    this.#historyTab.addEventListener("startPlaytestFromHistory", (e) => {
+      const { script, videoUrl } = e.detail;
+      this.#patternTab.loadScript(script, videoUrl);
+      this.switchTab("pattern");
+      // Dispatch startPlaytest so GameWidget picks it up
+      this.dispatchEvent(
+        new CustomEvent("startPlaytest", { detail: { url: videoUrl } })
+      );
+    });
+
     this.switchTab("pattern");
 
     this.#patternTab.addEventListener("startPlaytest", (e) => {
@@ -77,10 +94,13 @@ export class SidebarWidget extends EventTarget {
   }
 
   /**
-   * @param {'pattern'|'assets'} tabName
+   * @param {'pattern'|'assets'|'history'} tabName
    */
   switchTab(tabName) {
     this.#sidebar.setAttribute("data-active-tab", tabName);
+    if (tabName === "history") {
+      this.#historyTab.load();
+    }
     this.#updateDisplay();
   }
 
