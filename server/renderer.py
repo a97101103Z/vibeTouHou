@@ -162,39 +162,41 @@ def _run_job(key: str, team: str, index: int, script: str) -> None:
     sandbox.mkdir(exist_ok=True)
     sandbox.chmod(0o777)
 
+    target_path = sandbox / "target_script.py"
+    target_path.write_text(script, encoding="utf-8")
+
     script_path = sandbox / "script.py"
-    wrapper_script = f"""
-import sys, traceback, json, linecache
-user_code = {repr(script)}
-linecache.cache["script.py"] = (len(user_code), None, [line + "\\n" for line in user_code.splitlines()], "script.py")
+    wrapper_script = """
+import sys, traceback, json, runpy, linecache
+
 try:
-    exec(compile(user_code, "script.py", "exec"), {{"__name__": "__main__"}})
+    runpy.run_path("target_script.py", run_name="__main__")
 except BaseException as e:
     exc_type, exc_value, exc_traceback = sys.exc_info()
     frames = traceback.extract_tb(exc_traceback)
-    error_data = {{
+    error_data = {
         "error_type": exc_type.__name__,
         "error_message": getattr(exc_value, "msg", str(exc_value)),
         "raw_traceback": traceback.format_exc(),
         "stack_trace": []
-    }}
+    }
     for frame in frames:
-        if frame.filename == "script.py":
-            error_data["stack_trace"].append({{
-                "filename": frame.filename,
+        if frame.filename == "target_script.py":
+            error_data["stack_trace"].append({
+                "filename": "script.py", # Hide target_script from user
                 "line_number": frame.lineno,
                 "function_name": frame.name,
                 "code_line": frame.line or ""
-            }})
+            })
     
     if isinstance(exc_value, SyntaxError) and exc_value.lineno is not None:
-        code_line = linecache.getline("script.py", exc_value.lineno).strip()
-        error_data["stack_trace"].append({{
+        code_line = linecache.getline("target_script.py", exc_value.lineno).strip()
+        error_data["stack_trace"].append({
             "filename": "script.py",
             "line_number": exc_value.lineno,
             "function_name": "<module>",
             "code_line": code_line
-        }})
+        })
         
     print("__VIBE_ERROR__" + json.dumps(error_data), file=sys.stderr)
     sys.exit(1)

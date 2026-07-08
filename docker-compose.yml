@@ -18,7 +18,6 @@ services:
     volumes:
       - ./data:/app/data
       - ./gallery:/app/gallery
-      - /tmp2:/tmp2
       - ${XDG_RUNTIME_DIR}/docker.sock:/var/run/docker.sock
     ports:
       - "12345:8000"

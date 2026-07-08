@@ -20,15 +20,15 @@ def reset_environment():
 
     # Determine archive location
     timestamp = time.strftime("%Y%m%d_%H%M%S")
-    _tmp2 = Path("/tmp2")
-    if _tmp2.exists():
-        archive_base = _tmp2 / "b14902002"
+    custom_archive_dir = os.getenv("VIBE_ARCHIVE_DIR")
+    if custom_archive_dir:
+        archive_base = Path(custom_archive_dir)
         archive_base.mkdir(parents=True, exist_ok=True)
         archive_dir = archive_base / f"data_archive_{timestamp}"
-        print(f"ℹ️  /tmp2 detected — archiving to {archive_dir}")
+        print(f"ℹ️  VIBE_ARCHIVE_DIR detected — archiving to {archive_dir}")
     else:
         archive_dir = base_dir / f"data_archive_{timestamp}"
-        print(f"ℹ️  /tmp2 not found — archiving locally to {archive_dir.name}")
+        print(f"ℹ️  No VIBE_ARCHIVE_DIR set — archiving locally to {archive_dir.name}")
 
     try:
         shutil.move(str(data_dir), str(archive_dir))
