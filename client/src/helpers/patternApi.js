@@ -29,7 +29,7 @@ export async function render(script) {
  * @returns {Promise<string>} - Resolves with the video URL
  */
 async function pollRenderStatus() {
-  const timeoutMs = 30000;
+  const timeoutMs = 65000;
   const start = Date.now();
   while (true) {
     if (Date.now() - start >= timeoutMs) {

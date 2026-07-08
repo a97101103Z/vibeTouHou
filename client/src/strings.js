@@ -47,7 +47,7 @@ export const TOAST_RENDER_ERROR    = t("Error occured on render. Check the Patte
 export const TOAST_NETWORK_ERROR   = t("Network error.",                                      "網路錯誤。");
 export const ERR_EDITOR_EMPTY      = t("Editor is empty",                                     "編輯器內沒有程式。");
 export const ERR_SUBMISSION_FAIL   = t("Submission failed.",                                  "提交失敗。");
-export const ERR_RENDER_TIMEOUT    = t("Render timed out. Try again later.",                  "產生彈幕用的程式執行逾時，請稍後再試。");
+export const ERR_RENDER_TIMEOUT    = t("Render timed out. Code may have infinite loops or heavy computation.", "執行逾時。可能是程式中有無窮迴圈或運算量過大，請檢查您的程式碼。");
 export const ERR_RENDER_FAIL       = t("Render failed",                                       "產生彈幕用的程式執行失敗。");
 export const TOAST_PUBLISH_OK      = t("Published!",                                          "已成功提交彈幕！");
 export const TOAST_VALIDATION_FAIL = t("Validation failed.",                                  "驗證失敗。");
@@ -68,7 +68,7 @@ export const TOAST_DELETED         = tf((name) => `Deleted ${name}.`,           
 export const TOAST_UPLOADED        = tf((file) => `Uploaded ${file}`,                         (file) => `已上傳 ${file}`);
 export const TOAST_UPLOAD_FAIL     = tf((name) => `Upload failed for ${name}.`,               (name) => `${name} 上傳失敗。`);
 export const COPIED_LABEL          = t("Copied!",                                              "已複製！");
-export const ASSETS_USAGE_HINT    = t("Use assets in your pattern code:",                   "在代碼中使用素材：");
+export const ASSETS_USAGE_HINT    = t("Use assets in your pattern code:",                   "在程式中使用素材：");
 export const ASSETS_CLICK_HINT    = t("Click an asset to copy its filename",                "點擊素材即可複製檔名");
 
 // ── History tab ────────────────────────────────────────────────────────────────

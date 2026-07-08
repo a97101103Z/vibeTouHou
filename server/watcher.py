@@ -18,7 +18,7 @@ WORK    = Path("/work")
 TRIGGER = WORK / "trigger"
 RESULT  = WORK / "result"
 SCRIPT  = WORK / "script.py"
-TIMEOUT = int(os.environ.get("RENDER_TIMEOUT", "60"))
+TIMEOUT = int(os.environ.get("RENDER_TIMEOUT", "20"))
 
 while True:
     if TRIGGER.exists():
@@ -42,11 +42,18 @@ while True:
             else:
                 RESULT.write_text("error\n" + stderr_text, encoding="utf-8")
         except subprocess.TimeoutExpired:
-            proc.kill()
-            proc.communicate()
-            RESULT.write_text(
-                f"timeout\nScript exceeded {TIMEOUT}s limit.",
-                encoding="utf-8",
-            )
+            import signal
+            proc.send_signal(signal.SIGINT)
+            try:
+                _, stderr_bytes = proc.communicate(timeout=2)
+                stderr_text = stderr_bytes.decode(errors="replace")
+                RESULT.write_text("error\n" + stderr_text, encoding="utf-8")
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.communicate()
+                RESULT.write_text(
+                    f"timeout\nScript exceeded {TIMEOUT}s limit and failed to exit.",
+                    encoding="utf-8",
+                )
 
     time.sleep(0.05)  # 50 ms poll — low CPU, fast enough response

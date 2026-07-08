@@ -24,6 +24,7 @@ server/static/
 # ── Node / client ───────────────────────────────────────────────────────────────
 client/node_modules/
 client/dist/
+client/vite.config.js
 
 # ── Env / secrets ──────────────────────────────────────────────────────────────
 .env

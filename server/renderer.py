@@ -84,7 +84,8 @@ def check_imports(script: str) -> Optional[str]:
     try:
         tree = ast.parse(script)
     except SyntaxError as exc:
-        return f"Syntax error: {exc}"
+        msg = getattr(exc, "msg", str(exc))
+        return f"Line {exc.lineno} : SyntaxError: {msg}"
 
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
@@ -163,16 +164,18 @@ def _run_job(key: str, team: str, index: int, script: str) -> None:
 
     script_path = sandbox / "script.py"
     wrapper_script = f"""
-import sys, traceback, json
+import sys, traceback, json, linecache
 user_code = {repr(script)}
+linecache.cache["script.py"] = (len(user_code), None, [line + "\\n" for line in user_code.splitlines()], "script.py")
 try:
     exec(compile(user_code, "script.py", "exec"), {{"__name__": "__main__"}})
-except Exception as e:
+except BaseException as e:
     exc_type, exc_value, exc_traceback = sys.exc_info()
     frames = traceback.extract_tb(exc_traceback)
     error_data = {{
         "error_type": exc_type.__name__,
-        "error_message": str(exc_value),
+        "error_message": getattr(exc_value, "msg", str(exc_value)),
+        "raw_traceback": traceback.format_exc(),
         "stack_trace": []
     }}
     for frame in frames:
@@ -181,8 +184,18 @@ except Exception as e:
                 "filename": frame.filename,
                 "line_number": frame.lineno,
                 "function_name": frame.name,
-                "code_line": frame.line
+                "code_line": frame.line or ""
             }})
+    
+    if isinstance(exc_value, SyntaxError) and exc_value.lineno is not None:
+        code_line = linecache.getline("script.py", exc_value.lineno).strip()
+        error_data["stack_trace"].append({{
+            "filename": "script.py",
+            "line_number": exc_value.lineno,
+            "function_name": "<module>",
+            "code_line": code_line
+        }})
+        
     print("__VIBE_ERROR__" + json.dumps(error_data), file=sys.stderr)
     sys.exit(1)
 """
@@ -447,24 +460,40 @@ def _run_subprocess(key: str, d: Path, sandbox: Path):
     WARNING = "[WARNING] Docker unavailable — running without full sandboxing.\n"
 
     try:
-        result = subprocess.run(
+        creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == "win32" else 0
+        proc = subprocess.Popen(
             [sys.executable, str(script_path)],
             cwd=str(sandbox),
             env=env,
-            capture_output=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
             text=True,
-            timeout=MAX_RENDER_SECONDS,
+            creationflags=creation_flags
         )
+        _, stderr_text = proc.communicate(timeout=MAX_RENDER_SECONDS)
+        
         out_path = sandbox / "output.mp4"
-        if result.returncode != 0:
-            _set_status(key, "error", WARNING + (result.stderr or "Script exited with non-zero status."))
+        if proc.returncode != 0:
+            _set_status(key, "error", WARNING + (stderr_text or "Script exited with non-zero status."))
         elif not out_path.exists():
-            _set_status(key, "error", WARNING + (result.stderr or "No output.mp4 was created."))
+            _set_status(key, "error", WARNING + (stderr_text or "No output.mp4 was created."))
         else:
             shutil.move(str(out_path), str(d / "output.mp4"))
-            _set_status(key, "done", WARNING + result.stderr)
+            _set_status(key, "done", WARNING + stderr_text)
 
     except subprocess.TimeoutExpired:
-        _set_status(key, "error", WARNING + f"Script timed out after {MAX_RENDER_SECONDS} seconds.")
+        import signal
+        if sys.platform == "win32":
+            proc.send_signal(signal.CTRL_BREAK_EVENT)
+        else:
+            proc.send_signal(signal.SIGINT)
+        
+        try:
+            _, stderr_text = proc.communicate(timeout=2)
+            _set_status(key, "error", WARNING + stderr_text)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.communicate()
+            _set_status(key, "error", WARNING + f"Script timed out after {MAX_RENDER_SECONDS} seconds and failed to exit.")
     except Exception as exc:
         _set_status(key, "error", WARNING + str(exc))

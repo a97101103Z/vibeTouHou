@@ -84,12 +84,7 @@ export class HistoryTab extends EventTarget {
     statusBadge.textContent = isOk ? HIST_STATUS_OK : HIST_STATUS_ERR;
     header.appendChild(statusBadge);
 
-    if (!isOk && errorLine !== null) {
-      const lineBadge = document.createElement("span");
-      lineBadge.className = "history-error-line-badge";
-      lineBadge.textContent = HIST_ERROR_LINE(errorLine);
-      header.appendChild(lineBadge);
-    }
+
 
     // ── Action buttons ────────────────────────────────────
     const actions = document.createElement("div");
@@ -110,7 +105,17 @@ export class HistoryTab extends EventTarget {
       copyErrBtn.className = "history-btn";
       copyErrBtn.textContent = "複製錯誤訊息";
       copyErrBtn.addEventListener("click", () => {
-        this.#copyTextToClipboard(entry.stderr, copyErrBtn, "複製錯誤訊息");
+        let textToCopy = entry.stderr || "";
+        const match = textToCopy.match(/__VIBE_ERROR__(\{.*\})/);
+        if (match) {
+          try {
+            const errData = JSON.parse(match[1]);
+            if (errData.raw_traceback) {
+              textToCopy = errData.raw_traceback;
+            }
+          } catch(err) {}
+        }
+        this.#copyTextToClipboard(textToCopy, copyErrBtn, "複製錯誤訊息");
       });
       actions.appendChild(copyErrBtn);
     }
@@ -196,31 +201,30 @@ export class HistoryTab extends EventTarget {
         const errWrap = document.createElement("div");
         errWrap.className = "history-vibe-error";
         
+        let linePrefix = "";
+        if (parsedVibeError.stack_trace && parsedVibeError.stack_trace.length > 0) {
+          linePrefix = `Line ${parsedVibeError.stack_trace[parsedVibeError.stack_trace.length - 1].line_number} : `;
+        }
+        
         const header = document.createElement("div");
         header.className = "vibe-error-header";
-        header.textContent = `${parsedVibeError.error_type}: ${parsedVibeError.error_message}`;
+        let shortMsgInner = `${parsedVibeError.error_type}: ${parsedVibeError.error_message}`;
+        if (parsedVibeError.error_type === "KeyboardInterrupt") {
+          shortMsgInner = "程式執行時間過長";
+        }
+        header.textContent = `${linePrefix}${shortMsgInner}`;
         errWrap.appendChild(header);
 
-        if (parsedVibeError.stack_trace) {
-           parsedVibeError.stack_trace.forEach(st => {
-             const stEl = document.createElement("div");
-             stEl.className = "vibe-error-stack";
-             
-             const info = document.createElement("div");
-             info.className = "vibe-error-stack-info";
-             info.innerHTML = `<span class="st-func">${st.function_name}</span> at line <span class="st-line">${st.line_number}</span>`;
-             stEl.appendChild(info);
 
-             if (st.code_snippet) {
-               const code = document.createElement("code");
-               code.className = "vibe-error-stack-code";
-               code.textContent = st.code_snippet;
-               stEl.appendChild(code);
-             }
-             
-             errWrap.appendChild(stEl);
-           });
+
+        if (parsedVibeError.raw_traceback) {
+          const rawPre = document.createElement("pre");
+          rawPre.className = "history-stderr";
+          rawPre.style.borderTop = "1px solid rgba(255, 60, 80, 0.2)";
+          rawPre.textContent = parsedVibeError.raw_traceback;
+          errWrap.appendChild(rawPre);
         }
+
         mediaWrap.appendChild(errWrap);
       } else {
         const stderrPre = document.createElement("pre");
