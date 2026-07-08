@@ -155,6 +155,27 @@ export class AssetsTab extends EventTarget {
     if (this.#fileInput) this.#fileInput.value = "";
   }
 
+  #copyTextToClipboard(text, onSuccess) {
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(onSuccess).catch(() => {});
+    } else {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        if (document.execCommand("copy")) {
+          onSuccess();
+        }
+      } catch (err) {}
+      textArea.remove();
+    }
+  }
+
   // ── Listeners ──────────────────────────────────────────
 
   #setupAssetsListeners() {
