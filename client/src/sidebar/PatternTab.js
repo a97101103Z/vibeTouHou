@@ -3,6 +3,7 @@ import {
   publishPattern as publishPattern,
 } from "../helpers/patternApi.js";
 import {
+  BTN_VIEW_RECORD, BTN_COPY_ERROR, COPIED_LABEL,
   STATUS_NOT_TESTED, STATUS_TESTED,
   RENDER_STATUS_IDLE, RENDER_STATUS_QUEUED, RENDER_STATUS_RUNNING,
   RENDER_STATUS_DONE, RENDER_STATUS_ERROR,
@@ -112,14 +113,14 @@ export class PatternTab extends EventTarget {
   }
 
   async init() {
-    await this.#cacheDOM();
+    this.#cacheDOM();
     await this.#initEditor();
     this.#setupEventListeners();
     this.#setRendered(false);
     this.#setRenderStatus("idle");
   }
 
-  async #cacheDOM() {
+  #cacheDOM() {
     this.#btnPlaytest = document.getElementById("btn-playtest");
     this.#btnRenderPattern = document.getElementById("btn-render-pattern");
     this.#patternStatus = document.getElementById("pattern-status-text");
@@ -136,7 +137,6 @@ export class PatternTab extends EventTarget {
       </div>
     `;
     
-    const { BTN_VIEW_RECORD, BTN_COPY_ERROR } = await import("../strings.js");
     this.#renderErrorEl.querySelector("#btn-view-record").textContent = BTN_VIEW_RECORD;
     this.#renderErrorEl.querySelector("#btn-copy-error").textContent = BTN_COPY_ERROR;
   }
@@ -286,12 +286,10 @@ export class PatternTab extends EventTarget {
       } else if (e.target.id === "btn-copy-error") {
         let raw = this.#renderErrorEl.getAttribute("data-raw-error") || "";
         navigator.clipboard.writeText(raw).then(() => {
-          import("../strings.js").then(({ COPIED_LABEL }) => {
-            const btn = e.target;
-            const old = btn.textContent;
-            btn.textContent = COPIED_LABEL;
-            setTimeout(() => { btn.textContent = old; }, 2000);
-          });
+          const btn = e.target;
+          const old = btn.textContent;
+          btn.textContent = COPIED_LABEL;
+          setTimeout(() => { btn.textContent = old; }, 2000);
         });
       } else if (e.target.id === "btn-close-error") {
         this.#renderErrorEl.setAttribute("data-visible", "false");
