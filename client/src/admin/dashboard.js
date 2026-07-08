@@ -60,6 +60,10 @@ export class Dashboard {
   #skipBtn;
   #openSlots = new Set();
 
+  #trajectoryOverlayCanvas;
+  #trajectoryData = null;
+  #trajectoryRAF = null;
+
   #cacheDOM() {
     this.#phaseDisplay = document.getElementById("phase-display");
     this.#togglePhaseBtn = document.getElementById("btn-toggle-phase");
@@ -73,6 +77,7 @@ export class Dashboard {
     this.#btnSetTimer = document.getElementById("btn-set-timer");
     this.#btnClearTimer = document.getElementById("btn-clear-timer");
     this.#timerSeconds = document.getElementById("timer-seconds");
+    this.#trajectoryOverlayCanvas = document.getElementById("admin-trajectory-overlay");
   }
 
   startPolling() {
@@ -244,7 +249,7 @@ export class Dashboard {
       btn.addEventListener("click", () => {
         const team = btn.dataset.team;
         const index = parseInt(btn.dataset.index);
-        this.#openVideoPlayer(adminApi.slotPublishedVideoUrl(team, index), true);
+        this.#openVideoPlayer(adminApi.slotPublishedVideoUrl(team, index), team, index, true);
       });
     });
 
@@ -261,7 +266,7 @@ export class Dashboard {
       btn.addEventListener("click", () => {
         const team = btn.dataset.team;
         const index = parseInt(btn.dataset.index);
-        this.#openVideoPlayer(adminApi.slotVideoUrl(team, index), true);
+        this.#openVideoPlayer(adminApi.slotVideoUrl(team, index), null, null, true);
       });
     });
 
@@ -277,6 +282,7 @@ export class Dashboard {
           .catch((err) => alert(err.message));
       });
     });
+
   }
 
   #renderGallery(entries) {
@@ -305,7 +311,7 @@ export class Dashboard {
 
     this.#galleryList.querySelectorAll("[data-action='gallery-watch']").forEach((btn) => {
       btn.addEventListener("click", () => {
-        this.#openVideoPlayer(galleryVideoUrl(btn.dataset.id), true);
+        this.#openVideoPlayer(galleryVideoUrl(btn.dataset.id), null, null, true);
       });
     });
 
@@ -424,12 +430,106 @@ export class Dashboard {
     });
   }
 
-  #openVideoPlayer(url, autoplay = false) {
+  #findTrajectoryIndex(traj, time) {
+    let lo = 0, hi = traj.length - 1;
+    while (lo < hi - 1) {
+      const mid = (lo + hi) >> 1;
+      if (traj[mid].t <= time) lo = mid;
+      else hi = mid;
+    }
+    return lo;
+  }
+
+  #drawTrajectoryFrame() {
+    const canvas = this.#trajectoryOverlayCanvas;
+    const traj = this.#trajectoryData;
+    if (!canvas || !traj) return;
+
+    const ctx = canvas.getContext("2d");
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    const t = this.#videoPlayer.currentTime;
+
+    // Find where we are in the trajectory
+    const idx = this.#findTrajectoryIndex(traj, t);
+    const pt = traj[idx];
+
+    if (!pt) {
+      this.#trajectoryRAF = requestAnimationFrame(() => this.#drawTrajectoryFrame());
+      return;
+    }
+
+    // Draw full trajectory path (dim)
+    ctx.strokeStyle = "rgba(79, 195, 247, 0.25)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let i = 0; i < traj.length; i++) {
+      if (i === 0) ctx.moveTo(traj[i].x, traj[i].y);
+      else ctx.lineTo(traj[i].x, traj[i].y);
+    }
+    ctx.stroke();
+
+    // Draw travelled trail (brighter)
+    ctx.strokeStyle = "rgba(79, 195, 247, 0.7)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i <= idx; i++) {
+      if (i === 0) ctx.moveTo(traj[i].x, traj[i].y);
+      else ctx.lineTo(traj[i].x, traj[i].y);
+    }
+    ctx.stroke();
+
+    // Draw player position (glowing circle)
+    const px = pt.x, py = pt.y;
+    ctx.shadowColor = "#4fc3f7";
+    ctx.shadowBlur = 15;
+    ctx.fillStyle = "#4fc3f7";
+    ctx.beginPath();
+    ctx.arc(px, py, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Inner dot
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    this.#trajectoryRAF = requestAnimationFrame(() => this.#drawTrajectoryFrame());
+  }
+
+  #stopTrajectoryOverlay() {
+    if (this.#trajectoryRAF) {
+      cancelAnimationFrame(this.#trajectoryRAF);
+      this.#trajectoryRAF = null;
+    }
+    this.#trajectoryData = null;
+    const canvas = this.#trajectoryOverlayCanvas;
+    if (canvas) {
+      canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+
+  #openVideoPlayer(url, team, index, autoplay = false) {
     this.#videoPlayer.autoplay = autoplay;
     this.#videoPlayer.src = url;
+
+    // Load trajectory data for overlay
+    this.#trajectoryData = null;
+    if (team && index) {
+      adminApi.slotTrajectory(team, index).then((data) => {
+        if (data.trajectory && data.trajectory.length > 0) {
+          this.#trajectoryData = data.trajectory;
+          this.#drawTrajectoryFrame();
+        }
+      }).catch(() => {});
+    }
+
     this.#videoModal.classList.add("visible");
 
     const closeModal = () => {
+      this.#stopTrajectoryOverlay();
       this.#videoModal.classList.remove("visible");
       this.#videoPlayer.pause();
       this.#videoPlayer.src = "";

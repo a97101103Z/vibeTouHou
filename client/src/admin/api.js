@@ -69,4 +69,8 @@ export const adminApi = {
   slotPublishedVideoUrl(team, index) {
     return `${API_BASE}/admin/slot-published-video/${team}/${index}`;
   },
+
+  async slotTrajectory(team, index) {
+    return api("GET", `/api/admin/slot-trajectory/${team}/${index}`);
+  },
 };

@@ -2,8 +2,11 @@
 Publish endpoint: validate trajectory server-side, then promote draft to published.
 
 POST /api/publish   → body: { trajectory: [{x, y, t}, ...] }
+
+The verified trajectory is also saved to published_trajectory.json for admin review.
 """
 
+import json
 import shutil
 from pathlib import Path
 
@@ -53,5 +56,11 @@ def publish(body: PublishBody, slot: str = Depends(require_session)):
     # Promote draft → published
     published = d / "published.mp4"
     shutil.copy2(str(draft), str(published))
+
+    # Save submitted trajectory for admin review
+    traj_path = d / "published_trajectory.json"
+    # Keep the file around even if it's the same data; this allows admins
+    # to see the exact no-damage route the player submitted
+    traj_path.write_text(json.dumps(trajectory, indent=2), encoding="utf-8")
 
     return {"ok": True, "message": "Pattern published successfully!"}
