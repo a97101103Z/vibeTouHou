@@ -523,10 +523,20 @@ body::before {
 /* Expanded Sidebar Content */
 #sidebar-expanded {
   display: none;
+  flex: 1;
+  min-height: 0;
 }
 
 #sidebar[data-expanded="true"] #sidebar-expanded {
-  display: block;
+  display: flex;
+  flex-direction: column;
+}
+
+#tab-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 #sidebar-tab-container {
@@ -571,7 +581,12 @@ body::before {
   display: none;
 }
 
-#sidebar[data-active-tab="pattern"] #pattern-tab,
+#sidebar[data-active-tab="pattern"] #pattern-tab {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 #sidebar[data-active-tab="assets"] #assets-tab,
 #sidebar[data-active-tab="history"] #history-tab {
   display: block;
@@ -1534,13 +1549,12 @@ canvas#game-canvas {
 }
 
 .history-entry-body {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .history-code-wrap {
-  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   overflow: hidden;
 }
 
@@ -1592,16 +1606,7 @@ canvas#game-canvas {
   font-size: 0.82rem;
 }
 
-/* Narrow sidebar or small screens: stack code + media vertically */
-@media (max-width: 600px) {
-  .history-entry-body {
-    grid-template-columns: 1fr;
-  }
-  .history-code-wrap {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
-}
+/* Narrow sidebar or small screens */
 
 /* Responsive */
 @media (max-width: 1200px) {

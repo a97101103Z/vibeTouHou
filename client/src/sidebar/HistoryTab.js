@@ -99,13 +99,8 @@ export class HistoryTab extends EventTarget {
     const copyBtn = document.createElement("button");
     copyBtn.className = "history-btn";
     copyBtn.textContent = HIST_COPY_CODE;
-    let copyTimer = null;
     copyBtn.addEventListener("click", () => {
-      navigator.clipboard.writeText(entry.script).then(() => {
-        copyBtn.textContent = HIST_COPIED;
-        clearTimeout(copyTimer);
-        copyTimer = setTimeout(() => { copyBtn.textContent = HIST_COPY_CODE; }, 1500);
-      });
+      this.#copyTextToClipboard(entry.script, copyBtn, HIST_COPY_CODE);
     });
     actions.appendChild(copyBtn);
 
@@ -114,13 +109,8 @@ export class HistoryTab extends EventTarget {
       const copyErrBtn = document.createElement("button");
       copyErrBtn.className = "history-btn";
       copyErrBtn.textContent = "複製錯誤訊息";
-      let errTimer = null;
       copyErrBtn.addEventListener("click", () => {
-        navigator.clipboard.writeText(entry.stderr).then(() => {
-          copyErrBtn.textContent = HIST_COPIED;
-          clearTimeout(errTimer);
-          errTimer = setTimeout(() => { copyErrBtn.textContent = "複製錯誤訊息"; }, 1500);
-        });
+        this.#copyTextToClipboard(entry.stderr, copyErrBtn, "複製錯誤訊息");
       });
       actions.appendChild(copyErrBtn);
     }
@@ -211,24 +201,52 @@ export class HistoryTab extends EventTarget {
     btn.disabled = true;
     const originalText = btn.textContent;
     btn.textContent = "…";
-    try {
-      const res = await fetch(`/api/publish/history/${entryId}`, {
-        method: "POST",
-        credentials: "include",
+    fetch(`/api/publish/history/${entryId}`, {
+      method: "POST",
+      credentials: "include",
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.detail || HIST_PUBLISH_FAIL);
+        }
+        this.#toastService.toast(HIST_PUBLISH_OK, "success");
+      })
+      .catch((err) => {
+        this.#toastService.toast(err.message || HIST_PUBLISH_FAIL, "error");
+        btn.disabled = false;
+        btn.textContent = originalText;
       });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.detail || HIST_PUBLISH_FAIL);
-      }
-      this.#toastService.toast(HIST_PUBLISH_OK, "success");
-    } catch (err) {
-      this.#toastService.toast(err.message || HIST_PUBLISH_FAIL, "error");
-      btn.disabled = false;
-      btn.textContent = originalText;
-    }
   }
 
   // ── Utilities ───────────────────────────────────────────
+
+  #copyTextToClipboard(text, btn, defaultText) {
+    const success = () => {
+      btn.textContent = HIST_COPIED;
+      setTimeout(() => { btn.textContent = defaultText; }, 1500);
+    };
+
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(success).catch(() => {});
+    } else {
+      // Fallback for non-secure contexts (HTTP)
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "absolute";
+      textArea.style.left = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        success();
+      } catch (err) {
+        console.error('Fallback copy failed', err);
+      }
+      textArea.remove();
+    }
+  }
 
   /**
    * Parse the last line number from a Python traceback.

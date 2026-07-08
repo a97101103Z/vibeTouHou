@@ -214,7 +214,11 @@ export class PatternTab extends EventTarget {
       (durationStr ? ` (${durationStr})` : "");
 
     const hasMessage = Boolean(errorMessage);
-    this.#renderErrorEl.textContent = hasMessage ? errorMessage : "";
+    if (hasMessage) {
+      this.#renderErrorEl.textContent = "上次提交渲染發生錯誤：\n\n" + errorMessage;
+    } else {
+      this.#renderErrorEl.textContent = "";
+    }
     this.#renderErrorEl.setAttribute("data-visible", hasMessage ? "true" : "false");
   }
 
@@ -267,6 +271,11 @@ export class PatternTab extends EventTarget {
           EditorView.theme({
             "&": { height: "100%" },
             ".cm-scroller": { overflow: "auto" },
+          }),
+          EditorView.updateListener.of((update) => {
+            if (update.docChanged) {
+              this.#setRendered(false);
+            }
           }),
         ],
         parent: document.getElementById("editor-wrap"),

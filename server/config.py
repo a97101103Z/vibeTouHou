@@ -100,7 +100,7 @@ if len(set(_token_values)) != len(_token_values):
     )
 
 # ── History ───────────────────────────────────────────────────────────────────
-MAX_HISTORY_ENTRIES = int(os.getenv("MAX_HISTORY_ENTRIES", "20"))
+MAX_HISTORY_ENTRIES = int(os.getenv("MAX_HISTORY_ENTRIES", "100"))
 # Store history in /tmp2 if available (saves project disk space)
 _tmp2 = Path("/tmp2")
 if _tmp2.exists():

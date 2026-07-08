@@ -97,10 +97,11 @@ export class AssetsTab extends EventTarget {
     wrap.className = "asset-thumb";
     let copyTimer = null;
     wrap.addEventListener("click", () => {
-      navigator.clipboard.writeText(name);
-      label.textContent = COPIED_LABEL;
-      clearTimeout(copyTimer);
-      copyTimer = setTimeout(() => { label.textContent = name; }, 1500);
+      this.#copyTextToClipboard(name, () => {
+        label.textContent = COPIED_LABEL;
+        clearTimeout(copyTimer);
+        copyTimer = setTimeout(() => { label.textContent = name; }, 1500);
+      });
     });
 
     const img = document.createElement("img");

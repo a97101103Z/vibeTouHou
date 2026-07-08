@@ -129,7 +129,10 @@
 
               <div id="tab-content">
                 <div id="pattern-tab" class="tab-pane active">
-                  <div id="editor-wrap" style="height: 400px"></div>
+                  <div id="render-error" class="stderr-box" data-visible="false"></div>
+                  
+                  <div id="editor-wrap" style="flex: 1; min-height: 0;"></div>
+
                   <div class="tab-actions">
                     <button id="btn-render-pattern" class="btn btn-primary" data-i18n="BTN_RENDER">
                       ⬆ Render
@@ -138,7 +141,6 @@
                       ▶ Playtest
                     </button>
                   </div>
-                  <div id="render-error" class="stderr-box" data-visible="false"></div>
                 </div>
 
                 <div id="assets-tab" class="tab-pane">
