@@ -137,11 +137,14 @@ export class PatternTab extends EventTarget {
       if (result.ok) {
         this.#toastService.toast(result.message, "success");
         this.#setVerified(true);
+        return true;
       } else {
         this.#toastService.toast(result.message, "error");
+        return false;
       }
     } catch (_) {
       this.#toastService.toast(TOAST_NETWORK_ERROR, "error");
+      return false;
     }
   }
 

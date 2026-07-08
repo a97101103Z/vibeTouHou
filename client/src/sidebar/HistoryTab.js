@@ -109,6 +109,22 @@ export class HistoryTab extends EventTarget {
     });
     actions.appendChild(copyBtn);
 
+    if (!isOk && entry.stderr) {
+      // Copy Error button
+      const copyErrBtn = document.createElement("button");
+      copyErrBtn.className = "history-btn";
+      copyErrBtn.textContent = "複製錯誤訊息";
+      let errTimer = null;
+      copyErrBtn.addEventListener("click", () => {
+        navigator.clipboard.writeText(entry.stderr).then(() => {
+          copyErrBtn.textContent = HIST_COPIED;
+          clearTimeout(errTimer);
+          errTimer = setTimeout(() => { copyErrBtn.textContent = "複製錯誤訊息"; }, 1500);
+        });
+      });
+      actions.appendChild(copyErrBtn);
+    }
+
     if (isOk && entry.video_url) {
       if (entry.is_published) {
         // "Publish" button — direct re-publish without re-playtesting
@@ -143,9 +159,26 @@ export class HistoryTab extends EventTarget {
     codeWrap.className = "history-code-wrap";
     const pre = document.createElement("pre");
     pre.className = "history-code-block";
-    const code = document.createElement("code");
-    code.textContent = entry.script;
-    pre.appendChild(code);
+
+    if (!isOk && errorLine !== null) {
+      // Split by line and highlight the error line
+      const lines = entry.script.split("\n");
+      lines.forEach((line, idx) => {
+        const lineEl = document.createElement("div");
+        lineEl.textContent = line;
+        if (idx === errorLine - 1) {
+          lineEl.style.backgroundColor = "rgba(255, 60, 80, 0.2)";
+          lineEl.style.display = "block";
+          lineEl.style.width = "100%";
+        }
+        pre.appendChild(lineEl);
+      });
+    } else {
+      const code = document.createElement("code");
+      code.textContent = entry.script;
+      pre.appendChild(code);
+    }
+    
     codeWrap.appendChild(pre);
     body.appendChild(codeWrap);
 
@@ -205,9 +238,17 @@ export class HistoryTab extends EventTarget {
    * @returns {number|null}
    */
   #extractErrorLine(stderr) {
-    const matches = [...stderr.matchAll(/File "[^"]*", line (\d+)/g)];
-    if (!matches.length) return null;
-    return parseInt(matches[matches.length - 1][1], 10);
+    // We want the line number from the student's script, usually script.py
+    const matches = [...stderr.matchAll(/File ".*script\.py", line (\d+)/g)];
+    if (matches.length > 0) {
+      return parseInt(matches[matches.length - 1][1], 10);
+    }
+    // Fallback: if script.py is not found, just get the first file in the traceback
+    const fallback = [...stderr.matchAll(/File "[^"]*", line (\d+)/g)];
+    if (fallback.length > 0) {
+      return parseInt(fallback[0][1], 10);
+    }
+    return null;
   }
 
   /**

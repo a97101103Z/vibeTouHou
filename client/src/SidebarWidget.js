@@ -33,7 +33,10 @@ export class SidebarWidget extends EventTarget {
   // ── Passthrough ─────────────────────────────────────────
 
   async publishPattern(trajectory) {
-    await this.#patternTab.publishPattern(trajectory);
+    const success = await this.#patternTab.publishPattern(trajectory);
+    if (success) {
+      this.#historyTab.load();
+    }
   }
 
   // ── Init ────────────────────────────────────────────────

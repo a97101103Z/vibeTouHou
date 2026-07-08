@@ -33,4 +33,4 @@ def get_history_video(
     path = history.get_video_path(team, int(idx), entry_id)
     if path is None:
         raise HTTPException(404, "History video not found.")
-    return media_file_response(request, path, "video/mp4")
+    return media_file_response(request, path, "video/mp4", cache_public=True)
