@@ -68,8 +68,8 @@ def save_entry(
     script: str,
     status: str,
     stderr: str,
-    parsed_error: Optional[dict],
-    video_src: Optional[Path],
+    video_src: Optional[Path] = None,
+    parsed_error: Optional[dict] = None,
 ) -> None:
     """
     Persist a render result to history.

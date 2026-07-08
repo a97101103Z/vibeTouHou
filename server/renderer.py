@@ -230,8 +230,8 @@ except BaseException as e:
         history.save_entry(
             team, index, script,
             final["status"], final.get("stderr", ""),
-            final.get("parsed_error"),
             video_src if video_src.exists() else None,
+            final.get("parsed_error"),
         )
     except Exception as exc:
         logging.error("Failed to save render history for %s: %s", key, exc)
