@@ -101,6 +101,8 @@ export class PatternTab extends EventTarget {
   #renderStatusEl;
   #renderErrorEl;
 
+  #errorData = null; // Store parsed error data
+
   /**
    * @param {import("../ToastService.js").ToastService} toastService
    */
@@ -110,19 +112,32 @@ export class PatternTab extends EventTarget {
   }
 
   async init() {
-    this.#cacheDOM();
+    await this.#cacheDOM();
     await this.#initEditor();
     this.#setupEventListeners();
     this.#setRendered(false);
     this.#setRenderStatus("idle");
   }
 
-  #cacheDOM() {
+  async #cacheDOM() {
     this.#btnPlaytest = document.getElementById("btn-playtest");
     this.#btnRenderPattern = document.getElementById("btn-render-pattern");
     this.#patternStatus = document.getElementById("pattern-status-text");
     this.#renderStatusEl = document.getElementById("render-status");
     this.#renderErrorEl = document.getElementById("render-error");
+    
+    // Build compact error banner structure
+    this.#renderErrorEl.innerHTML = `
+      <div class="compact-error-text"></div>
+      <div class="compact-error-actions">
+        <button class="btn btn-secondary btn-sm" id="btn-view-record"></button>
+        <button class="btn btn-secondary btn-sm" id="btn-copy-error"></button>
+      </div>
+    `;
+    
+    const { BTN_VIEW_RECORD, BTN_COPY_ERROR } = await import("../strings.js");
+    this.#renderErrorEl.querySelector("#btn-view-record").textContent = BTN_VIEW_RECORD;
+    this.#renderErrorEl.querySelector("#btn-copy-error").textContent = BTN_COPY_ERROR;
   }
 
   // ── Public ──────────────────────────────────────────────
@@ -215,9 +230,16 @@ export class PatternTab extends EventTarget {
 
     const hasMessage = Boolean(errorMessage);
     if (hasMessage) {
-      this.#renderErrorEl.textContent = "上次提交渲染發生錯誤：\n\n" + errorMessage;
-    } else {
-      this.#renderErrorEl.textContent = "";
+      let shortMsg = errorMessage;
+      const match = errorMessage.match(/__VIBE_ERROR__(\{.*\})/);
+      if (match) {
+        try {
+          const errData = JSON.parse(match[1]);
+          shortMsg = `${errData.error_type}: ${errData.error_message}`;
+        } catch(e) {}
+      }
+      this.#renderErrorEl.querySelector(".compact-error-text").textContent = shortMsg;
+      this.#renderErrorEl.setAttribute("data-raw-error", errorMessage);
     }
     this.#renderErrorEl.setAttribute("data-visible", hasMessage ? "true" : "false");
   }
@@ -249,6 +271,22 @@ export class PatternTab extends EventTarget {
 
     this.#btnRenderPattern.addEventListener("click", () => {
       this.#handleRenderPattern();
+    });
+
+    this.#renderErrorEl.addEventListener("click", (e) => {
+      if (e.target.id === "btn-view-record") {
+        document.getElementById("tab-history")?.click();
+      } else if (e.target.id === "btn-copy-error") {
+        const raw = this.#renderErrorEl.getAttribute("data-raw-error") || "";
+        navigator.clipboard.writeText(raw).then(() => {
+          import("../strings.js").then(({ COPIED_LABEL }) => {
+            const btn = e.target;
+            const old = btn.textContent;
+            btn.textContent = COPIED_LABEL;
+            setTimeout(() => { btn.textContent = old; }, 2000);
+          });
+        });
+      }
     });
   }
 

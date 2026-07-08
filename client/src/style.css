@@ -366,6 +366,8 @@ body::before {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Collapsed Sidebar Content */
@@ -542,9 +544,9 @@ body::before {
 #sidebar-tab-container {
   display: flex;
   gap: 4px;
-  margin-bottom: 12px;
+  padding: 12px 16px 8px 16px;
   border-bottom: 1px solid var(--border);
-  padding-bottom: 8px;
+  overflow-x: auto;
 }
 
 .sidebar-tab {
@@ -596,6 +598,31 @@ body::before {
   display: flex;
   gap: 8px;
   margin-top: 12px;
+}
+
+/* Sidebar bottom actions */
+.sidebar-bottom-actions {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.sidebar-bottom-actions #render-status-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+#sidebar:not([data-active-tab="pattern"]) #btn-render-pattern,
+#sidebar:not([data-active-tab="pattern"]) #btn-playtest {
+  display: none;
 }
 
 /* Editor */
@@ -822,6 +849,36 @@ body::before {
 
 .stderr-box[data-visible="false"] {
   display: none;
+}
+
+.compact-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 60, 80, 0.1);
+  border: 1px solid rgba(255, 60, 80, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.compact-error-banner[data-visible="false"] {
+  display: none;
+}
+
+.compact-error-text {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  color: #ff5060;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.compact-error-actions {
+  display: flex;
+  gap: 8px;
 }
 
 @keyframes pulse {
@@ -1597,6 +1654,64 @@ canvas#game-canvas {
   white-space: pre-wrap;
   word-break: break-all;
   width: 100%;
+}
+
+.history-vibe-error {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background: #1a1520;
+  overflow: hidden;
+}
+
+.vibe-error-header {
+  padding: 10px 14px;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #ff5060;
+  background: rgba(255, 60, 80, 0.1);
+  border-bottom: 1px solid rgba(255, 60, 80, 0.2);
+}
+
+.vibe-error-stack {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.vibe-error-stack:last-child {
+  border-bottom: none;
+}
+
+.vibe-error-stack-info {
+  font-family: var(--font-ui);
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.st-func {
+  color: #50b4ff;
+  font-weight: 700;
+}
+
+.st-line {
+  color: #ffcc00;
+  font-weight: 700;
+}
+
+.vibe-error-stack-code {
+  font-family: var(--font-code);
+  font-size: 0.72rem;
+  color: #e8e8f4;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  white-space: pre-wrap;
+  word-break: break-all;
+  border: 1px solid var(--border);
 }
 
 .history-empty {

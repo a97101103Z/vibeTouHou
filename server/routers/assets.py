@@ -49,8 +49,10 @@ async def upload_asset(
     ext = Path(safe_name).suffix.lower()
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(400, f"File type '{ext}' not allowed. Use: {', '.join(ALLOWED_EXTENSIONS)}")
-    if file.content_type and file.content_type not in ALLOWED_CONTENT_TYPES:
-        raise HTTPException(400, f"Content type '{file.content_type}' is not an allowed image type.")
+    if file.content_type:
+        base_ct = file.content_type.split(";")[0].strip().lower()
+        if base_ct not in ALLOWED_CONTENT_TYPES and base_ct != "application/octet-stream":
+            raise HTTPException(400, f"Content type '{file.content_type}' is not an allowed image type.")
 
     team, idx = slot.rsplit("-", 1)
     assets_dir = renderer.slot_dir(team, int(idx)) / "assets"

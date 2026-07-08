@@ -184,10 +184,50 @@ export class HistoryTab extends EventTarget {
       video.loop = true;
       mediaWrap.appendChild(video);
     } else {
-      const stderrPre = document.createElement("pre");
-      stderrPre.className = "history-stderr";
-      stderrPre.textContent = entry.stderr || "(no error output)";
-      mediaWrap.appendChild(stderrPre);
+      const match = (entry.stderr || "").match(/__VIBE_ERROR__(\{.*\})/);
+      let parsedVibeError = null;
+      if (match) {
+        try {
+          parsedVibeError = JSON.parse(match[1]);
+        } catch(e) {}
+      }
+
+      if (parsedVibeError) {
+        const errWrap = document.createElement("div");
+        errWrap.className = "history-vibe-error";
+        
+        const header = document.createElement("div");
+        header.className = "vibe-error-header";
+        header.textContent = `${parsedVibeError.error_type}: ${parsedVibeError.error_message}`;
+        errWrap.appendChild(header);
+
+        if (parsedVibeError.stack_trace) {
+           parsedVibeError.stack_trace.forEach(st => {
+             const stEl = document.createElement("div");
+             stEl.className = "vibe-error-stack";
+             
+             const info = document.createElement("div");
+             info.className = "vibe-error-stack-info";
+             info.innerHTML = `<span class="st-func">${st.function_name}</span> at line <span class="st-line">${st.line_number}</span>`;
+             stEl.appendChild(info);
+
+             if (st.code_snippet) {
+               const code = document.createElement("code");
+               code.className = "vibe-error-stack-code";
+               code.textContent = st.code_snippet;
+               stEl.appendChild(code);
+             }
+             
+             errWrap.appendChild(stEl);
+           });
+        }
+        mediaWrap.appendChild(errWrap);
+      } else {
+        const stderrPre = document.createElement("pre");
+        stderrPre.className = "history-stderr";
+        stderrPre.textContent = entry.stderr || "(no error output)";
+        mediaWrap.appendChild(stderrPre);
+      }
     }
     body.appendChild(mediaWrap);
 
@@ -256,6 +296,16 @@ export class HistoryTab extends EventTarget {
    * @returns {number|null}
    */
   #extractErrorLine(stderr) {
+    const match = stderr.match(/__VIBE_ERROR__(\{.*\})/);
+    if (match) {
+      try {
+        const errData = JSON.parse(match[1]);
+        if (errData.stack_trace && errData.stack_trace.length > 0) {
+          return errData.stack_trace[errData.stack_trace.length - 1].line_number;
+        }
+      } catch(e) {}
+    }
+
     // We want the line number from the student's script, usually script.py
     const matches = [...stderr.matchAll(/File ".*script\.py", line (\d+)/g)];
     if (matches.length > 0) {

@@ -162,7 +162,31 @@ def _run_job(key: str, team: str, index: int, script: str) -> None:
     sandbox.chmod(0o777)
 
     script_path = sandbox / "script.py"
-    script_path.write_text(script, encoding="utf-8")
+    wrapper_script = f"""
+import sys, traceback, json
+user_code = {repr(script)}
+try:
+    exec(compile(user_code, "script.py", "exec"), {{"__name__": "__main__"}})
+except Exception as e:
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    frames = traceback.extract_tb(exc_traceback)
+    error_data = {{
+        "error_type": exc_type.__name__,
+        "error_message": str(exc_value),
+        "stack_trace": []
+    }}
+    for frame in frames:
+        if frame.filename == "script.py":
+            error_data["stack_trace"].append({{
+                "filename": frame.filename,
+                "line_number": frame.lineno,
+                "function_name": frame.name,
+                "code_line": frame.line
+            }})
+    print("__VIBE_ERROR__" + json.dumps(error_data), file=sys.stderr)
+    sys.exit(1)
+"""
+    script_path.write_text(wrapper_script, encoding="utf-8")
     _stage_assets_for_runtime(d, sandbox)
 
     if _docker_available():

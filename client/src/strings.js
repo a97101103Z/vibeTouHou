@@ -72,7 +72,7 @@ export const ASSETS_USAGE_HINT    = t("Use assets in your pattern code:",       
 export const ASSETS_CLICK_HINT    = t("Click an asset to copy its filename",                "點擊素材即可複製檔名");
 
 // ── History tab ────────────────────────────────────────────────────────────────
-export const TAB_HISTORY          = t("History",                                           "歷史");
+export const TAB_HISTORY          = t("History",                                           "紀錄");
 export const HIST_COPY_CODE       = t("Copy Code",                                         "複製程式");
 export const HIST_PLAYTEST        = t("▶ Test",                                            "▶ 測試彈幕");
 export const HIST_PUBLISH         = t("⬆ Publish",                                         "⬆ 提交彈幕");
@@ -85,6 +85,9 @@ export const HIST_STATUS_OK       = t("✓ Success",                            
 export const HIST_STATUS_ERR      = t("✗ Error",                                           "✗ 錯誤");
 export const HIST_PUBLISH_OK      = t("Pattern published from history!",                   "已從歷史紀錄提交彈幕！");
 export const HIST_PUBLISH_FAIL    = t("Could not publish from history.",                   "從歷史紀錄提交失敗。");
+export const BTN_VIEW_RECORD      = t("View Records",                                      "查看紀錄");
+export const BTN_COPY_ERROR       = t("Copy Error Message",                                "複製錯誤訊息");
+export const ERR_RENDER_PREFIX    = t("Render Error from last submission:",                "上次提交渲染發生錯誤：");
 
 // ── Collapsed sidebar ──────────────────────────────────────────────────────────
 export const GALLERY_LABEL         = t("Gallery",                                             "彈幕畫廊");
