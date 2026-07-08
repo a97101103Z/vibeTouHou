@@ -133,7 +133,7 @@ export class GauntletWidget extends EventTarget {
 
     setTimeout(async () => {
       await this.loadPatterns();
-    }, 1000 + Math.random() * 2000);
+    }, 1000); // potentially prevent race conditions
   }
 
   // ── Patterns & Scores ──────────────────────────────────────────────────────
