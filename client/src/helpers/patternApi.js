@@ -44,7 +44,11 @@ async function pollRenderStatus() {
     if (data.status === "done") {
       return data.video_url || `${API_BASE}/video/my`;
     } else if (data.status === "error") {
-      throw new Error(data.stderr || ERR_RENDER_FAIL);
+      const err = new Error(data.stderr || ERR_RENDER_FAIL);
+      if (data.parsed_error) {
+        err.parsed_error = data.parsed_error;
+      }
+      throw err;
     }
 
     await new Promise((resolve) => setTimeout(resolve, 500));

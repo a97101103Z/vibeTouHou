@@ -63,7 +63,7 @@ export class HistoryTab extends EventTarget {
     el.dataset.id = entry.id;
 
     const isOk = entry.status === "done";
-    const errorLine = isOk ? null : this.#extractErrorLine(entry.stderr || "");
+    const errorLine = isOk ? null : this.#extractErrorLine(entry);
 
     // ── Header ────────────────────────────────────────────
     const header = document.createElement("div");
@@ -106,14 +106,8 @@ export class HistoryTab extends EventTarget {
       copyErrBtn.textContent = "複製錯誤訊息";
       copyErrBtn.addEventListener("click", () => {
         let textToCopy = entry.stderr || "";
-        const match = textToCopy.match(/__VIBE_ERROR__(\{.*\})/);
-        if (match) {
-          try {
-            const errData = JSON.parse(match[1]);
-            if (errData.raw_traceback) {
-              textToCopy = errData.raw_traceback;
-            }
-          } catch(err) {}
+        if (entry.parsed_error && entry.parsed_error.raw_traceback) {
+          textToCopy = entry.parsed_error.raw_traceback;
         }
         this.#copyTextToClipboard(textToCopy, copyErrBtn, "複製錯誤訊息");
       });
@@ -189,13 +183,7 @@ export class HistoryTab extends EventTarget {
       video.loop = true;
       mediaWrap.appendChild(video);
     } else {
-      const match = (entry.stderr || "").match(/__VIBE_ERROR__(\{.*\})/);
-      let parsedVibeError = null;
-      if (match) {
-        try {
-          parsedVibeError = JSON.parse(match[1]);
-        } catch(e) {}
-      }
+      let parsedVibeError = entry.parsed_error || null;
 
       if (parsedVibeError) {
         const errWrap = document.createElement("div");
@@ -299,16 +287,11 @@ export class HistoryTab extends EventTarget {
    * @param {string} stderr
    * @returns {number|null}
    */
-  #extractErrorLine(stderr) {
-    const match = stderr.match(/__VIBE_ERROR__(\{.*\})/);
-    if (match) {
-      try {
-        const errData = JSON.parse(match[1]);
-        if (errData.stack_trace && errData.stack_trace.length > 0) {
-          return errData.stack_trace[errData.stack_trace.length - 1].line_number;
-        }
-      } catch(e) {}
+  #extractErrorLine(entry) {
+    if (entry.parsed_error && entry.parsed_error.stack_trace && entry.parsed_error.stack_trace.length > 0) {
+      return entry.parsed_error.stack_trace[entry.parsed_error.stack_trace.length - 1].line_number;
     }
+    const stderr = entry.stderr || "";
 
     // We want the line number from the student's script, usually script.py
     const matches = [...stderr.matchAll(/File ".*script\.py", line (\d+)/g)];

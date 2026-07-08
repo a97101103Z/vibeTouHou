@@ -212,7 +212,7 @@ export class PatternTab extends EventTarget {
     }
   }
 
-  #setRenderStatus(status, durationStr = "", errorMessage = "") {
+  #setRenderStatus(status, durationStr = "", errorMessage = "", parsed_error = null) {
     if (!this.#renderStatusEl) return;
     if (!this.#renderErrorEl) return;
 
@@ -232,23 +232,21 @@ export class PatternTab extends EventTarget {
     const hasMessage = Boolean(errorMessage);
     if (hasMessage) {
       let shortMsg = errorMessage;
-      const match = errorMessage.match(/__VIBE_ERROR__(\{.*\})/);
-      if (match) {
+      if (parsed_error) {
         try {
-          const errData = JSON.parse(match[1]);
           let linePrefix = "";
-          if (errData.stack_trace && errData.stack_trace.length > 0) {
-            linePrefix = `Line ${errData.stack_trace[errData.stack_trace.length - 1].line_number} : `;
+          if (parsed_error.stack_trace && parsed_error.stack_trace.length > 0) {
+            linePrefix = `Line ${parsed_error.stack_trace[parsed_error.stack_trace.length - 1].line_number} : `;
           }
-          let shortMsgInner = `${errData.error_type}: ${errData.error_message}`;
-          if (errData.error_type === "KeyboardInterrupt") {
+          let shortMsgInner = `${parsed_error.error_type}: ${parsed_error.error_message}`;
+          if (parsed_error.error_type === "KeyboardInterrupt") {
             shortMsgInner = "程式執行時間過長";
           }
           shortMsg = `${linePrefix}${shortMsgInner}`;
         } catch(e) {}
       }
       this.#renderErrorEl.querySelector(".compact-error-text").textContent = shortMsg;
-      this.#renderErrorEl.setAttribute("data-raw-error", errorMessage);
+      this.#renderErrorEl.setAttribute("data-raw-error", parsed_error && parsed_error.raw_traceback ? parsed_error.raw_traceback : errorMessage);
     }
     this.#renderErrorEl.setAttribute("data-visible", hasMessage ? "true" : "false");
   }
@@ -264,7 +262,7 @@ export class PatternTab extends EventTarget {
       this.#setRenderStatus("done");
       this.#setRendered(true);
     } catch (err) {
-      this.#setRenderStatus("error", "", err.message);
+      this.#setRenderStatus("error", "", err.message, err.parsed_error);
       this.#toastService.toast(TOAST_RENDER_ERROR, "error");
     }
   }
@@ -287,15 +285,6 @@ export class PatternTab extends EventTarget {
         document.getElementById("tab-history")?.click();
       } else if (e.target.id === "btn-copy-error") {
         let raw = this.#renderErrorEl.getAttribute("data-raw-error") || "";
-        const match = raw.match(/__VIBE_ERROR__(\{.*\})/);
-        if (match) {
-          try {
-            const errData = JSON.parse(match[1]);
-            if (errData.raw_traceback) {
-              raw = errData.raw_traceback;
-            }
-          } catch(err) {}
-        }
         navigator.clipboard.writeText(raw).then(() => {
           import("../strings.js").then(({ COPIED_LABEL }) => {
             const btn = e.target;

@@ -120,8 +120,21 @@ def get_status(team: str, index: int) -> dict:
 
 
 def _set_status(key: str, status: str, stderr: str = "") -> None:
+    parsed_error = None
+    if "__VIBE_ERROR__" in stderr:
+        parts = stderr.split("__VIBE_ERROR__", 1)
+        stderr = parts[0].strip()
+        try:
+            import json
+            parsed_error = json.loads(parts[1])
+        except Exception:
+            pass
+
     with _jobs_lock:
-        _jobs[key] = {"status": status, "stderr": stderr}
+        job = {"status": status, "stderr": stderr}
+        if parsed_error:
+            job["parsed_error"] = parsed_error
+        _jobs[key] = job
 
 
 def _start_workers() -> None:
@@ -217,6 +230,7 @@ except BaseException as e:
         history.save_entry(
             team, index, script,
             final["status"], final.get("stderr", ""),
+            final.get("parsed_error"),
             video_src if video_src.exists() else None,
         )
     except Exception as exc:

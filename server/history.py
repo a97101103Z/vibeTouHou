@@ -68,6 +68,7 @@ def save_entry(
     script: str,
     status: str,
     stderr: str,
+    parsed_error: Optional[dict],
     video_src: Optional[Path],
 ) -> None:
     """
@@ -85,6 +86,7 @@ def save_entry(
             "script": script,
             "status": status,
             "stderr": stderr,
+            "parsed_error": parsed_error,
             "is_published": False,
             "published_trajectory": None,
         }
