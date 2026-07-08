@@ -11,6 +11,7 @@ Polls /work/trigger every 50 ms; when found:
 """
 import os
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -29,7 +30,7 @@ while True:
             pass
 
         proc = subprocess.Popen(
-            ["python", str(SCRIPT)],
+            [sys.executable, str(SCRIPT)],
             cwd=str(WORK),
             stderr=subprocess.PIPE,
             stdout=subprocess.DEVNULL,

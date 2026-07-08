@@ -8,7 +8,6 @@ GET  /api/video/history/{id}    → stream a history video
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 import history
-import renderer
 from responses import media_file_response
 from routers import require_session
 
