@@ -101,11 +101,4 @@ if len(set(_token_values)) != len(_token_values):
 
 # ── History ───────────────────────────────────────────────────────────────────
 MAX_HISTORY_ENTRIES = int(os.getenv("MAX_HISTORY_ENTRIES", "100"))
-# Store history in /tmp2 if available (saves project disk space)
-_tmp2 = Path("/tmp2")
-if _tmp2.exists():
-    _tmp2_base = _tmp2 / "b14902002"
-    _tmp2_base.mkdir(parents=True, exist_ok=True)
-    HISTORY_DIR = _tmp2_base / "vibeTouHou_history"
-else:
-    HISTORY_DIR = DATA_DIR / "history"
+HISTORY_DIR = DATA_DIR / "history"
