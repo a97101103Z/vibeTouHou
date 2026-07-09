@@ -7,6 +7,20 @@ Steps:
 3. [Build & start server with Docker Compose](#build--start-server-with-docker-compose)
 4. [Configuration in `docker-compose.yml`](#configuration-in-docker-composeyml)
 
+## Ensure system features are enabled
+
+> [!NOTE]
+> Make sure this is done on each new workstation that you have not set up Docker.
+> **If the `docker.service` systemd service fails to start, this is likely why!**
+
+```bash
+# Enable system features
+linger-switch enable
+subuid-register
+```
+
+Doing this does nothing if it is already set up; so feel free to do it, nothing wrong would happen.
+
 ## Ensure rootless Docker is installed
 
 After installation, you should be able to run these commands (without `sudo`):
@@ -19,7 +33,7 @@ docker compose version
 Installation steps (reference: [NASA Lab](https://nasalab.csie.ntu.edu.tw/workstation/docker_tutorial.html), [Docker Compose Docs](https://docs.docker.com/compose/install/linux/#install-the-plugin-manually)):
 
 ```bash
-# Enable system features
+# Enable system features (if you haven't)
 linger-switch enable
 subuid-register
 
