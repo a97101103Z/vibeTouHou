@@ -1,5 +1,5 @@
 /**
- * PhaseService — polls /api/phase every 5 seconds and fires window events
+ * PhaseService — polls /api/phase every 2 seconds and fires window events
  * when the phase or lock state changes.
  *
  * Events dispatched on `this` (PhaseService):
@@ -7,7 +7,7 @@
  *   "phaselocked"  — fired once when grace period expires and lock becomes active
  */
 
-const POLL_INTERVAL = 5000;
+const POLL_INTERVAL = 2000;
 
 class PhaseService extends EventTarget {
   #phase = "code";

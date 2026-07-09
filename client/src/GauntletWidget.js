@@ -11,6 +11,8 @@ import {
   LB_TEAM_AVG, LB_MEMBER,
 } from "./strings.js";
 
+const LEADERBOARD_POLL_INTERVAL = 5000; // ms
+
 export class GauntletWidget extends EventTarget {
   #patterns = [];
   #leaderboard = [];
@@ -243,7 +245,7 @@ export class GauntletWidget extends EventTarget {
   startLeaderboardPoll() {
     if (this.#lbPollTimer) clearInterval(this.#lbPollTimer);
     this.updateLeaderboard();
-    this.#lbPollTimer = setInterval(() => this.updateLeaderboard(), 5000);
+    this.#lbPollTimer = setInterval(() => this.updateLeaderboard(), LEADERBOARD_POLL_INTERVAL);
   }
 
   stopLeaderboardPoll() {
