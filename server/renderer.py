@@ -25,6 +25,7 @@ Build the Docker image once:
 """
 
 import ast
+import atexit
 import json
 import logging
 import os
@@ -336,6 +337,35 @@ _SANDBOX_ENV = {
 }
 
 
+def _cleanup_stale_watchers(host_sandbox: Path) -> None:
+    """Remove any watcher containers bound to the same sandbox path."""
+    import docker as docker_sdk
+    sandbox_str = str(host_sandbox.resolve())
+    client = docker_sdk.from_env()
+    for c in client.containers.list(all=True):
+        try:
+            if any(DOCKER_IMAGE in tag for tag in (c.image.tags or [])):
+                for mount in c.attrs.get("Mounts", []):
+                    if mount.get("Destination") == "/work" and mount.get("Source") == sandbox_str:
+                        try: c.remove(force=True)
+                        except Exception: pass
+                        break
+        except Exception:
+            pass
+
+
+def _cleanup_all_watchers():
+    """atexit: stop all tracked watcher containers."""
+    with _watcher_lock:
+        for key, c in list(_watcher_containers.items()):
+            try: c.remove(force=True)
+            except Exception: pass
+            _watcher_containers.pop(key, None)
+
+
+atexit.register(_cleanup_all_watchers)
+
+
 def _get_or_create_watcher(key: str, d: Path, sandbox: Path) -> Any:
     """
     Return the running watcher container for this slot, creating it if needed.
@@ -370,6 +400,9 @@ def _get_or_create_watcher(key: str, d: Path, sandbox: Path) -> Any:
             host_sandbox = HOST_DATA_DIR / rel_sandbox
             rel_d = d.relative_to(DATA_DIR)
             host_assets = HOST_DATA_DIR / rel_d / "assets"
+
+        # Kill any orphaned container still mounting this sandbox path
+        _cleanup_stale_watchers(host_sandbox)
 
         c = docker_sdk.from_env().containers.run(
             DOCKER_IMAGE,
