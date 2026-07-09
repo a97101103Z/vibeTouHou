@@ -94,6 +94,10 @@ export const TAB_EXAMPLES        = t("Examples",                                
 export const EX_LOADING          = t("Loading examples…",                                  "載入範例中…");
 export const EX_ERR_LOAD         = t("Could not load examples.",                           "無法載入範例。");
 
+// ── Code expand / collapse ─────────────────────────────────────
+export const CODE_EXPAND         = t("Show full code",                                     "展開程式碼");
+export const CODE_COLLAPSE       = t("Show less",                                          "收合");
+
 // ── Collapsed sidebar ──────────────────────────────────────────────────────────
 export const GALLERY_LABEL         = t("Gallery",                                             "彈幕畫廊");
 export const CONTROLS_HINT         = t("SHIFT = focus · WASD / ↕↔ = move",                   "SHIFT = 集中 · WASD / ↕↔ = 移動");

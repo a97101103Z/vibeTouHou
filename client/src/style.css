@@ -1639,10 +1639,38 @@ canvas#game-canvas {
   line-height: 1.5;
   color: #abb2bf;
   background: #1a1b26;
-  overflow: auto;
+  overflow: hidden;
   max-height: 220px;
   white-space: pre;
   tab-size: 4;
+  transition: max-height 0.25s ease;
+}
+
+.history-code-block.expanded {
+  max-height: none;
+  overflow: auto;
+}
+
+.code-expand-btn {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: rgba(0, 0, 0, 0.3);
+  border: none;
+  border-top: 1px solid var(--border);
+  cursor: pointer;
+  text-align: center;
+  letter-spacing: 0.04em;
+  transition: var(--transition);
+}
+
+.code-expand-btn:hover {
+  color: var(--text);
+  background: rgba(0, 0, 0, 0.45);
 }
 
 .history-media-wrap {
@@ -1800,10 +1828,16 @@ canvas#game-canvas {
   line-height: 1.5;
   color: #abb2bf;
   background: #1a1b26;
-  overflow: auto;
+  overflow: hidden;
   max-height: 220px;
   white-space: pre;
   tab-size: 4;
+  transition: max-height 0.25s ease;
+}
+
+.examples-code-block.expanded {
+  max-height: none;
+  overflow: auto;
 }
 
 .examples-entry-body {

@@ -1,5 +1,6 @@
 import {
   HIST_COPY_CODE, HIST_COPIED, HIST_LOADING, HIST_ERR_LOAD,
+  CODE_EXPAND, CODE_COLLAPSE,
 } from "../strings.js";
 
 /**
@@ -99,6 +100,16 @@ export class ExamplesTab extends EventTarget {
     code.textContent = entry.code;
     pre.appendChild(code);
     codeWrap.appendChild(pre);
+
+    const expandBtn = document.createElement("button");
+    expandBtn.className = "code-expand-btn";
+    expandBtn.textContent = CODE_EXPAND;
+    expandBtn.addEventListener("click", () => {
+      pre.classList.toggle("expanded");
+      expandBtn.textContent = pre.classList.contains("expanded") ? CODE_COLLAPSE : CODE_EXPAND;
+    });
+    codeWrap.appendChild(expandBtn);
+
     body.appendChild(codeWrap);
 
     if (entry.video_url) {
