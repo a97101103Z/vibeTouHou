@@ -96,7 +96,7 @@ export const EX_ERR_LOAD         = t("Could not load examples.",                
 
 // ── Code expand / collapse ─────────────────────────────────────
 export const CODE_EXPAND         = t("Show full code",                                     "展開程式碼");
-export const CODE_COLLAPSE       = t("Show less",                                          "收合");
+export const CODE_COLLAPSE       = t("Show less",                                          "摺疊程式碼");
 
 // ── Collapsed sidebar ──────────────────────────────────────────────────────────
 export const GALLERY_LABEL         = t("Gallery",                                             "彈幕畫廊");
