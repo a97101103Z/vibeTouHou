@@ -17,6 +17,7 @@ services:
       ADMIN_TOKEN: "${ADMIN_TOKEN}"
     volumes:
       - ./data:/app/data
+      - ./pattern_examples:/app/pattern_examples
       - ./gallery:/app/gallery
       - ${XDG_RUNTIME_DIR}/docker.sock:/var/run/docker.sock
     ports:
