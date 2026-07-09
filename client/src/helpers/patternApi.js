@@ -44,7 +44,10 @@ async function pollRenderStatus() {
     if (data.status === "done") {
       return data.video_url || `${API_BASE}/video/my`;
     } else if (data.status === "error") {
-      const err = new Error(data.stderr || ERR_RENDER_FAIL);
+      const errMsg = data.parsed_error
+        ? (data.parsed_error.error_message || data.stderr || ERR_RENDER_FAIL)
+        : (data.stderr || data.stdout || ERR_RENDER_FAIL);
+      const err = new Error(errMsg);
       if (data.parsed_error) {
         err.parsed_error = data.parsed_error;
       }

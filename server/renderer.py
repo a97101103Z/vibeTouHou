@@ -116,22 +116,19 @@ def _docker_available() -> bool:
 def get_status(team: str, index: int) -> dict:
     key = f"{team}-{index}"
     with _jobs_lock:
-        return dict(_jobs.get(key, {"status": "idle", "stderr": ""}))
+        return dict(_jobs.get(key, {"status": "idle", "stderr": "", "stdout": ""}))
 
 
-def _set_status(key: str, status: str, stderr: str = "") -> None:
+def _set_status(key: str, status: str, stderr: str = "", stdout: str = "") -> None:
     parsed_error = None
-    if "__VIBE_ERROR__" in stderr:
-        parts = stderr.split("__VIBE_ERROR__", 1)
-        stderr = parts[0].strip()
+    if stderr:
         try:
-            import json
-            parsed_error = json.loads(parts[1])
+            parsed_error = json.loads(stderr)
         except Exception:
             pass
 
     with _jobs_lock:
-        job = {"status": status, "stderr": stderr}
+        job = {"status": status, "stderr": stderr, "stdout": stdout}
         if parsed_error:
             job["parsed_error"] = parsed_error
         _jobs[key] = job
@@ -182,6 +179,9 @@ def _run_job(key: str, team: str, index: int, script: str) -> None:
     wrapper_script = """
 import sys, traceback, json, runpy, linecache
 
+_real_stderr = sys.stderr
+sys.stderr = sys.stdout
+
 try:
     runpy.run_path("target_script.py", run_name="__main__")
 except BaseException as e:
@@ -196,7 +196,7 @@ except BaseException as e:
     for frame in frames:
         if frame.filename == "target_script.py":
             error_data["stack_trace"].append({
-                "filename": "script.py", # Hide target_script from user
+                "filename": "script.py",
                 "line_number": frame.lineno,
                 "function_name": frame.name,
                 "code_line": frame.line or ""
@@ -211,7 +211,7 @@ except BaseException as e:
             "code_line": code_line
         })
         
-    print("__VIBE_ERROR__" + json.dumps(error_data), file=sys.stderr)
+    print(json.dumps(error_data), file=_real_stderr)
     sys.exit(1)
 """
     script_path.write_text(wrapper_script, encoding="utf-8")
@@ -232,6 +232,7 @@ except BaseException as e:
             final["status"], final.get("stderr", ""),
             video_src if video_src.exists() else None,
             final.get("parsed_error"),
+            stdout=final.get("stdout", ""),
         )
     except Exception as exc:
         logging.error("Failed to save render history for %s: %s", key, exc)
@@ -440,18 +441,27 @@ def _run_docker(key: str, d: Path, sandbox: Path) -> None:
         _set_status(key, "error", f"Could not read watcher result: {exc}")
         return
 
-    status_line, _, stderr_text = content.partition("\n")
+    try:
+        data = json.loads(content)
+    except Exception:
+        _set_status(key, "error", f"Could not parse watcher result: {content[:200]}")
+        return
+
+    status_line = data.get("status", "error")
+    stdout_text = data.get("stdout", "")
+    stderr_text = data.get("stderr", "")
+
     if status_line == "ok":
         # Move output.mp4 from sandbox/ up to the slot dir so the rest of
         # the server (publish, download) can find it at the expected path.
         sandbox_output = sandbox / "output.mp4"
         if sandbox_output.exists():
             shutil.move(str(sandbox_output), str(d / "output.mp4"))
-        _set_status(key, "done", stderr_text)
+        _set_status(key, "done", stderr_text, stdout=stdout_text)
     elif status_line == "timeout":
-        _set_status(key, "error", stderr_text or f"Script timed out after {MAX_RENDER_SECONDS}s.")
+        _set_status(key, "error", stderr_text or f"Script timed out after {MAX_RENDER_SECONDS}s.", stdout=stdout_text)
     else:
-        _set_status(key, "error", stderr_text or "Script did not produce output.mp4.")
+        _set_status(key, "error", stderr_text or "Script did not produce output.mp4.", stdout=stdout_text)
 
 
 # ── Subprocess fallback (when Docker is not running) ───────────────────────────
@@ -473,29 +483,27 @@ def _run_subprocess(key: str, d: Path, sandbox: Path):
     env["SDL_AUDIODRIVER"] = "dummy"
     env.pop("DISPLAY", None)
 
-    WARNING = "[WARNING] Docker unavailable — running without full sandboxing.\n"
-
     try:
         creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == "win32" else 0
         proc = subprocess.Popen(
             [sys.executable, str(script_path)],
             cwd=str(sandbox),
             env=env,
-            stdout=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
             creationflags=creation_flags
         )
-        _, stderr_text = proc.communicate(timeout=MAX_RENDER_SECONDS)
+        stdout_text, stderr_text = proc.communicate(timeout=MAX_RENDER_SECONDS)
         
         out_path = sandbox / "output.mp4"
         if proc.returncode != 0:
-            _set_status(key, "error", WARNING + (stderr_text or "Script exited with non-zero status."))
+            _set_status(key, "error", stderr_text or "Script exited with non-zero status.", stdout=stdout_text)
         elif not out_path.exists():
-            _set_status(key, "error", WARNING + (stderr_text or "No output.mp4 was created."))
+            _set_status(key, "error", stderr_text or "No output.mp4 was created.", stdout=stdout_text)
         else:
             shutil.move(str(out_path), str(d / "output.mp4"))
-            _set_status(key, "done", WARNING + stderr_text)
+            _set_status(key, "done", stderr_text, stdout=stdout_text)
 
     except subprocess.TimeoutExpired:
         import signal
@@ -505,8 +513,8 @@ def _run_subprocess(key: str, d: Path, sandbox: Path):
             proc.send_signal(signal.SIGINT)
         
         try:
-            _, stderr_text = proc.communicate(timeout=2)
-            _set_status(key, "error", WARNING + stderr_text)
+            stdout_text, stderr_text = proc.communicate(timeout=2)
+            _set_status(key, "error", WARNING + stderr_text, stdout=stdout_text)
         except subprocess.TimeoutExpired:
             proc.kill()
             proc.communicate()

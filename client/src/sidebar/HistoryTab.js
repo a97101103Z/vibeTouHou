@@ -99,17 +99,15 @@ export class HistoryTab extends EventTarget {
     });
     actions.appendChild(copyBtn);
 
-    if (!isOk && entry.stderr) {
+    if (!isOk && (entry.stderr || entry.stdout)) {
       // Copy Error button
       const copyErrBtn = document.createElement("button");
       copyErrBtn.className = "history-btn";
       copyErrBtn.textContent = "複製錯誤訊息";
       copyErrBtn.addEventListener("click", () => {
-        let textToCopy = entry.stderr || "";
-        if (entry.parsed_error && entry.parsed_error.raw_traceback) {
-          textToCopy = entry.parsed_error.raw_traceback;
-        }
-        this.#copyTextToClipboard(textToCopy, copyErrBtn, "複製錯誤訊息");
+        let textToCopy = entry.stdout ? `${entry.stdout}\n` : "";
+        textToCopy += entry.parsed_error?.raw_traceback || entry.stderr || "";
+        this.#copyTextToClipboard(textToCopy.trim(), copyErrBtn, "複製錯誤訊息");
       });
       actions.appendChild(copyErrBtn);
     }
@@ -215,6 +213,13 @@ export class HistoryTab extends EventTarget {
 
         mediaWrap.appendChild(errWrap);
       } else {
+        if (entry.stdout) {
+          const stdoutPre = document.createElement("pre");
+          stdoutPre.className = "history-stderr";
+          stdoutPre.style.borderTop = "1px solid rgba(255, 60, 80, 0.2)";
+          stdoutPre.textContent = entry.stdout;
+          mediaWrap.appendChild(stdoutPre);
+        }
         const stderrPre = document.createElement("pre");
         stderrPre.className = "history-stderr";
         stderrPre.textContent = entry.stderr || "(no error output)";
@@ -291,15 +296,15 @@ export class HistoryTab extends EventTarget {
     if (entry.parsed_error && entry.parsed_error.stack_trace && entry.parsed_error.stack_trace.length > 0) {
       return entry.parsed_error.stack_trace[entry.parsed_error.stack_trace.length - 1].line_number;
     }
-    const stderr = entry.stderr || "";
+    const combined = (entry.stdout || "") + "\n" + (entry.stderr || "");
 
     // We want the line number from the student's script, usually script.py
-    const matches = [...stderr.matchAll(/File ".*script\.py", line (\d+)/g)];
+    const matches = [...combined.matchAll(/File ".*script\.py", line (\d+)/g)];
     if (matches.length > 0) {
       return parseInt(matches[matches.length - 1][1], 10);
     }
     // Fallback: if script.py is not found, just get the first file in the traceback
-    const fallback = [...stderr.matchAll(/File "[^"]*", line (\d+)/g)];
+    const fallback = [...combined.matchAll(/File "[^"]*", line (\d+)/g)];
     if (fallback.length > 0) {
       return parseInt(fallback[0][1], 10);
     }

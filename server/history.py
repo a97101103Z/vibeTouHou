@@ -70,6 +70,7 @@ def save_entry(
     stderr: str,
     video_src: Optional[Path] = None,
     parsed_error: Optional[dict] = None,
+    stdout: str = "",
 ) -> None:
     """
     Persist a render result to history.
@@ -86,6 +87,7 @@ def save_entry(
             "script": script,
             "status": status,
             "stderr": stderr,
+            "stdout": stdout,
             "parsed_error": parsed_error,
             "is_published": False,
             "published_trajectory": None,
