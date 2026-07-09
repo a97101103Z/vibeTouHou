@@ -1621,6 +1621,12 @@ canvas#game-canvas {
   background: rgba(var(--accent-rgb, 120, 80, 255), 0.25);
 }
 
+.history-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .history-entry-body {
   display: flex;
   flex-direction: column;

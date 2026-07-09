@@ -2,6 +2,7 @@ import {
   HIST_COPY_CODE, HIST_COPIED, HIST_LOADING, HIST_ERR_LOAD,
   CODE_EXPAND, CODE_COLLAPSE,
 } from "../strings.js";
+import { phaseService } from "../helpers/phase.js";
 
 /**
  * ExamplesTab - Shows example pattern scripts from pattern_examples/.
@@ -13,6 +14,7 @@ import {
  */
 export class ExamplesTab extends EventTarget {
   #listEl = null;
+  #loadButtons = new Set();
 
   constructor() {
     super();
@@ -20,6 +22,16 @@ export class ExamplesTab extends EventTarget {
 
   init() {
     this.#listEl = document.getElementById("examples-list");
+    phaseService.addEventListener("phasechange", () => this.#refreshDisabled());
+    phaseService.addEventListener("phaselocked", () => this.#refreshDisabled());
+    phaseService.addEventListener("phaseunlocked", () => this.#refreshDisabled());
+  }
+
+  #refreshDisabled() {
+    const locked = phaseService.isLocked();
+    for (const btn of this.#loadButtons) {
+      btn.disabled = locked;
+    }
   }
 
   // ── Public ──────────────────────────────────────────────
@@ -78,11 +90,13 @@ export class ExamplesTab extends EventTarget {
     const loadBtn = document.createElement("button");
     loadBtn.className = "history-btn is-primary";
     loadBtn.textContent = "載入編輯器";
+    if (phaseService.isLocked()) loadBtn.disabled = true;
     loadBtn.addEventListener("click", () => {
       this.dispatchEvent(new CustomEvent("loadExample", {
         detail: { script: entry.code },
       }));
     });
+    this.#loadButtons.add(loadBtn);
     actions.appendChild(loadBtn);
 
     header.appendChild(actions);
