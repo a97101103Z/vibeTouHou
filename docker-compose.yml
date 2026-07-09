@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: ./deploy/Dockerfile
       args:
-        ROOT_PATH: "${ROOT_PATH:-}"
+        ROOT_PATH: "${ROOT_PATH:-/touhou}"
     environment:
       MAX_RENDER_WORKERS: "3"
       MAX_RENDER_QUEUE: "48"
@@ -12,9 +12,9 @@ services:
       # Docker siblings via /var/run/docker.sock) can bind-mount it.
       # Override with an explicit path if ${PWD} doesn't resolve correctly.
       HOST_DATA_DIR: "${PWD}/data"
-      RED_TEAM_TOKEN: "${RED_TEAM_TOKEN}"
-      BLUE_TEAM_TOKEN: "${BLUE_TEAM_TOKEN}"
-      ADMIN_TOKEN: "${ADMIN_TOKEN}"
+      #RED_TEAM_TOKEN: "${RED_TEAM_TOKEN}"
+      #BLUE_TEAM_TOKEN: "${BLUE_TEAM_TOKEN}"
+      #ADMIN_TOKEN: "${ADMIN_TOKEN}"
     volumes:
       - ./data:/app/data
       - ./gallery:/app/gallery

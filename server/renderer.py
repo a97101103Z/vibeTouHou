@@ -375,12 +375,14 @@ def _run_docker(key: str, d: Path, sandbox: Path) -> None:
 
     status_line, _, stderr_text = content.partition("\n")
     if status_line == "ok":
-        # Move output.mp4 from sandbox/ up to the slot dir so the rest of
-        # the server (publish, download) can find it at the expected path.
         sandbox_output = sandbox / "output.mp4"
         if sandbox_output.exists():
             shutil.move(str(sandbox_output), str(d / "output.mp4"))
-        _set_status(key, "done", stderr_text)
+            _set_status(key, "done", stderr_text)
+        else:
+            _set_status(key, "error", stderr_text or "Watcher reported ok but output.mp4 was not found.")
+    elif status_line == "error":
+        _set_status(key, "error", stderr_text or "Script exited with non-zero status.")
     elif status_line == "timeout":
         _set_status(key, "error", stderr_text or f"Script timed out after {MAX_RENDER_SECONDS}s.")
     else:
