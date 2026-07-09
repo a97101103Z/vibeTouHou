@@ -38,7 +38,6 @@ export class GauntletWidget extends EventTarget {
   init() {
     this.#cacheDOM();
     this.setLocked(true, /* skipLoad */ true);
-    this.startLeaderboardPoll();
   }
 
   #cacheDOM() {
@@ -62,6 +61,12 @@ export class GauntletWidget extends EventTarget {
         "data-locked",
         locked ? "true" : "false",
       );
+    }
+
+    if (locked) {
+      this.stopLeaderboardPoll();
+    } else {
+      this.startLeaderboardPoll();
     }
 
     if (!locked && !skipLoad) {
