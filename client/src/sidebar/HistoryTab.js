@@ -3,6 +3,7 @@ import {
   HIST_ERROR_LINE, HIST_EMPTY, HIST_LOADING, HIST_ERR_LOAD,
   HIST_COPIED, HIST_STATUS_OK, HIST_STATUS_ERR,
   HIST_PUBLISH_OK, HIST_PUBLISH_FAIL,
+  CODE_EXPAND, CODE_COLLAPSE,
   TOAST_NETWORK_ERROR,
 } from "../strings.js";
 
@@ -167,6 +168,16 @@ export class HistoryTab extends EventTarget {
     }
     
     codeWrap.appendChild(pre);
+
+    const expandBtn = document.createElement("button");
+    expandBtn.className = "code-expand-btn";
+    expandBtn.textContent = CODE_EXPAND;
+    expandBtn.addEventListener("click", () => {
+      pre.classList.toggle("expanded");
+      expandBtn.textContent = pre.classList.contains("expanded") ? CODE_COLLAPSE : CODE_EXPAND;
+    });
+    codeWrap.appendChild(expandBtn);
+
     body.appendChild(codeWrap);
 
     // Right: video or stderr

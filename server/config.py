@@ -99,6 +99,10 @@ if len(set(_token_values)) != len(_token_values):
         "RED_TEAM_TOKEN, BLUE_TEAM_TOKEN, and ADMIN_TOKEN must all be unique."
     )
 
+# ── Examples ──────────────────────────────────────────────────
+# pattern_examples/ is at the project root (one level above server/)
+EXAMPLES_DIR = Path(__file__).parent.parent / "pattern_examples"
+
 # ── History ───────────────────────────────────────────────────────────────────
 MAX_HISTORY_ENTRIES = int(os.getenv("MAX_HISTORY_ENTRIES", "100"))
 HISTORY_DIR = DATA_DIR / "history"

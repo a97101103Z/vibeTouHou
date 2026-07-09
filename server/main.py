@@ -16,8 +16,9 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import FileResponse
 
-from routers import auth, render, assets, patterns, scores_router, publish, gallery_router, history_router
+from routers import auth, render, assets, patterns, scores_router, publish, gallery_router, history_router, examples_router
 from config import STATIC_DIR, DATA_DIR, ROOT_PATH, API_PREFIX
+from example_renderer import pre_render_all
 
 # ── Application ────────────────────────────────────────────────────────────────
 app = FastAPI(
@@ -36,6 +37,7 @@ app.include_router(patterns.router,      prefix="/api", tags=["patterns"])
 app.include_router(scores_router.router, prefix="/api", tags=["scores"])
 app.include_router(publish.router,       prefix="/api", tags=["publish"])
 app.include_router(gallery_router.router, prefix="/api", tags=["gallery"])
+app.include_router(examples_router.router, prefix="/api", tags=["examples"])
 
 
 @app.get("/api/health")
@@ -60,3 +62,6 @@ if STATIC_DIR.exists():
 
 # ── Ensure data directory exists ───────────────────────────────────────────────
 DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+# ── Pre-render example scripts ─────────────────────────────────────────────────
+pre_render_all()
