@@ -105,17 +105,20 @@ async function main() {
   // Phase polling detected a change (e.g. admin just switched)
   phaseService.addEventListener("phasechange", (e) => {
     const { phase, active_at } = e.detail;
+    gauntlet.hideCountdown();
     applyPhase(phase, active_at);
   });
 
   // Grace period expired — lock coding, start gauntlet unlock sequence
   phaseService.addEventListener("phaselocked", () => {
+    gauntlet.hideCountdown();
     sidebar.setLocked(true);
     gauntlet.setLocked(false);
   });
 
   // Code transition grace expired — unlock coding, go back to code mode
   phaseService.addEventListener("phaseunlocked", () => {
+    gauntlet.hideCountdown();
     sidebar.setLocked(false);
     gauntlet.setLocked(true);
   });
