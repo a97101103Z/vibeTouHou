@@ -113,7 +113,7 @@ Additionally, the server will also be configured to listen on the path prefix it
 
 ```bash
 # beside your TEAM_TOKEN's
-ROOT_PATH=/touhou
+ROOT_PATH=/vibetouhou
 ```
 
 Note that you do need to re-build the Docker image to apply the change:
