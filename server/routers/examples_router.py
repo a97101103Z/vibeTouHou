@@ -6,7 +6,7 @@ GET /api/examples/video/{name}  → serve cached example MP4
 """
 
 from fastapi import APIRouter, HTTPException, Request
-from config import EXAMPLES_DIR
+from config import API_PREFIX, EXAMPLES_DIR
 from example_renderer import EXAMPLES_CACHE
 from responses import media_file_response
 
@@ -23,7 +23,7 @@ def list_examples():
             video_path = EXAMPLES_CACHE / f"{f.stem}.mp4"
             video_url = None
             if video_path.exists():
-                video_url = f"/api/examples/video/{f.stem}"
+                video_url = f"{API_PREFIX}/examples/video/{f.stem}"
             entries.append({
                 "filename": f.name,
                 "name": f.stem,
