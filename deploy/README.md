@@ -6,6 +6,7 @@ Steps:
 2. [Build renderer sandbox environment](#build-renderer-sandbox-environment)
 3. [Build & start server with Docker Compose](#build--start-server-with-docker-compose)
 4. [Configuration in `docker-compose.yml`](#configuration-in-docker-composeyml)
+5. [Pitfalls after updates](#pitfalls-after-updates)
 
 ## Ensure system features are enabled
 
@@ -136,3 +137,8 @@ Note that you do need to re-build the Docker image to apply the change:
 docker compose build
 docker compose up -d
 ```
+
+### Pitfalls after updates
+
+1. The HTML page served may be incorrectly cached by browsers. Try using <key>Ctrl</key> + <key>F</key> to refresh the page without caching, or clear the browser cookies entirely.
+2. Old sandbox containers may be left running after a forced / accidental exit of our server. Try looking them up with `docker ps`, and stop existing ones with `docker stop ID1 ID2 ID3 ...`. 
