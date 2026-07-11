@@ -377,55 +377,57 @@ def _get_or_create_watcher(key: str, d: Path, sandbox: Path) -> Any:
     import docker as docker_sdk
     with _watcher_lock:
         c = _watcher_containers.get(key)
-        if c is not None:
-            try:
-                c.reload()
-                if c.status == "running":
-                    return c
-            except Exception:
-                pass
-            try: c.remove(force=True)
-            except Exception: pass
+        
+    if c is not None:
+        try:
+            c.reload()
+            if c.status == "running":
+                return c
+        except Exception:
+            pass
+        try: c.remove(force=True)
+        except Exception: pass
 
-        assets_dir = d / "assets"
-        assets_dir.mkdir(exist_ok=True)
+    assets_dir = d / "assets"
+    assets_dir.mkdir(exist_ok=True)
 
-        # When spawning sibling containers through the host Docker daemon,
-        # bind-mount paths must be valid on the HOST, not inside this container.
-        # If HOST_DATA_DIR differs from DATA_DIR, remap both paths accordingly.
-        host_sandbox = sandbox
-        host_assets  = d / "assets"
-        if HOST_DATA_DIR != DATA_DIR:
-            rel_sandbox = sandbox.relative_to(DATA_DIR)
-            host_sandbox = HOST_DATA_DIR / rel_sandbox
-            rel_d = d.relative_to(DATA_DIR)
-            host_assets = HOST_DATA_DIR / rel_d / "assets"
+    # When spawning sibling containers through the host Docker daemon,
+    # bind-mount paths must be valid on the HOST, not inside this container.
+    # If HOST_DATA_DIR differs from DATA_DIR, remap both paths accordingly.
+    host_sandbox = sandbox
+    host_assets  = d / "assets"
+    if HOST_DATA_DIR != DATA_DIR:
+        rel_sandbox = sandbox.relative_to(DATA_DIR)
+        host_sandbox = HOST_DATA_DIR / rel_sandbox
+        rel_d = d.relative_to(DATA_DIR)
+        host_assets = HOST_DATA_DIR / rel_d / "assets"
 
-        # Kill any orphaned container still mounting this sandbox path
-        _cleanup_stale_watchers(host_sandbox)
+    # Kill any orphaned container still mounting this sandbox path
+    _cleanup_stale_watchers(host_sandbox)
 
-        c = docker_sdk.from_env().containers.run(
-            DOCKER_IMAGE,
-            volumes={
-                # sandbox/ → /work  (rw): script, trigger, result, output.mp4
-                str(host_sandbox.resolve()): {"bind": "/work",        "mode": "rw"},
-                # assets/  → /work/assets (ro): student-uploaded images/files
-                str(host_assets.resolve()):  {"bind": "/work/assets", "mode": "ro"},
-            },
-            working_dir="/work",
-            network_disabled=True,
-            mem_limit="1g",
-            memswap_limit="1g",
-            cpu_period=100_000,
-            cpu_quota=200_000,
-            pids_limit=64,
-            user="1000",
-            environment={**_SANDBOX_ENV, "RENDER_TIMEOUT": str(MAX_RENDER_SECONDS)},
-            detach=True,
-            remove=False,
-        )
+    c = docker_sdk.from_env().containers.run(
+        DOCKER_IMAGE,
+        volumes={
+            # sandbox/ → /work  (rw): script, trigger, result, output.mp4
+            str(host_sandbox.resolve()): {"bind": "/work",        "mode": "rw"},
+            # assets/  → /work/assets (ro): student-uploaded images/files
+            str(host_assets.resolve()):  {"bind": "/work/assets", "mode": "ro"},
+        },
+        working_dir="/work",
+        network_disabled=True,
+        mem_limit="1g",
+        memswap_limit="1g",
+        cpu_period=100_000,
+        cpu_quota=200_000,
+        pids_limit=64,
+        user="1000",
+        environment={**_SANDBOX_ENV, "RENDER_TIMEOUT": str(MAX_RENDER_SECONDS)},
+        detach=True,
+        remove=False,
+    )
+    with _watcher_lock:
         _watcher_containers[key] = c
-        return c
+    return c
 
 
 # ── Docker execution (preferred) ───────────────────────────────────────────────
