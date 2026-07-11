@@ -267,6 +267,7 @@ export class PatternTab extends EventTarget {
       this.#setRenderStatus("done");
       this.#setRendered(true);
     } catch (err) {
+      if (err.status === 409) return;
       this.#setRenderStatus("error", "", err.message, err.parsed_error);
       this.#toastService.toast(TOAST_RENDER_ERROR, "error");
     }

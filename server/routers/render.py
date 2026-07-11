@@ -29,7 +29,8 @@ def submit_render(body: RenderBody, slot: str = Depends(require_session)):
     team, idx = slot.rsplit("-", 1)
     err = renderer.start_render(team, int(idx), body.script)
     if err:
-        raise HTTPException(400, err)
+        status_code = 409 if "already running" in err else 400
+        raise HTTPException(status_code, err)
     return {"ok": True, "status": "queued"}
 
 

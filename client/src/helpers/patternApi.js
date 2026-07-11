@@ -19,7 +19,9 @@ export async function render(script) {
 
   if (!res.ok) {
     const data = await res.json();
-    throw new Error(data.detail || ERR_SUBMISSION_FAIL);
+    const err = new Error(data.detail || ERR_SUBMISSION_FAIL);
+    err.status = res.status;
+    throw err;
   }
 
   return await pollRenderStatus();
