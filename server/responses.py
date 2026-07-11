@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse, Response
 
 def version_for(path: Path) -> str:
     stat = path.stat()
-    return f"{stat.st_mtime_ns:x}-{stat.st_size:x}"
+    return f'"{stat.st_mtime_ns:x}-{stat.st_size:x}"'
 
 
 def media_file_response(
