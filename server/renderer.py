@@ -342,14 +342,13 @@ def _cleanup_stale_watchers(host_sandbox: Path) -> None:
     import docker as docker_sdk
     sandbox_str = str(host_sandbox.resolve())
     client = docker_sdk.from_env()
-    for c in client.containers.list(all=True):
+    for c in client.containers.list(all=True, filters={"ancestor": DOCKER_IMAGE}):
         try:
-            if any(DOCKER_IMAGE in tag for tag in (c.image.tags or [])):
-                for mount in c.attrs.get("Mounts", []):
-                    if mount.get("Destination") == "/work" and mount.get("Source") == sandbox_str:
-                        try: c.remove(force=True)
-                        except Exception: pass
-                        break
+            for mount in c.attrs.get("Mounts", []):
+                if mount.get("Destination") == "/work" and mount.get("Source") == sandbox_str:
+                    try: c.remove(force=True)
+                    except Exception: pass
+                    break
         except Exception:
             pass
 
