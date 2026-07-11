@@ -6,7 +6,7 @@ services:
       args:
         ROOT_PATH: "${ROOT_PATH:-}"
     environment:
-      MAX_RENDER_WORKERS: "3"
+      MAX_RENDER_WORKERS: "12"
       MAX_RENDER_QUEUE: "48"
       # Absolute host path to ./data so sandbox containers (spawned as
       # Docker siblings via /var/run/docker.sock) can bind-mount it.
