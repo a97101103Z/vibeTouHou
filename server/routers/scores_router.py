@@ -72,7 +72,7 @@ def get_scores(slot: str = Depends(require_session)):
 
 
 @router.get("/leaderboard")
-def leaderboard(slot: str = Depends(require_session), session: str | None = Cookie(default=None)):
+def leaderboard(session: str | None = Cookie(default=None)):
     if session:
         identity.update_last_seen(session)
 

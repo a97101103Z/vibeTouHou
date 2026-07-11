@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vibeTouHou — Leaderboard</title>
+    <meta
+      name="description"
+      content="vibeTouHou leaderboard — team scores and rankings."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/style.css" />
+    <link rel="stylesheet" href="/src/leaderboard/style.css" />
+  </head>
+  <body class="lb-page-body">
+    <div class="lb-page">
+      <nav class="lb-nav">
+        <a href="/" class="lb-nav-logo">
+          <span class="logo-vibe">vibe</span><span class="logo-tou">Tou</span
+          ><span class="logo-hou">Hou</span>
+        </a>
+        <div class="lb-nav-title" data-i18n="LEADERBOARD">Leaderboard</div>
+        <div class="lb-nav-spacer"></div>
+      </nav>
+
+      <main class="lb-content">
+        <div id="lb-phase" class="lb-phase">
+          <div id="lb-phase-text" class="lb-phase-text"></div>
+          <div id="lb-phase-timer" class="lb-phase-timer" style="display:none"></div>
+        </div>
+        <div class="lb-layout">
+          <div class="lb-entries-card">
+            <h2 class="lb-card-title" data-i18n="LEADERBOARD">Leaderboard</h2>
+            <div id="lb-entries" class="lb-entries">
+              <div class="lb-loading" data-i18n="LOADING">Loading…</div>
+            </div>
+          </div>
+          <div class="lb-avg-column">
+            <div class="lb-avg-card lb-avg-red">
+              <div class="lb-avg-label">RED</div>
+              <div id="lb-avg-red" class="lb-avg-value">—</div>
+            </div>
+            <div class="lb-avg-card lb-avg-blue">
+              <div class="lb-avg-label">BLUE</div>
+              <div id="lb-avg-blue" class="lb-avg-value">—</div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script type="module" src="/src/leaderboard/main.js"></script>
+  </body>
+</html>
