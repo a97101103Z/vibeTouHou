@@ -6,7 +6,6 @@ ENV VITE_API_BASE=${ROOT_PATH:-}/api
 COPY client/package*.json ./client/
 RUN cd client && npm ci
 COPY client ./client
-COPY server ./server
 RUN cd client && npm run build
 
 FROM python:3.11-slim AS runtime
@@ -20,7 +19,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY server/requirements.txt /tmp/requirements.txt
 RUN python -m pip install --upgrade pip && pip install -r /tmp/requirements.txt
 
-COPY --from=client-build /src/server /app/server
+COPY server /app/server
+COPY --from=client-build /src/server/static /app/server/static
 
 ARG ROOT_PATH=
 RUN python -c "import os; root = os.environ.get('ROOT_PATH', ''); open('/app/server/_build_config.py', 'w').write(f'ROOT_PATH = \"{root}\"\nAPI_PREFIX = \"{root}/api\"\n')"
