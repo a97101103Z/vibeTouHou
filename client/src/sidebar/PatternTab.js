@@ -177,10 +177,15 @@ export class PatternTab extends EventTarget {
         this.#editor.state.update({ changes: { from, to, insert: script } })
       );
     }
-    this.#patternUrl = videoUrl;
-    this.#setRendered(true);
     this.#setVerified(false);
-    this.#setRenderStatus("done");
+    if (videoUrl) {
+      this.#patternUrl = videoUrl;
+      this.#setRendered(true);
+      this.#setRenderStatus("done");
+    } else {
+      this.#setRendered(false);
+      this.#setRenderStatus("idle");
+    }
   }
 
   // ── DOM side effects ───────────────────────────────────
