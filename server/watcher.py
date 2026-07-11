@@ -40,10 +40,12 @@ while True:
             stdout_bytes, stderr_bytes = proc.communicate(timeout=TIMEOUT)
             stdout_text = stdout_bytes.decode(errors="replace")
             stderr_text = stderr_bytes.decode(errors="replace")
-            if proc.returncode == 0 and (WORK / "output.mp4").exists():
-                result = {"status": "ok", "stdout": stdout_text, "stderr": stderr_text}
-            else:
-                result = {"status": "error", "stdout": stdout_text, "stderr": stderr_text}
+            result = {
+                "status": "ok" if proc.returncode == 0 and (WORK / "output.mp4").exists() else "error",
+                "stdout": stdout_text,
+                "stderr": stderr_text,
+                "returncode": proc.returncode,
+            }
             RESULT.write_text(json.dumps(result), encoding="utf-8")
         except subprocess.TimeoutExpired:
             import signal

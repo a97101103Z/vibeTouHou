@@ -484,6 +484,26 @@ def _run_docker(key: str, d: Path, sandbox: Path) -> None:
     status_line = data.get("status", "error")
     stdout_text = data.get("stdout", "")
     stderr_text = data.get("stderr", "")
+    returncode = data.get("returncode")
+
+    if returncode == -9:
+        _set_status(key, "error",
+            "Script exceeded memory limit (1 GB). "
+            "Reduce the number of frames or simplify the per-frame rendering.",
+            stdout=stdout_text)
+        return
+
+    try:
+        container.reload()
+        if container.attrs.get("State", {}).get("OOMKilled"):
+            mem_mb = container.attrs['HostConfig']['Memory'] // (1024 * 1024)
+            _set_status(key, "error",
+                f"Script exceeded memory limit ({mem_mb} MB). "
+                "Reduce the number of frames or simplify the per-frame rendering.",
+                stdout=stdout_text)
+            return
+    except Exception:
+        pass
 
     if status_line == "ok":
         # Move output.mp4 from sandbox/ up to the slot dir so the rest of

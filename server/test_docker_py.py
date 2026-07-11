@@ -19,8 +19,9 @@ def test_docker_sandbox_smoke(tmp_path):
         """
 import imageio
 import numpy as np
-frames=[np.zeros((600,800,3),dtype='uint8')]*5
-imageio.mimwrite('output.mp4',frames,fps=30)
+with imageio.get_writer('output.mp4', fps=30) as w:
+    for _ in range(5):
+        w.append_data(np.zeros((600,800,3),dtype='uint8'))
 """,
         encoding="utf-8",
     )
