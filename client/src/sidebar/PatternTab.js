@@ -8,6 +8,7 @@ import {
   RENDER_STATUS_IDLE, RENDER_STATUS_QUEUED, RENDER_STATUS_RUNNING,
   RENDER_STATUS_DONE, RENDER_STATUS_ERROR,
   TOAST_RENDER_ERROR, TOAST_NETWORK_ERROR,
+  ERR_RENDER_TIMEOUT,
 } from "../strings.js";
 
 const PATTERN_SAMPLE = `import math
@@ -24,10 +25,10 @@ import gizeh
 #
 # 給 LLM 生成程式碼的參考指南：
 # 1. 目標： 
-#     產生 10 秒鐘的彈幕影片。
+#     產生 10 秒鐘的彈幕影片，不多不少。
 # 2. 效能限制： 
-#     這支程式將在受到限制的 Docker 沙盒內執行。
-#     如果執行時間超過 20 秒，將會觸發執行超時（TLE），程式被強制終止。
+#     這支程式將在受到限制的沙盒內執行。
+#     如果執行時間超過 20 秒，系統會判定為程式執行時間逾時（TLE）並且被強制終止。
 #     請務必將數學運算與迴圈最佳化。
 # 3. 畫布與座標系統：
 #     畫布大小：寬 800、高 600。
@@ -39,6 +40,12 @@ import gizeh
 #     標準亮度公式 (假設 RGB 數值介於 0~255): 
 #     Y = 0.299*R + 0.587*G + 0.114*B
 #     請確保您的彈幕顏色夠亮，否則打中玩家也不會扣血！
+# 5. 與使用者的互動方式：
+#     請向使用者提問並確認彈幕設計細節，引導他們發揮創意精準描述出心中的想法，
+#     設計出最獨特的彈幕。
+# 6. 程式編輯注意事項：
+#     本程式使用 gizeh 套件。請確認正確使用該圖形套件的繪圖 API。
+#     範例彈幕之程式已向使用者提供，可以透過使用者參考現有範例。
 # ─────────────────────────────────────────────────────────────
 
 # 畫布基本設定（請保持原樣）
@@ -245,7 +252,7 @@ export class PatternTab extends EventTarget {
           }
           let shortMsgInner = `${parsed_error.error_type}: ${parsed_error.error_message}`;
           if (parsed_error.error_type === "KeyboardInterrupt") {
-            shortMsgInner = "程式執行時間過長";
+            shortMsgInner = ERR_RENDER_TIMEOUT;
           }
           shortMsg = `${linePrefix}${shortMsgInner}`;
         } catch(e) {}

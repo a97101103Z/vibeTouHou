@@ -47,6 +47,7 @@ export const TOAST_RENDER_ERROR    = t("Error occured on render. Check the Patte
 export const TOAST_NETWORK_ERROR   = t("Network error.",                                      "網路錯誤。");
 export const ERR_EDITOR_EMPTY      = t("Editor is empty",                                     "編輯器內沒有程式。");
 export const ERR_SUBMISSION_FAIL   = t("Submission failed.",                                  "提交失敗。");
+export const ERR_RENDER_POLL_TIMEOUT    = t("Server render timed out. Please seek help from the admins.", "伺服器回覆逾時。");
 export const ERR_RENDER_TIMEOUT    = t("Render timed out. Code may have infinite loops or heavy computation.", "執行逾時。可能是程式中有無窮迴圈或運算量過大，請檢查您的程式碼。");
 export const ERR_RENDER_FAIL       = t("Render failed",                                       "產生彈幕用的程式執行失敗。");
 export const TOAST_PUBLISH_OK      = t("Published!",                                          "已成功提交彈幕！");

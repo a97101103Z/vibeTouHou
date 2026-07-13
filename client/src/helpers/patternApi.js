@@ -1,4 +1,4 @@
-import { ERR_EDITOR_EMPTY, ERR_SUBMISSION_FAIL, ERR_RENDER_TIMEOUT, ERR_RENDER_FAIL, TOAST_PUBLISH_OK, TOAST_VALIDATION_FAIL } from "../strings.js";
+import { ERR_EDITOR_EMPTY, ERR_SUBMISSION_FAIL, ERR_RENDER_POLL_TIMEOUT, ERR_RENDER_FAIL, TOAST_PUBLISH_OK, TOAST_VALIDATION_FAIL } from "../strings.js";
 import { API_BASE } from "../constants.js";
 
 /**
@@ -35,7 +35,7 @@ async function pollRenderStatus() {
   const start = Date.now();
   while (true) {
     if (Date.now() - start >= timeoutMs) {
-      throw new Error(ERR_RENDER_TIMEOUT);
+      throw new Error(ERR_RENDER_POLL_TIMEOUT);
     }
 
     const res = await fetch("/api/render/status", {
