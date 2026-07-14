@@ -30,7 +30,8 @@ def stream_showcase_video(entry_id: str):
     path = showcase_store.video_path(entry_id)
     if path is None:
         raise HTTPException(404, "Showcase entry not found.")
-    return FileResponse(str(path), media_type="video/mp4")
+    return FileResponse(str(path), media_type="video/mp4",
+                        headers={"Cache-Control": "public, max-age=2592000"})
 
 
 # ── Admin ──────────────────────────────────────────────────────────────────────
