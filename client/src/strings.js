@@ -197,14 +197,15 @@ export const SHOWCASE_SECTION_EMPTY = t("No entries in this section.",          
 export const SHOWCASE_LOADING       = t("Loading...",                                          "載入中...");
 export const SHOWCASE_LOAD_ERR      = t("Failed to load showcase.",                           "無法載入展示區。");
 export const SHOWCASE_PATTERNS      = tf((n) => `${n} pattern${n !== 1 ? "s" : ""}`,         (n) => `${n} 個彈幕`);
-export const SHOWCASE_READY         = t("Ready",                                               "準備就緒");
-export const SHOWCASE_FINISHED      = t("Finished",                                            "結束");
-export const SHOWCASE_PLAY          = t("Play",                                                "開始遊玩");
-export const SHOWCASE_REPLAY        = t("Replay",                                              "再玩一次");
-export const SHOWCASE_CANCEL        = t("Cancel",                                              "取消");
-export const SHOWCASE_CLOSE         = t("Close",                                               "關閉");
-export const SHOWCASE_VIDEO_ERR     = t("Failed to load video.",                              "無法載入影片。");
-export const SHOWCASE_GET_READY     = t("Get ready...",                                        "準備中...");
 export const SHOWCASE_GAME_HINT     = t("WASD / Arrow keys to move · Shift to focus · Click outside to close", "WASD / 方向鍵移動 · Shift 集中 · 點擊外部關閉");
 
+// ── Game overlay ─────────────────────────────────────────────────────────────
+export const OVERLAY_READY         = t("Ready",                                               "準備就緒");
+export const OVERLAY_FINISHED      = t("Finished",                                            "結束");
+export const OVERLAY_PLAY          = t("Play",                                                "開始遊玩");
+export const OVERLAY_REPLAY        = t("Replay",                                              "再玩一次");
+export const OVERLAY_CANCEL        = t("Cancel",                                              "取消");
+export const OVERLAY_CLOSE         = t("Close",                                               "關閉");
+export const OVERLAY_VIDEO_ERR     = t("Failed to load video.",                              "無法載入影片。");
+export const OVERLAY_GET_READY     = t("Get ready...",                                        "準備中...");
 
