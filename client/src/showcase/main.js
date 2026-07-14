@@ -8,7 +8,7 @@
  */
 
 import { GameOverlay } from "../game/GameOverlay.js";
-import { API_BASE, BASE_PATH } from "../constants.js";
+import { API_BASE, apiFetch } from "../constants.js";
 import { applyStrings } from "../i18n.js";
 import {
   SHOWCASE_EMPTY,
@@ -17,22 +17,8 @@ import {
   SHOWCASE_PATTERNS,
 } from "../strings.js";
 
-// Patch fetch to use the configured API base path
-const patchedFetch = (() => {
-  if (API_BASE === "/api") return window.fetch;
-  const origFetch = window.fetch;
-  return (input, init) => {
-    if (typeof input === "string" && input.startsWith("/api/")) {
-      return origFetch(BASE_PATH + input.slice(4), init);
-    }
-    return origFetch(input, init);
-  };
-})();
-window.fetch = patchedFetch;
-
 function showcaseVideoUrl(entryId) {
-  const base = API_BASE === "/api" ? (BASE_PATH === "/" ? "/api" : BASE_PATH + "api") : API_BASE;
-  return `${base}/showcase/${entryId}/video`;
+  return `${API_BASE}/showcase/${entryId}/video`;
 }
 
 // ── Showcase ──────────────────────────────────────────────────────────────────
@@ -71,7 +57,7 @@ export class Showcase {
   async init() {
     applyStrings();
     try {
-      const res = await fetch("/api/showcase");
+      const res = await apiFetch("/api/showcase");
       const data = await res.json();
       this.#renderSections(data);
     } catch {

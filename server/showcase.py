@@ -12,7 +12,6 @@ Public API:
 """
 
 import json
-import shutil
 import threading
 from pathlib import Path
 
@@ -75,6 +74,9 @@ def video_path(entry_id: str) -> Path | None:
     for section in data.get("sections", []):
         for entry in section.get("entries", []):
             if entry.get("id") == entry_id:
-                p = SHOWCASE_DIR / entry["filename"]
+                filename = entry.get("filename")
+                if not filename:
+                    return None
+                p = SHOWCASE_DIR / filename
                 return p if p.exists() else None
     return None
