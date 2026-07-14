@@ -19,6 +19,7 @@ services:
       - ./data:/app/data
       - ./pattern_examples:/app/pattern_examples
       - ./gallery:/app/gallery
+      - ./showcase:/app/showcase
       - ${XDG_RUNTIME_DIR}/docker.sock:/var/run/docker.sock
     ports:
       - "12345:8000"
