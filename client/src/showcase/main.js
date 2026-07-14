@@ -15,6 +15,8 @@ import {
   SHOWCASE_SECTION_EMPTY,
   SHOWCASE_LOAD_ERR,
   SHOWCASE_PATTERNS,
+  SHOWCASE_LOADING,
+  SHOWCASE_VIDEO_ERR,
 } from "../strings.js";
 
 function showcaseVideoUrl(entryId) {
@@ -76,13 +78,10 @@ export class Showcase {
 
     this.#sectionsEl.innerHTML = "";
 
-    for (let i = 0; i < sections.length; i++) {
-      const section = sections[i];
-
+    for (const section of sections) {
       const details = document.createElement("details");
       details.className = "sc-accordion";
       details.name = "sc-section";
-      if (i === 0) details.open = true;
 
       const summary = document.createElement("summary");
       summary.className = "sc-accordion-header";
@@ -105,9 +104,18 @@ export class Showcase {
 
       details.appendChild(grid);
       this.#sectionsEl.appendChild(details);
-    }
 
-    this.#sectionsEl.querySelectorAll(".sc-entry-video").forEach((v) => {
+      const activate = () => this.#activateSection(grid);
+      summary.addEventListener("mouseenter", activate);
+      details.addEventListener("toggle", activate);
+    }
+  }
+
+  #activateSection(grid) {
+    if (grid.dataset.activated) return;
+    grid.dataset.activated = "1";
+    grid.querySelectorAll(".sc-entry-video").forEach((v) => {
+      v.src = v.dataset.src;
       this.#videoObserver.observe(v);
     });
   }
@@ -119,7 +127,7 @@ export class Showcase {
 
     const video = document.createElement("video");
     video.className = "sc-entry-video";
-    video.src = showcaseVideoUrl(entry.id);
+    video.dataset.src = showcaseVideoUrl(entry.id);
     video.muted = true;
     video.loop = true;
     video.playsInline = true;
@@ -128,11 +136,18 @@ export class Showcase {
       video.autoplay = true;
     }
 
+    const loading = document.createElement("div");
+    loading.className = "sc-entry-loading";
+    loading.textContent = SHOWCASE_LOADING;
+    video.addEventListener("canplay", () => loading.remove(), { once: true });
+    video.addEventListener("error", () => { loading.textContent = SHOWCASE_VIDEO_ERR; }, { once: true });
+
     const title = document.createElement("div");
     title.className = "sc-entry-title";
     title.textContent = entry.title;
 
     card.appendChild(video);
+    card.appendChild(loading);
     card.appendChild(title);
     card.addEventListener("click", () => this.#launchGame(entry, video));
 

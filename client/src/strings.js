@@ -196,6 +196,7 @@ export const SHOWCASE_EMPTY         = t("No patterns in the showcase yet.",     
 export const SHOWCASE_SECTION_EMPTY = t("No entries in this section.",                        "此分類內尚無作品。");
 export const SHOWCASE_LOADING       = t("Loading...",                                          "載入中...");
 export const SHOWCASE_LOAD_ERR      = t("Failed to load showcase.",                           "無法載入展示區。");
+export const SHOWCASE_VIDEO_ERR     = t("Failed to load video.",                              "無法載入影片。");
 export const SHOWCASE_PATTERNS      = tf((n) => `${n} pattern${n !== 1 ? "s" : ""}`,         (n) => `${n} 個彈幕`);
 export const SHOWCASE_GAME_HINT     = t("WASD / Arrow keys to move · Shift to focus · Click outside to close", "WASD / 方向鍵移動 · Shift 集中 · 點擊外部關閉");
 
