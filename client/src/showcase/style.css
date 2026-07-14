@@ -365,7 +365,7 @@ body.sc-page-body {
   font-size: 2.4rem;
   font-weight: 900;
   color: #fff;
-  margin-bottom: 8px;
+  margin-bottom: 0;
   text-shadow: 0 0 30px var(--accent-glow);
 }
 
@@ -373,7 +373,16 @@ body.sc-page-body {
   font-family: var(--font-code);
   font-size: 1rem;
   color: var(--text-dim);
-  margin-bottom: 24px;
+  margin-bottom: 8px;
+}
+
+.sc-summary-hits {
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.04em;
+  margin-bottom: 20px;
 }
 
 /* ── Buttons ────────────────────────────────────────────────────────────────── */

@@ -72,6 +72,7 @@ export class GameOverlay extends EventTarget {
     this._titleEl = modal.querySelector("[data-go-title]");
     this._subEl = modal.querySelector("[data-go-subtitle]");
     this._actionsEl = modal.querySelector("[data-go-actions]");
+    this._summaryEl = modal.querySelector("[data-go-summary]");
 
     // State
     this._engine = null;
@@ -176,11 +177,12 @@ export class GameOverlay extends EventTarget {
   _onFinish() {
     this._running = false;
     this._stopTimer();
+    const hits = this._engine ? this._engine.hits : "?";
     this._showOverlay(this._strings.finished, this._label, `
       <button class="${this._btnCls.play}" data-go-action="replay">${this._strings.replay}</button>
       <button class="${this._btnCls.close}" data-go-action="close-game">${this._strings.close}</button>
-    `);
-    this._hitsEl.textContent = this._strings.hitsDisplay(this._engine ? this._engine.hits : "?");
+    `, `<div class="sc-summary-hits">${this._strings.hitsDisplay(hits)}</div>`);
+    this._hitsEl.textContent = this._strings.hitsDisplay(hits);
     this._actionsEl.querySelector('[data-go-action="replay"]')?.addEventListener("click", () => {
       this._closed = false;
       this._cleanup();
@@ -212,10 +214,11 @@ export class GameOverlay extends EventTarget {
     this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
   }
 
-  _showOverlay(title, sub, actionsHtml) {
+  _showOverlay(title, sub, actionsHtml, summaryHtml = "") {
     this._overlay.setAttribute("data-visible", "true");
     this._titleEl.textContent = title;
     this._subEl.textContent = sub;
+    if (this._summaryEl) this._summaryEl.innerHTML = summaryHtml;
     this._actionsEl.innerHTML = actionsHtml;
   }
 
