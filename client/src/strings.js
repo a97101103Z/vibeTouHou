@@ -189,4 +189,22 @@ export const BTN_VIEW_REPLAY       = t("Replay",                                
 export const TOAST_ALREADY_RUNNING = t("A game mode is already running.",                     "目前有其他正在執行中的彈幕。");
 export const TOAST_VIDEO_ERROR     = t("Failed to load video. Returning to list.",          "讀取影片失敗。返回列表。");
 
+// ── Showcase page ─────────────────────────────────────────────────────────────
+export const SHOWCASE_TITLE         = t("Showcase",                                            "作品展示");
+export const SHOWCASE_INSTRUCTION   = t("Open a section below, then click on a pattern to start playing.", "展開下方分類，點擊作品即可開始遊玩。");
+export const SHOWCASE_EMPTY         = t("No patterns in the showcase yet.",                    "展示區尚無作品。");
+export const SHOWCASE_SECTION_EMPTY = t("No entries in this section.",                        "此分類內尚無作品。");
+export const SHOWCASE_LOADING       = t("Loading...",                                          "載入中...");
+export const SHOWCASE_LOAD_ERR      = t("Failed to load showcase.",                           "無法載入展示區。");
+export const SHOWCASE_PATTERNS      = tf((n) => `${n} pattern${n !== 1 ? "s" : ""}`,         (n) => `${n} 個彈幕`);
+export const SHOWCASE_READY         = t("Ready",                                               "準備就緒");
+export const SHOWCASE_FINISHED      = t("Finished",                                            "結束");
+export const SHOWCASE_PLAY          = t("Play",                                                "開始遊玩");
+export const SHOWCASE_REPLAY        = t("Replay",                                              "再玩一次");
+export const SHOWCASE_CANCEL        = t("Cancel",                                              "取消");
+export const SHOWCASE_CLOSE         = t("Close",                                               "關閉");
+export const SHOWCASE_VIDEO_ERR     = t("Failed to load video.",                              "無法載入影片。");
+export const SHOWCASE_GET_READY     = t("Get ready...",                                        "準備中...");
+export const SHOWCASE_GAME_HINT     = t("WASD / Arrow keys to move · Shift to focus · Click outside to close", "WASD / 方向鍵移動 · Shift 集中 · 點擊外部關閉");
+
 
