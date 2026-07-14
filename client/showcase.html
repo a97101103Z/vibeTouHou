@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vibeTouHou — Showcase</title>
+    <meta
+      name="description"
+      content="vibeTouHou showcase — curated bullet-hell pattern gallery."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/style.css" />
+    <link rel="stylesheet" href="/src/showcase/style.css" />
+  </head>
+  <body class="sc-page-body">
+    <div class="sc-page">
+      <nav class="sc-nav">
+        <a href="/" class="sc-nav-logo">
+          <span class="logo-vibe">vibe</span><span class="logo-tou">Tou</span
+          ><span class="logo-hou">Hou</span>
+        </a>
+        <div class="sc-nav-title" data-i18n="SHOWCASE_TITLE">Showcase</div>
+        <div class="sc-nav-spacer"></div>
+      </nav>
+
+      <main class="sc-content">
+        <p class="sc-instruction" data-i18n="SHOWCASE_INSTRUCTION">Open a section below, then click on a pattern to start playing.</p>
+        <div id="sc-sections" class="sc-sections">
+          <div class="sc-loading" data-i18n="SHOWCASE_LOADING">Loading...</div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Game Modal (play) -->
+    <div id="sc-game-modal">
+      <div class="sc-game-modal-close" id="sc-game-modal-close" data-go-close>&times;</div>
+      <div class="sc-game-modal-inner">
+        <div class="sc-canvas-wrap">
+          <canvas id="sc-game-canvas" width="800" height="600" data-go-canvas></canvas>
+          <div class="sc-canvas-hud">
+            <span id="sc-hud-pattern" data-go-pattern>&mdash;</span>
+            <span id="sc-hud-time" data-go-time>10.0s</span>
+            <span id="sc-hud-hits" data-go-hits>Hits: 0</span>
+          </div>
+          <div id="sc-canvas-overlay" class="sc-canvas-overlay" data-visible="true" data-go-overlay>
+            <h2 id="sc-overlay-title" data-go-title>Ready</h2>
+            <p id="sc-overlay-subtitle" data-go-subtitle>Get ready to play.</p>
+            <div id="sc-overlay-actions" data-go-actions></div>
+          </div>
+        </div>
+        <div class="sc-game-hint" data-i18n="SHOWCASE_GAME_HINT">WASD / Arrow keys to move · Shift to focus · Click outside to close</div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/showcase/main.js"></script>
+  </body>
+</html>

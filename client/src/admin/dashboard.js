@@ -1,7 +1,7 @@
 import { adminApi } from "./api.js";
-import { GameEngine } from "../game/engine.js";
+import { GameOverlay } from "../game/GameOverlay.js";
 import { API_BASE } from "../constants.js";
-import { LB_TEAM_AVG, LB_MEMBER } from "../strings.js";
+import { LB_TEAM_AVG } from "../strings.js";
 
 function formatTimeAgo(unixTs) {
   const secs = Math.max(0, Math.floor((Date.now() / 1000) - unixTs));
@@ -33,16 +33,19 @@ function galleryVideoUrl(entryId) {
 export class Dashboard {
   constructor() {
     this.#cacheDOM();
+    this.#gameOverlay = new GameOverlay({
+      modal: document.getElementById("game-modal"),
+      buttonClasses: { play: "btn-admin play", close: "btn-admin danger" },
+      showTimer: false,
+      onReplay: "ready",
+    });
   }
 
   #pollingTimer = null;
   #countdownTimer = null;
-  #gameEngine = null;
-  #gameRunning = false;
-  #gameCountdownId = null;
-  #gameClosed = false;
   #currentPhase = null;
   #lastPhaseData = null;
+  #gameOverlay;
 
   #phaseDisplay;
   #togglePhaseBtn;
@@ -258,7 +261,7 @@ export class Dashboard {
         const team = btn.dataset.team;
         const index = parseInt(btn.dataset.index);
         const slotLabel = btn.dataset.slot;
-        this.#launchEngine(adminApi.slotPublishedVideoUrl(team, index), slotLabel);
+        this.#gameOverlay.open(adminApi.slotPublishedVideoUrl(team, index), slotLabel);
       });
     });
 
@@ -320,7 +323,7 @@ export class Dashboard {
         const row = btn.closest(".gallery-entry-row");
         const titleEl = row?.querySelector(".title");
         const label = titleEl?.textContent || "Gallery";
-        this.#launchEngine(galleryVideoUrl(btn.dataset.id), label);
+        this.#gameOverlay.open(galleryVideoUrl(btn.dataset.id), label);
       });
     });
 
@@ -539,117 +542,6 @@ export class Dashboard {
     this.#videoModal.addEventListener("click", (e) => {
       if (e.target === this.#videoModal) closeModal();
     }, { once: true });
-  }
-
-  #launchEngine(url, label) {
-    this.#gameEngine = null;
-    this.#gameRunning = false;
-    this.#gameCountdownId = null;
-    this.#gameClosed = false;
-
-    const modal = document.getElementById("game-modal");
-    const canvas = document.getElementById("admin-game-canvas");
-    const ctx = canvas.getContext("2d");
-    const overlay = document.getElementById("admin-canvas-overlay");
-    const titleEl = document.getElementById("admin-overlay-title");
-    const subEl = document.getElementById("admin-overlay-subtitle");
-    const actionsEl = document.getElementById("admin-overlay-actions");
-    const patternEl = document.getElementById("admin-hud-pattern");
-    const timeEl = document.getElementById("admin-hud-time");
-    const hitsEl = document.getElementById("admin-hud-hits");
-    const modalCloseEl = document.getElementById("game-modal-close");
-
-    const cleanup = () => {
-      if (this.#gameCountdownId) { clearInterval(this.#gameCountdownId); this.#gameCountdownId = null; }
-      this.#gameRunning = false;
-      if (this.#gameEngine) { this.#gameEngine.stop(); this.#gameEngine = null; }
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    };
-
-    const close = () => {
-      if (this.#gameClosed) return;
-      this.#gameClosed = true;
-      cleanup();
-      modal.classList.remove("visible");
-      modal.style.display = "";
-    };
-
-    const startGame = () => {
-      if (this.#gameClosed) return;
-      this.#gameRunning = true;
-      this.#gameEngine = new GameEngine(canvas, url, {
-        playerRadius: 8,
-        recordTrajectory: true,
-      });
-
-      this.#gameEngine.addEventListener("hit", (e) => {
-        if (this.#gameClosed) return;
-        hitsEl.textContent = `Hits: ${e.detail.hits}`;
-      });
-
-      this.#gameEngine.addEventListener("finish", () => {
-        this.#gameRunning = false;
-        overlay.setAttribute("data-visible", "true");
-        titleEl.textContent = "Finished";
-        subEl.textContent = `Pattern: ${label}`;
-        hitsEl.textContent = `Hits: ${this.#gameEngine ? this.#gameEngine.hits : "?"}`;
-        actionsEl.innerHTML = `<button class="btn-admin play" id="btn-game-replay">Replay</button>
-          <button class="btn-admin danger" id="btn-game-close">Close</button>`;
-        actionsEl.querySelector("#btn-game-replay")?.addEventListener("click", () => { this.#gameClosed = false; ready(); }, { once: true });
-        actionsEl.querySelector("#btn-game-close")?.addEventListener("click", close, { once: true });
-      });
-
-      this.#gameEngine.addEventListener("videoerror", () => {
-        this.#gameRunning = false;
-        overlay.setAttribute("data-visible", "true");
-        titleEl.textContent = "Video Error";
-        subEl.textContent = "Failed to load video.";
-        actionsEl.innerHTML = `<button class="btn-admin danger" id="btn-game-close">Close</button>`;
-        actionsEl.querySelector("#btn-game-close")?.addEventListener("click", close, { once: true });
-      });
-
-      overlay.setAttribute("data-visible", "false");
-      patternEl.textContent = label;
-      timeEl.textContent = "10.0s";
-      hitsEl.textContent = "Hits: 0";
-      this.#gameEngine.start().catch(() => { if (this.#gameRunning) { this.#gameRunning = false; close(); } });
-    };
-
-    const ready = () => {
-      cleanup();
-      overlay.setAttribute("data-visible", "true");
-      titleEl.textContent = "Ready";
-      subEl.textContent = label;
-      actionsEl.innerHTML = `<button class="btn-admin primary" id="btn-game-start">Play</button>
-        <button class="btn-admin danger" id="btn-game-cancel">Cancel</button>`;
-      actionsEl.querySelector("#btn-game-start")?.addEventListener("click", () => {
-        if (this.#gameClosed) return;
-        let count = 3;
-        overlay.setAttribute("data-visible", "true");
-        titleEl.textContent = String(count);
-        subEl.textContent = "Get ready...";
-        actionsEl.innerHTML = "";
-        this.#gameCountdownId = setInterval(() => {
-          count--;
-          if (count > 0) {
-            titleEl.textContent = String(count);
-          } else {
-            clearInterval(this.#gameCountdownId);
-            this.#gameCountdownId = null;
-            startGame();
-          }
-        }, 1000);
-      }, { once: true });
-      actionsEl.querySelector("#btn-game-cancel")?.addEventListener("click", close, { once: true });
-    };
-
-    this.#gameClosed = false;
-    modal.style.display = "flex";
-    modal.classList.add("visible");
-    modalCloseEl.onclick = close;
-    modal.addEventListener("click", (e) => { if (e.target === modal) close(); }, { once: true });
-
-    ready();
   }
 
   setupPhaseControl() {

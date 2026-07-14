@@ -124,19 +124,19 @@
 
     <!-- Game Modal (play) -->
     <div id="game-modal">
-      <div class="modal-close" id="game-modal-close">&times;</div>
+      <div class="modal-close" id="game-modal-close" data-go-close>&times;</div>
       <div class="game-modal-inner">
         <div class="canvas-wrap">
-          <canvas id="admin-game-canvas" width="800" height="600"></canvas>
+          <canvas id="admin-game-canvas" width="800" height="600" data-go-canvas></canvas>
           <div class="canvas-hud">
-            <span id="admin-hud-pattern">—</span>
-            <span id="admin-hud-time">10.0s</span>
-            <span id="admin-hud-hits">Hits: 0</span>
+            <span id="admin-hud-pattern" data-go-pattern>—</span>
+            <span id="admin-hud-time" data-go-time>10.0s</span>
+            <span id="admin-hud-hits" data-go-hits>Hits: 0</span>
           </div>
-          <div id="admin-canvas-overlay" class="canvas-overlay" data-visible="true">
-            <h2 id="admin-overlay-title">Ready</h2>
-            <p id="admin-overlay-subtitle">Get ready to play.</p>
-            <div id="admin-overlay-actions"></div>
+          <div id="admin-canvas-overlay" class="canvas-overlay" data-visible="true" data-go-overlay>
+            <h2 id="admin-overlay-title" data-go-title>Ready</h2>
+            <p id="admin-overlay-subtitle" data-go-subtitle>Get ready to play.</p>
+            <div id="admin-overlay-actions" data-go-actions></div>
           </div>
         </div>
       </div>
